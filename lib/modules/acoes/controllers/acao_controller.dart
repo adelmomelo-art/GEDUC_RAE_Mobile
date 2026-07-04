@@ -230,6 +230,7 @@ class AcaoController extends ChangeNotifier {
     required String endereco,
     required String bairro,
     required String regional,
+    required String equipamentoReferencia,
     required double latitude,
     required double longitude,
   }) {
@@ -239,6 +240,7 @@ class AcaoController extends ChangeNotifier {
       endereco: endereco,
       bairro: bairro,
       regional: regional,
+      equipamentoReferencia: equipamentoReferencia,
       latitude: latitude,
       longitude: longitude,
     );
@@ -342,6 +344,11 @@ class AcaoController extends ChangeNotifier {
 
     if (acao.endereco.isEmpty && acao.latitude == 0) {
       erro = 'Informe a localização.';
+      return false;
+    }
+
+    if (acao.equipamentoReferencia.isEmpty) {
+      erro = 'Informe o equipamento ou ponto de referência.';
       return false;
     }
 

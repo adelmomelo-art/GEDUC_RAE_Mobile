@@ -19,6 +19,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
   final enderecoController = TextEditingController();
   final bairroController = TextEditingController();
   final regionalController = TextEditingController();
+  final equipamentoReferenciaController = TextEditingController();
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -176,10 +177,20 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       return;
     }
 
+    if (equipamentoReferenciaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Informe o equipamento ou ponto de referência.'),
+        ),
+      );
+      return;
+    }
+
     context.read<AcaoController>().preencherLocalizacao(
           endereco: enderecoController.text.trim(),
           bairro: bairroController.text.trim(),
           regional: regionalController.text.trim(),
+          equipamentoReferencia: equipamentoReferenciaController.text.trim(),
           latitude: latitude,
           longitude: longitude,
         );
@@ -192,6 +203,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     enderecoController.dispose();
     bairroController.dispose();
     regionalController.dispose();
+    equipamentoReferenciaController.dispose();
     super.dispose();
   }
 
@@ -255,6 +267,15 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
             decoration: const InputDecoration(
               labelText: 'Regional',
               hintText: 'Ex: SER 03',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: equipamentoReferenciaController,
+            decoration: const InputDecoration(
+              labelText: 'Equipamento ou ponto de referência',
+              hintText: 'Ex: escola, praça, terminal, shopping, empresa...',
               border: OutlineInputBorder(),
             ),
           ),

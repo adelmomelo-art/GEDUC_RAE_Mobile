@@ -19,6 +19,11 @@ class AcaoController extends ChangeNotifier {
   bool gerandoNumeroRae = false;
   bool carregandoRascunho = false;
 
+  List<AcaoModel> pendentesSincronizacao = [];
+  bool carregandoPendentes = false;
+  bool sincronizandoPendentes = false;
+  String? erroSincronizacao;
+
   bool get possuiRascunhoEmAndamento {
     final acao = acaoAtual;
 
@@ -273,6 +278,37 @@ class AcaoController extends ChangeNotifier {
     );
 
     unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  Future<void> carregarPendentesSincronizacao() async {
+    carregandoPendentes = true;
+    erroSincronizacao = null;
+    notifyListeners();
+
+    try {
+      pendentesSincronizacao = await acaoRepository.listarPendentes();
+    } catch (e) {
+      erroSincronizacao = 'Erro ao carregar pendências: $e';
+    }
+
+    carregandoPendentes = false;
+    notifyListeners();
+  }
+
+  Future<void> sincronizarPendentes() async {
+    sincronizandoPendentes = true;
+    erroSincronizacao = null;
+    notifyListeners();
+
+    try {
+      await acaoRepository.sincronizarPendentes();
+      pendentesSincronizacao = await acaoRepository.listarPendentes();
+    } catch (e) {
+      erroSincronizacao = 'Erro ao sincronizar pendências: $e';
+    }
+
+    sincronizandoPendentes = false;
     notifyListeners();
   }
 

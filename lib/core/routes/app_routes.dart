@@ -16,6 +16,7 @@ import '../../modules/regionais/regionais_page.dart';
 import '../../modules/materiais/materiais_page.dart';
 import '../../modules/acoes/consulta_rae_page.dart';
 import '../../modules/dashboard/bi_geduc_page.dart';
+import '../../modules/sincronizacao/sincronizacao_page.dart';
 
 class AppRoutes {
   static final router = GoRouter(
@@ -38,6 +39,8 @@ class AppRoutes {
       GoRoute(path: '/materiais',  builder: (context, state) => const MateriaisPage()),
       GoRoute(path: '/consulta-rae',  builder: (context, state) => const ConsultaRaePage()),
       GoRoute(path: '/bi-geduc',  builder: (context, state) => const BiGeducPage(),),
+      GoRoute(path: '/sincronizacao',   builder: (context, state) => const SincronizacaoPage(),
+),
     ],
   );
 }

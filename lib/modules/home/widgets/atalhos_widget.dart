@@ -107,6 +107,13 @@ class AtalhosWidget extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _botaoSecundario(
+             context,
+             icon: Icons.cloud_sync,
+             titulo: 'Sincronização Offline',
+             rota: '/sincronizacao',
+            ),
+            const SizedBox(height: 10),
+            _botaoSecundario(
               context,
               icon: Icons.dashboard,
               titulo: 'Dashboard Executivo',

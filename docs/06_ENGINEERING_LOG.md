@@ -458,6 +458,25 @@ flutter analyze:
 Situação:
 Aprovado.
 
+## CE-023
+
+Status:
+✅ Homologado
+
+Descrição:
+Implementa proteção e retomada inteligente do rascunho da ação educativa.
+
+Resultado:
+O usuário visualiza rascunho em andamento na Home, pode continuar do ponto correto ou descartar com confirmação.
+
+flutter analyze:
+No issues found
+
+Git:
+A preencher após o commit.
+
+Situação:
+Aprovado.
 # OBSERVAÇÃO FINAL
 
 O Engineering Log é um documento vivo.

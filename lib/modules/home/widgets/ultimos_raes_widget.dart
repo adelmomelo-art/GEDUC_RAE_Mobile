@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/status_acao_chip.dart';
 import '../../../data/models/acao_model.dart';
 
 class UltimosRaesWidget extends StatelessWidget {
@@ -38,9 +39,7 @@ class UltimosRaesWidget extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             if (acoes.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
@@ -50,7 +49,6 @@ class UltimosRaesWidget extends StatelessWidget {
                   ),
                 ),
               ),
-
             ...acoes.map(
               (acao) => Card(
                 elevation: 0,
@@ -69,9 +67,22 @@ class UltimosRaesWidget extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  subtitle: Text(
-                    'RAE ${acao.numeroRAE}\n'
-                    '${acao.regional} • ${acao.bairro}',
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'RAE ${acao.numeroRAE}\n'
+                          '${acao.regional} • ${acao.bairro}',
+                        ),
+                        const SizedBox(height: 8),
+                        StatusAcaoChip(
+                          status: acao.status,
+                          sincronizado: acao.sincronizado,
+                        ),
+                      ],
+                    ),
                   ),
                   trailing: const Icon(
                     Icons.chevron_right,

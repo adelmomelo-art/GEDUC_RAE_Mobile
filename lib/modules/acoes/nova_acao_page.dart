@@ -23,6 +23,8 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
   String? coordenadorId;
   String? coordenadorNome;
 
+  bool acaoPlanejada = false;
+
   List<TipoAcaoModel> tiposAcoes = [];
   List<Map<String, dynamic>> coordenadores = [];
 
@@ -106,6 +108,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           tipoAcao: tipoSelecionado!.tipoAcao,
           publicoEstimado: tipoSelecionado!.publicoEstimadoPadrao,
           publicoMinimo: tipoSelecionado!.publicoMinimoPadrao,
+          acaoPlanejada: acaoPlanejada,
           coordenadorId: coordenadorId,
           coordenadorNome: coordenadorNome,
         );
@@ -185,6 +188,19 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
             },
           ),
           const SizedBox(height: 16),
+          SwitchListTile(
+            value: acaoPlanejada,
+            title: const Text('A ação foi previamente planejada?'),
+            subtitle: const Text(
+              'Campo oriundo do formulário GEDUC/RAE.',
+            ),
+            onChanged: (valor) {
+              setState(() {
+                acaoPlanejada = valor;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             initialValue: coordenadorId,
             decoration: const InputDecoration(
@@ -234,6 +250,9 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                     Text(
                       'Público mínimo: '
                       '${tipoSelecionado!.publicoMinimoPadrao}',
+                    ),
+                    Text(
+                      'Ação planejada: ${acaoPlanejada ? 'Sim' : 'Não'}',
                     ),
                     const SizedBox(height: 12),
                     const Text(

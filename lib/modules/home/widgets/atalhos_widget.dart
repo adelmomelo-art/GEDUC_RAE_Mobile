@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../data/models/usuario_model.dart';
+import '../../acoes/controllers/acao_controller.dart';
 
 class AtalhosWidget extends StatelessWidget {
   final UsuarioModel? usuario;
@@ -10,6 +12,54 @@ class AtalhosWidget extends StatelessWidget {
     super.key,
     required this.usuario,
   });
+
+  Future<void> _abrirNovaAcao(BuildContext context) async {
+    final acaoController = context.read<AcaoController>();
+
+    if (!acaoController.possuiRascunhoEmAndamento) {
+      acaoController.criarRascunhoInicial();
+      context.go('/nova-acao');
+      return;
+    }
+
+    final escolha = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Existe um rascunho em andamento'),
+          content: const Text(
+            'Você deseja continuar o rascunho atual ou iniciar uma nova ação?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'continuar'),
+              child: const Text('Continuar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'nova'),
+              child: const Text('Nova ação'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!context.mounted) return;
+
+    if (escolha == 'continuar') {
+      context.go(acaoController.rotaContinuacaoRascunho);
+      return;
+    }
+
+    if (escolha == 'nova') {
+      await acaoController.descartarRascunho();
+      acaoController.criarRascunhoInicial();
+
+      if (!context.mounted) return;
+
+      context.go('/nova-acao');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,46 +89,38 @@ class AtalhosWidget extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 18),
-
-            _botaoPrincipal(
-              context,
-              icon: Icons.add,
-              titulo: 'Nova Ação',
-              rota: '/nova-acao',
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('Nova Ação'),
+                onPressed: () => _abrirNovaAcao(context),
+              ),
             ),
-
             const SizedBox(height: 10),
-
             _botaoPrincipal(
               context,
               icon: Icons.search,
               titulo: 'Consulta de RAE',
               rota: '/consulta-rae',
             ),
-
             const SizedBox(height: 10),
-
             _botaoSecundario(
               context,
               icon: Icons.dashboard,
               titulo: 'Dashboard Executivo',
               rota: '/dashboard',
             ),
-
             const SizedBox(height: 10),
-
             _botaoSecundario(
               context,
               icon: Icons.analytics,
               titulo: 'Painel BI GEDUC',
               rota: '/bi-geduc',
             ),
-
             if (usuario?.perfilAcesso == 'administrador') ...[
               const SizedBox(height: 10),
-
               _botaoSecundario(
                 context,
                 icon: Icons.admin_panel_settings,

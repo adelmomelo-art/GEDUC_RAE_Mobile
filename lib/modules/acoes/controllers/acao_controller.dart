@@ -19,6 +19,79 @@ class AcaoController extends ChangeNotifier {
   bool gerandoNumeroRae = false;
   bool carregandoRascunho = false;
 
+  bool get possuiRascunhoEmAndamento {
+    final acao = acaoAtual;
+
+    if (acao == null) {
+      return false;
+    }
+
+    return acao.status == 'rascunho' &&
+        (acao.turno.isNotEmpty ||
+            acao.nomeAcao.isNotEmpty ||
+            acao.endereco.isNotEmpty ||
+            acao.pessoasAlcancadas > 0 ||
+            acao.fotosUrls.isNotEmpty);
+  }
+
+  String get resumoRascunho {
+    final acao = acaoAtual;
+
+    if (acao == null) {
+      return 'Nenhum rascunho encontrado.';
+    }
+
+    if (acao.nomeAcao.isNotEmpty) {
+      return acao.nomeAcao;
+    }
+
+    if (acao.turno.isNotEmpty) {
+      return 'Ação iniciada no turno ${acao.turno}';
+    }
+
+    return 'Rascunho de ação educativa em andamento.';
+  }
+
+  String get rotaContinuacaoRascunho {
+    final acao = acaoAtual;
+
+    if (acao == null) {
+      return '/nova-acao';
+    }
+
+    if (acao.turno.isEmpty || acao.nomeAcao.isEmpty) {
+      return '/nova-acao';
+    }
+
+    if (acao.endereco.isEmpty && acao.latitude == 0) {
+      return '/localizacao';
+    }
+
+    if (acao.pessoasAlcancadas <= 0) {
+      return '/resultados';
+    }
+
+    if (acao.fotosUrls.isEmpty) {
+      return '/evidencias';
+    }
+
+    return '/revisao';
+  }
+
+  Future<bool> carregarRascunhoSeExistir() async {
+    carregandoRascunho = true;
+    notifyListeners();
+
+    final rascunho = await acaoRepository.recuperarRascunho();
+
+    acaoAtual = rascunho;
+
+    carregandoRascunho = false;
+    notifyListeners();
+
+    return rascunho != null;
+  }
+
   Future<void> carregarRascunhoOuCriarNovo() async {
     carregandoRascunho = true;
     notifyListeners();
@@ -32,6 +105,12 @@ class AcaoController extends ChangeNotifier {
     }
 
     carregandoRascunho = false;
+    notifyListeners();
+  }
+
+  Future<void> descartarRascunho() async {
+    await acaoRepository.excluirRascunho();
+    acaoAtual = null;
     notifyListeners();
   }
 

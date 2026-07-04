@@ -58,9 +58,12 @@ class AcaoModel {
   });
 
   AcaoModel copyWith({
+    String? id,
     String? numeroRAE,
     int? anoRAE,
+    DateTime? dataAcao,
     String? turno,
+    String? horaInicio,
     String? horaFinal,
     String? nomeAcao,
     String? tipoAcao,
@@ -84,12 +87,12 @@ class AcaoModel {
     bool? sincronizado,
   }) {
     return AcaoModel(
-      id: id,
+      id: id ?? this.id,
       numeroRAE: numeroRAE ?? this.numeroRAE,
       anoRAE: anoRAE ?? this.anoRAE,
-      dataAcao: dataAcao,
+      dataAcao: dataAcao ?? this.dataAcao,
       turno: turno ?? this.turno,
-      horaInicio: horaInicio,
+      horaInicio: horaInicio ?? this.horaInicio,
       horaFinal: horaFinal ?? this.horaFinal,
       nomeAcao: nomeAcao ?? this.nomeAcao,
       tipoAcao: tipoAcao ?? this.tipoAcao,
@@ -109,8 +112,7 @@ class AcaoModel {
       coordenadorId: coordenadorId ?? this.coordenadorId,
       coordenadorNome: coordenadorNome ?? this.coordenadorNome,
       fotosUrls: fotosUrls ?? this.fotosUrls,
-      descricaoEvidencias:
-          descricaoEvidencias ?? this.descricaoEvidencias,
+      descricaoEvidencias: descricaoEvidencias ?? this.descricaoEvidencias,
       status: status ?? this.status,
       sincronizado: sincronizado ?? this.sincronizado,
     );
@@ -146,33 +148,46 @@ class AcaoModel {
         'sincronizado': sincronizado,
       };
 
-  factory AcaoModel.fromMap(Map<String, dynamic> map) => AcaoModel(
-        id: map['id'] ?? '',
-        numeroRAE: map['numeroRAE'] ?? '',
-        anoRAE: map['anoRAE'] ?? 0,
-        dataAcao: DateTime.parse(map['dataAcao']),
-        turno: map['turno'] ?? '',
-        horaInicio: map['horaInicio'] ?? '',
-        horaFinal: map['horaFinal'],
-        nomeAcao: map['nomeAcao'] ?? '',
-        tipoAcao: map['tipoAcao'] ?? '',
-        publicoEstimado: map['publicoEstimado'] ?? 0,
-        publicoMinimo: map['publicoMinimo'] ?? 0,
-        pessoasAlcancadas: map['pessoasAlcancadas'] ?? 0,
-        veiculosAbordados: map['veiculosAbordados'] ?? 0,
-        credenciaisEmitidas: map['credenciaisEmitidas'] ?? 0,
-        metaAtingida: map['metaAtingida'] ?? false,
-        motivoMetaNaoAtingida: map['motivoMetaNaoAtingida'],
-        endereco: map['endereco'] ?? '',
-        bairro: map['bairro'] ?? '',
-        regional: map['regional'] ?? '',
-        latitude: (map['latitude'] ?? 0).toDouble(),
-        longitude: (map['longitude'] ?? 0).toDouble(),
-        coordenadorId: map['coordenadorId'] ?? '',
-        coordenadorNome: map['coordenadorNome'] ?? '',
-        fotosUrls: List<String>.from(map['fotosUrls'] ?? []),
-        descricaoEvidencias: map['descricaoEvidencias'] ?? '',
-        status: map['status'] ?? 'rascunho',
-        sincronizado: map['sincronizado'] ?? false,
-      );
+  Map<String, dynamic> toJson() => toMap();
+
+  factory AcaoModel.fromMap(Map<String, dynamic> map) {
+    final dataAcaoTexto = map['dataAcao']?.toString();
+    final dataAcao = dataAcaoTexto == null || dataAcaoTexto.isEmpty
+        ? DateTime.now()
+        : DateTime.tryParse(dataAcaoTexto) ?? DateTime.now();
+
+    return AcaoModel(
+      id: map['id'] ?? '',
+      numeroRAE: map['numeroRAE'] ?? '',
+      anoRAE: map['anoRAE'] ?? 0,
+      dataAcao: dataAcao,
+      turno: map['turno'] ?? '',
+      horaInicio: map['horaInicio'] ?? '',
+      horaFinal: map['horaFinal'],
+      nomeAcao: map['nomeAcao'] ?? '',
+      tipoAcao: map['tipoAcao'] ?? '',
+      publicoEstimado: map['publicoEstimado'] ?? 0,
+      publicoMinimo: map['publicoMinimo'] ?? 0,
+      pessoasAlcancadas: map['pessoasAlcancadas'] ?? 0,
+      veiculosAbordados: map['veiculosAbordados'] ?? 0,
+      credenciaisEmitidas: map['credenciaisEmitidas'] ?? 0,
+      metaAtingida: map['metaAtingida'] ?? false,
+      motivoMetaNaoAtingida: map['motivoMetaNaoAtingida'],
+      endereco: map['endereco'] ?? '',
+      bairro: map['bairro'] ?? '',
+      regional: map['regional'] ?? '',
+      latitude: (map['latitude'] ?? 0).toDouble(),
+      longitude: (map['longitude'] ?? 0).toDouble(),
+      coordenadorId: map['coordenadorId'] ?? '',
+      coordenadorNome: map['coordenadorNome'] ?? '',
+      fotosUrls: List<String>.from(map['fotosUrls'] ?? []),
+      descricaoEvidencias: map['descricaoEvidencias'] ?? '',
+      status: map['status'] ?? 'rascunho',
+      sincronizado: map['sincronizado'] ?? false,
+    );
+  }
+
+  factory AcaoModel.fromJson(Map<String, dynamic> json) {
+    return AcaoModel.fromMap(json);
+  }
 }

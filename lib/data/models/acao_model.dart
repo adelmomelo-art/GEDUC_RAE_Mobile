@@ -43,6 +43,20 @@ class AcaoModel {
   final double longitude;
 
   // ============================================================
+  // CARACTERIZAÇÃO DA AÇÃO
+  // ============================================================
+
+  final List<String> fatorRiscoIds;
+  final String mudancaComportamentoId;
+  final String formacaoId;
+  final String publicoId;
+  final List<String> tipoParticipacaoIds;
+  final List<String> focoTematicoIds;
+  final List<String> perfilUsuarioIds;
+  final String sexoPredominanteId;
+  final String instituicaoParceira;
+
+  // ============================================================
   // RECURSOS
   // ============================================================
 
@@ -97,6 +111,15 @@ class AcaoModel {
     this.equipamentoReferencia = '',
     required this.latitude,
     required this.longitude,
+    this.fatorRiscoIds = const [],
+    this.mudancaComportamentoId = '',
+    this.formacaoId = '',
+    this.publicoId = '',
+    this.tipoParticipacaoIds = const [],
+    this.focoTematicoIds = const [],
+    this.perfilUsuarioIds = const [],
+    this.sexoPredominanteId = '',
+    this.instituicaoParceira = '',
     required this.coordenadorId,
     required this.coordenadorNome,
     this.agentesTransito = 0,
@@ -134,6 +157,15 @@ class AcaoModel {
     String? equipamentoReferencia,
     double? latitude,
     double? longitude,
+    List<String>? fatorRiscoIds,
+    String? mudancaComportamentoId,
+    String? formacaoId,
+    String? publicoId,
+    List<String>? tipoParticipacaoIds,
+    List<String>? focoTematicoIds,
+    List<String>? perfilUsuarioIds,
+    String? sexoPredominanteId,
+    String? instituicaoParceira,
     String? coordenadorId,
     String? coordenadorNome,
     int? agentesTransito,
@@ -172,6 +204,19 @@ class AcaoModel {
           equipamentoReferencia ?? this.equipamentoReferencia,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      fatorRiscoIds: fatorRiscoIds ?? this.fatorRiscoIds,
+      mudancaComportamentoId:
+          mudancaComportamentoId ?? this.mudancaComportamentoId,
+      formacaoId: formacaoId ?? this.formacaoId,
+      publicoId: publicoId ?? this.publicoId,
+      tipoParticipacaoIds:
+          tipoParticipacaoIds ?? this.tipoParticipacaoIds,
+      focoTematicoIds: focoTematicoIds ?? this.focoTematicoIds,
+      perfilUsuarioIds: perfilUsuarioIds ?? this.perfilUsuarioIds,
+      sexoPredominanteId:
+          sexoPredominanteId ?? this.sexoPredominanteId,
+      instituicaoParceira:
+          instituicaoParceira ?? this.instituicaoParceira,
       coordenadorId: coordenadorId ?? this.coordenadorId,
       coordenadorNome: coordenadorNome ?? this.coordenadorNome,
       agentesTransito: agentesTransito ?? this.agentesTransito,
@@ -215,6 +260,15 @@ class AcaoModel {
         'equipamentoReferencia': equipamentoReferencia,
         'latitude': latitude,
         'longitude': longitude,
+        'fatorRiscoIds': fatorRiscoIds,
+        'mudancaComportamentoId': mudancaComportamentoId,
+        'formacaoId': formacaoId,
+        'publicoId': publicoId,
+        'tipoParticipacaoIds': tipoParticipacaoIds,
+        'focoTematicoIds': focoTematicoIds,
+        'perfilUsuarioIds': perfilUsuarioIds,
+        'sexoPredominanteId': sexoPredominanteId,
+        'instituicaoParceira': instituicaoParceira,
         'coordenadorId': coordenadorId,
         'coordenadorNome': coordenadorNome,
         'agentesTransito': agentesTransito,
@@ -261,6 +315,16 @@ class AcaoModel {
       equipamentoReferencia: map['equipamentoReferencia'] ?? '',
       latitude: (map['latitude'] ?? 0).toDouble(),
       longitude: (map['longitude'] ?? 0).toDouble(),
+      fatorRiscoIds: List<String>.from(map['fatorRiscoIds'] ?? []),
+      mudancaComportamentoId: map['mudancaComportamentoId'] ?? '',
+      formacaoId: map['formacaoId'] ?? '',
+      publicoId: map['publicoId'] ?? '',
+      tipoParticipacaoIds:
+          List<String>.from(map['tipoParticipacaoIds'] ?? []),
+      focoTematicoIds: List<String>.from(map['focoTematicoIds'] ?? []),
+      perfilUsuarioIds: List<String>.from(map['perfilUsuarioIds'] ?? []),
+      sexoPredominanteId: map['sexoPredominanteId'] ?? '',
+      instituicaoParceira: map['instituicaoParceira'] ?? '',
       coordenadorId: map['coordenadorId'] ?? '',
       coordenadorNome: map['coordenadorNome'] ?? '',
       agentesTransito: map['agentesTransito'] ?? 0,

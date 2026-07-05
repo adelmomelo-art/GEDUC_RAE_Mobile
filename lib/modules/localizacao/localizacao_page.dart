@@ -195,7 +195,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
           longitude: longitude,
         );
 
-    context.go('/resultados');
+    context.go('/caracterizacao');
   }
 
   @override

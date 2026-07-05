@@ -72,6 +72,14 @@ class AcaoController extends ChangeNotifier {
       return '/localizacao';
     }
 
+    if (acao.formacaoId.isEmpty || acao.publicoId.isEmpty) {
+      return '/caracterizacao';
+    }
+
+    if (acao.materialUtilizadoIds.isEmpty) {
+      return '/recursos-operacionais';
+    }
+
     if (acao.pessoasAlcancadas <= 0) {
       return '/resultados';
     }
@@ -144,11 +152,21 @@ class AcaoController extends ChangeNotifier {
       equipamentoReferencia: '',
       latitude: 0,
       longitude: 0,
+      fatorRiscoIds: const [],
+      mudancaComportamentoId: '',
+      formacaoId: '',
+      publicoId: '',
+      tipoParticipacaoIds: const [],
+      focoTematicoIds: const [],
+      perfilUsuarioIds: const [],
+      sexoPredominanteId: '',
+      instituicaoParceira: '',
       coordenadorId: '',
       coordenadorNome: '',
       agentesTransito: 0,
       equipeTerceirizada: 0,
       materialUtilizadoIds: const [],
+      coberturaMidia: false,
       houveParticipacaoOutroOrgao: false,
       orgaoParticipanteId: '',
       fotosUrls: const [],
@@ -243,6 +261,54 @@ class AcaoController extends ChangeNotifier {
       equipamentoReferencia: equipamentoReferencia,
       latitude: latitude,
       longitude: longitude,
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  void preencherCaracterizacao({
+    required List<String> fatorRiscoIds,
+    required String mudancaComportamentoId,
+    required String formacaoId,
+    required String publicoId,
+    required List<String> tipoParticipacaoIds,
+    required List<String> focoTematicoIds,
+    required List<String> perfilUsuarioIds,
+    required String sexoPredominanteId,
+    required String instituicaoParceira,
+  }) {
+    if (acaoAtual == null) criarRascunhoInicial();
+
+    acaoAtual = acaoAtual!.copyWith(
+      fatorRiscoIds: fatorRiscoIds,
+      mudancaComportamentoId: mudancaComportamentoId,
+      formacaoId: formacaoId,
+      publicoId: publicoId,
+      tipoParticipacaoIds: tipoParticipacaoIds,
+      focoTematicoIds: focoTematicoIds,
+      perfilUsuarioIds: perfilUsuarioIds,
+      sexoPredominanteId: sexoPredominanteId,
+      instituicaoParceira: instituicaoParceira,
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  void preencherRecursosOperacionais({
+    required int agentesTransito,
+    required int equipeTerceirizada,
+    required List<String> materialUtilizadoIds,
+    required bool coberturaMidia,
+  }) {
+    if (acaoAtual == null) criarRascunhoInicial();
+
+    acaoAtual = acaoAtual!.copyWith(
+      agentesTransito: agentesTransito,
+      equipeTerceirizada: equipeTerceirizada,
+      materialUtilizadoIds: materialUtilizadoIds,
+      coberturaMidia: coberturaMidia,
     );
 
     unawaited(_salvarRascunhoAtual());
@@ -349,6 +415,16 @@ class AcaoController extends ChangeNotifier {
 
     if (acao.equipamentoReferencia.isEmpty) {
       erro = 'Informe o equipamento ou ponto de referência.';
+      return false;
+    }
+
+    if (acao.formacaoId.isEmpty || acao.publicoId.isEmpty) {
+      erro = 'Informe a caracterização da ação.';
+      return false;
+    }
+
+    if (acao.materialUtilizadoIds.isEmpty) {
+      erro = 'Informe os recursos operacionais utilizados.';
       return false;
     }
 

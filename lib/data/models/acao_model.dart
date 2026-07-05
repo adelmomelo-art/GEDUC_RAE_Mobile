@@ -57,7 +57,7 @@ class AcaoModel {
   final String instituicaoParceira;
 
   // ============================================================
-  // RECURSOS
+  // RECURSOS OPERACIONAIS
   // ============================================================
 
   final String coordenadorId;
@@ -65,6 +65,7 @@ class AcaoModel {
   final int agentesTransito;
   final int equipeTerceirizada;
   final List<String> materialUtilizadoIds;
+  final bool coberturaMidia;
 
   // ============================================================
   // INTEGRAÇÃO INSTITUCIONAL
@@ -125,6 +126,7 @@ class AcaoModel {
     this.agentesTransito = 0,
     this.equipeTerceirizada = 0,
     this.materialUtilizadoIds = const [],
+    this.coberturaMidia = false,
     this.houveParticipacaoOutroOrgao = false,
     this.orgaoParticipanteId = '',
     this.fotosUrls = const [],
@@ -171,6 +173,7 @@ class AcaoModel {
     int? agentesTransito,
     int? equipeTerceirizada,
     List<String>? materialUtilizadoIds,
+    bool? coberturaMidia,
     bool? houveParticipacaoOutroOrgao,
     String? orgaoParticipanteId,
     List<String>? fotosUrls,
@@ -224,6 +227,7 @@ class AcaoModel {
           equipeTerceirizada ?? this.equipeTerceirizada,
       materialUtilizadoIds:
           materialUtilizadoIds ?? this.materialUtilizadoIds,
+      coberturaMidia: coberturaMidia ?? this.coberturaMidia,
       houveParticipacaoOutroOrgao:
           houveParticipacaoOutroOrgao ?? this.houveParticipacaoOutroOrgao,
       orgaoParticipanteId:
@@ -274,6 +278,7 @@ class AcaoModel {
         'agentesTransito': agentesTransito,
         'equipeTerceirizada': equipeTerceirizada,
         'materialUtilizadoIds': materialUtilizadoIds,
+        'coberturaMidia': coberturaMidia,
         'houveParticipacaoOutroOrgao': houveParticipacaoOutroOrgao,
         'orgaoParticipanteId': orgaoParticipanteId,
         'fotosUrls': fotosUrls,
@@ -331,6 +336,7 @@ class AcaoModel {
       equipeTerceirizada: map['equipeTerceirizada'] ?? 0,
       materialUtilizadoIds:
           List<String>.from(map['materialUtilizadoIds'] ?? []),
+      coberturaMidia: map['coberturaMidia'] ?? false,
       houveParticipacaoOutroOrgao:
           map['houveParticipacaoOutroOrgao'] ?? false,
       orgaoParticipanteId: map['orgaoParticipanteId'] ?? '',

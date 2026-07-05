@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/services/faxita_insights_service.dart';
 import '../../core/services/faxita_review_service.dart';
 import '../../core/services/pdf_relatorio_service.dart';
 import '../../core/widgets/rae_qrcode_widget.dart';
@@ -18,6 +19,7 @@ class RevisaoRelatorioPage extends StatefulWidget {
 
 class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
   final faxitaReviewService = FaxitaReviewService();
+  final faxitaInsightsService = FaxitaInsightsService();
 
   @override
   void initState() {
@@ -49,18 +51,25 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
   }
 
   Widget _cardFaxita(FaxitaReviewResult review) {
+    final nivel = faxitaInsightsService.classificarNivelRae(
+      review.indiceQualidade,
+    );
+
+    final emoji = faxitaInsightsService.emojiNivelRae(
+      review.indiceQualidade,
+    );
+
     return Card(
       color: Colors.purple.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.psychology),
-                const SizedBox(width: 8),
-                const Expanded(
+                Icon(Icons.psychology),
+                SizedBox(width: 8),
+                Expanded(
                   child: Text(
                     'Revisão Inteligente da Faxita',
                     style: TextStyle(
@@ -69,27 +78,92 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
                     ),
                   ),
                 ),
-                Text(
-                  '${review.indiceQualidade}/100',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              '${review.indiceQualidade}',
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(
+              'Índice de Qualidade do Relatório',
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             LinearProgressIndicator(
               value: review.indiceQualidade / 100,
-              minHeight: 10,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Classificação: ${review.classificacao}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              minHeight: 12,
             ),
             const SizedBox(height: 12),
-            Text(review.parecer),
+            Text(
+              '$emoji $nivel',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text('Classificação técnica: ${review.classificacao}'),
+            const SizedBox(height: 14),
+            Text(
+              faxitaInsightsService.parecerExecutivo(
+                indiceQualidade: review.indiceQualidade,
+                classificacao: review.classificacao,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _timelineQualidade({
+    required bool planejamento,
+    required bool localizacao,
+    required bool caracterizacao,
+    required bool recursos,
+    required bool resultados,
+    required bool evidencias,
+  }) {
+    final etapas = [
+      ('Planejamento', planejamento),
+      ('Localização', localizacao),
+      ('Caracterização', caracterizacao),
+      ('Recursos', recursos),
+      ('Resultados', resultados),
+      ('Evidências', evidencias),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Timeline da qualidade',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...etapas.map(
+              (etapa) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  etapa.$2 ? Icons.check_circle : Icons.warning,
+                  color: etapa.$2 ? Colors.green : Colors.orange,
+                ),
+                title: Text(etapa.$1),
+                subtitle: Text(etapa.$2 ? 'Concluído' : 'Revisar'),
+              ),
+            ),
           ],
         ),
       ),
@@ -144,6 +218,48 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _alertasPriorizados(List<FaxitaInsight> alertas) {
+    if (alertas.isEmpty) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.check_circle, color: Colors.green),
+          title: Text('Alertas priorizados'),
+          subtitle: Text('Nenhum alerta prioritário identificado.'),
+        ),
+      );
+    }
+
+    return Column(
+      children: alertas.map((alerta) {
+        final cor = alerta.severidade == 'critico'
+            ? Colors.red
+            : alerta.severidade == 'importante'
+                ? Colors.orange
+                : Colors.blue;
+
+        final icone = alerta.severidade == 'critico'
+            ? Icons.priority_high
+            : alerta.severidade == 'importante'
+                ? Icons.warning
+                : Icons.info;
+
+        return Card(
+          child: ListTile(
+            leading: Icon(icone, color: cor),
+            title: Text(alerta.titulo),
+            subtitle: Text(alerta.mensagem),
+            trailing: TextButton(
+              child: const Text('Corrigir'),
+              onPressed: () {
+                context.go(alerta.rotaCorrecao);
+              },
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -226,6 +342,37 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
     final controller = context.watch<AcaoController>();
     final acao = controller.acaoAtual;
     final review = acao == null ? null : faxitaReviewService.revisar(acao);
+    final alertasPriorizados = review == null
+        ? <FaxitaInsight>[]
+        : faxitaInsightsService.priorizarAlertas(review.alertas);
+
+    final planejamentoOk = acao != null &&
+        acao.turno.isNotEmpty &&
+        acao.nomeAcao.isNotEmpty &&
+        acao.publicoEstimado > 0 &&
+        acao.publicoMinimo > 0;
+
+    final localizacaoOk = acao != null &&
+        acao.endereco.isNotEmpty &&
+        acao.bairro.isNotEmpty &&
+        acao.regional.isNotEmpty &&
+        acao.equipamentoReferencia.isNotEmpty;
+
+    final caracterizacaoOk = acao != null &&
+        acao.formacaoId.isNotEmpty &&
+        acao.publicoId.isNotEmpty &&
+        acao.focoTematicoIds.isNotEmpty &&
+        acao.fatorRiscoIds.isNotEmpty;
+
+    final recursosOk = acao != null &&
+        (acao.agentesTransito + acao.equipeTerceirizada) > 0 &&
+        acao.materialUtilizadoIds.isNotEmpty;
+
+    final resultadosOk = acao != null && acao.pessoasAlcancadas > 0;
+
+    final evidenciasOk = acao != null &&
+        acao.fotosUrls.isNotEmpty &&
+        acao.descricaoEvidencias.trim().length >= 10;
 
     return Scaffold(
       appBar: AppBar(
@@ -276,19 +423,21 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
                 const SizedBox(height: 16),
                 if (review != null) ...[
                   _cardFaxita(review),
+                  _timelineQualidade(
+                    planejamento: planejamentoOk,
+                    localizacao: localizacaoOk,
+                    caracterizacao: caracterizacaoOk,
+                    recursos: recursosOk,
+                    resultados: resultadosOk,
+                    evidencias: evidenciasOk,
+                  ),
+                  _alertasPriorizados(alertasPriorizados),
                   _listaRevisao(
                     titulo: 'Pontos fortes',
                     icone: Icons.check_circle,
                     itens: review.pontosFortes,
                     cor: Colors.green,
                     vazio: 'Nenhum ponto forte identificado.',
-                  ),
-                  _listaRevisao(
-                    titulo: 'Alertas',
-                    icone: Icons.warning,
-                    itens: review.alertas,
-                    cor: Colors.orange,
-                    vazio: 'Nenhum alerta identificado.',
                   ),
                   _listaRevisao(
                     titulo: 'Recomendações',

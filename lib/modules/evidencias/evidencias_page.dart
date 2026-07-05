@@ -25,6 +25,37 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
 
   bool salvandoEvidencias = false;
 
+  int get totalFotos => fotos.length;
+
+  bool get possuiFotoMinima => totalFotos >= 1;
+
+  bool get possuiConjuntoRecomendado => totalFotos >= 3;
+
+  bool get possuiDescricao =>
+      descricaoController.text.trim().length >= 10;
+
+  bool get podeAvancar => possuiFotoMinima && possuiDescricao;
+
+  String get analiseFaxita {
+    if (!possuiFotoMinima) {
+      return 'Faxita recomenda anexar pelo menos uma foto para comprovar a execução da ação.';
+    }
+
+    if (!possuiConjuntoRecomendado && !possuiDescricao) {
+      return 'Faxita observou poucas fotos e ausência de descrição. Inclua mais evidências e descreva o contexto da ação.';
+    }
+
+    if (!possuiConjuntoRecomendado) {
+      return 'Faxita recomenda, quando possível, anexar pelo menos 3 fotos: equipe, público e contexto da ação.';
+    }
+
+    if (!possuiDescricao) {
+      return 'Faxita recomenda descrever as evidências para facilitar a revisão e futura análise da ação.';
+    }
+
+    return 'Faxita considera que o conjunto mínimo de evidências está adequado para prosseguir.';
+  }
+
   Future<void> tirarFoto() async {
     final foto = await imagemService.capturarCamera();
 
@@ -126,9 +157,20 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
   }
 
   Future<void> avancar() async {
-    if (fotos.isEmpty) {
+    if (!possuiFotoMinima) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adicione pelo menos uma foto da ação.')),
+      );
+      return;
+    }
+
+    if (!possuiDescricao) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Descreva as evidências com pelo menos 10 caracteres.',
+          ),
+        ),
       );
       return;
     }
@@ -184,6 +226,152 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
     super.dispose();
   }
 
+  Widget _cardResumo() {
+    return Card(
+      color: Colors.blue.shade50,
+      child: ListTile(
+        leading: const Icon(Icons.verified),
+        title: const Text('Central de Evidências Inteligentes'),
+        subtitle: Text(
+          fotos.isEmpty
+              ? 'Adicione imagens da ação educativa.'
+              : '$totalFotos foto(s) adicionada(s).',
+        ),
+      ),
+    );
+  }
+
+  Widget _cardChecklist() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Checklist da Faxita',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _itemChecklist(
+              concluido: possuiFotoMinima,
+              texto: 'Pelo menos 1 foto obrigatória',
+            ),
+            _itemChecklist(
+              concluido: possuiConjuntoRecomendado,
+              texto: 'Recomendação: mínimo de 3 fotos',
+            ),
+            _itemChecklist(
+              concluido: possuiDescricao,
+              texto: 'Descrição contextual preenchida',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _itemChecklist({
+    required bool concluido,
+    required String texto,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        concluido ? Icons.check_circle : Icons.radio_button_unchecked,
+        color: concluido ? Colors.green : Colors.grey,
+      ),
+      title: Text(texto),
+    );
+  }
+
+  Widget _cardFaxita() {
+    return Card(
+      color: Colors.purple.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.psychology),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                analiseFaxita,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _botaoAdicionarFoto() {
+    return ElevatedButton.icon(
+      onPressed: salvandoEvidencias ? null : abrirOpcoesFoto,
+      icon: const Icon(Icons.add_a_photo),
+      label: const Text('ADICIONAR FOTO'),
+    );
+  }
+
+  Widget _campoDescricao() {
+    return TextField(
+      controller: descricaoController,
+      maxLines: 3,
+      enabled: !salvandoEvidencias,
+      onChanged: (_) => setState(() {}),
+      decoration: const InputDecoration(
+        labelText: 'Descrição das evidências',
+        hintText:
+            'Ex: Fotos da abordagem educativa, público presente, equipe e materiais utilizados...',
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _galeriaOuVazio() {
+    if (fotos.isEmpty) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.image_not_supported),
+          title: Text('Nenhuma foto adicionada'),
+          subtitle: Text('Inclua pelo menos uma imagem para continuar.'),
+        ),
+      );
+    }
+
+    return _GaleriaEvidencias(
+      fotos: fotos,
+      onAbrir: abrirFoto,
+      onRemover: salvandoEvidencias ? null : removerFoto,
+    );
+  }
+
+  Widget _botaoAvancar() {
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton.icon(
+        icon: salvandoEvidencias
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.arrow_forward),
+        label: Text(
+          salvandoEvidencias ? 'SALVANDO EVIDÊNCIAS...' : 'PRÓXIMO',
+        ),
+        onPressed: salvandoEvidencias ? null : avancar,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,70 +381,19 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            color: Colors.blue.shade50,
-            child: ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Registro fotográfico'),
-              subtitle: Text(
-                fotos.isEmpty
-                    ? 'Adicione imagens da ação educativa.'
-                    : '${fotos.length} foto(s) adicionada(s).',
-              ),
-            ),
-          ),
+          _cardResumo(),
+          const SizedBox(height: 12),
+          _cardChecklist(),
+          const SizedBox(height: 12),
+          _cardFaxita(),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: salvandoEvidencias ? null : abrirOpcoesFoto,
-            icon: const Icon(Icons.add_a_photo),
-            label: const Text('ADICIONAR FOTO'),
-          ),
+          _botaoAdicionarFoto(),
           const SizedBox(height: 16),
-          TextField(
-            controller: descricaoController,
-            maxLines: 3,
-            enabled: !salvandoEvidencias,
-            decoration: const InputDecoration(
-              labelText: 'Descrição das evidências',
-              hintText:
-                  'Ex: Fotos da abordagem educativa, público presente, materiais utilizados...',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          _campoDescricao(),
           const SizedBox(height: 20),
-          if (fotos.isEmpty)
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.image_not_supported),
-                title: Text('Nenhuma foto adicionada'),
-                subtitle: Text('Inclua pelo menos uma imagem para continuar.'),
-              ),
-            )
-          else
-            _GaleriaEvidencias(
-              fotos: fotos,
-              onAbrir: abrirFoto,
-              onRemover: salvandoEvidencias ? null : removerFoto,
-            ),
+          _galeriaOuVazio(),
           const SizedBox(height: 30),
-          SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              icon: salvandoEvidencias
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.arrow_forward),
-              label: Text(
-                salvandoEvidencias
-                    ? 'SALVANDO EVIDÊNCIAS...'
-                    : 'PRÓXIMO',
-              ),
-              onPressed: salvandoEvidencias ? null : avancar,
-            ),
-          ),
+          _botaoAvancar(),
         ],
       ),
     );

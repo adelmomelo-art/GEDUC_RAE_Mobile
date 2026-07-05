@@ -5,6 +5,7 @@ import '../../modules/acoes/consulta_rae_page.dart';
 import '../../modules/acoes/nova_acao_page.dart';
 import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
+import '../../modules/admin/admin_home_page.dart';
 import '../../modules/admin/admin_page.dart';
 import '../../modules/auth/login_page.dart';
 import '../../modules/avaliacao/avaliacao_page.dart';
@@ -21,6 +22,7 @@ import '../../modules/regionais/regionais_page.dart';
 import '../../modules/sincronizacao/sincronizacao_page.dart';
 import '../../modules/tipos_acoes/tipos_acoes_page.dart';
 import '../../modules/usuarios/usuarios_page.dart';
+import '../../modules/admin/domain_list_page.dart';
 
 class AppRoutes {
   static final router = GoRouter(
@@ -76,7 +78,15 @@ class AppRoutes {
       ),
       GoRoute(
         path: '/admin',
+        builder: (context, state) => const AdminHomePage(),
+      ),
+      GoRoute(
+        path: '/admin-legado',
         builder: (context, state) => const AdminPage(),
+      ),
+      GoRoute(
+        path: '/admin/dominios',
+        builder: (context, state) => const DomainListPage(),
       ),
       GoRoute(
         path: '/usuarios',

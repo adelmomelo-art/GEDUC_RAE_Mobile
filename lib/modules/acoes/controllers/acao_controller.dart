@@ -169,6 +169,9 @@ class AcaoController extends ChangeNotifier {
       coberturaMidia: false,
       houveParticipacaoOutroOrgao: false,
       orgaoParticipanteId: '',
+      pontosPositivos: '',
+      dificuldadesEncontradas: '',
+      recomendacoes: '',
       fotosUrls: const [],
       descricaoEvidencias: '',
       status: 'rascunho',
@@ -309,6 +312,27 @@ class AcaoController extends ChangeNotifier {
       equipeTerceirizada: equipeTerceirizada,
       materialUtilizadoIds: materialUtilizadoIds,
       coberturaMidia: coberturaMidia,
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  void preencherIntegracaoObservacoes({
+    required bool houveParticipacaoOutroOrgao,
+    required String orgaoParticipanteId,
+    required String pontosPositivos,
+    required String dificuldadesEncontradas,
+    required String recomendacoes,
+  }) {
+    if (acaoAtual == null) criarRascunhoInicial();
+
+    acaoAtual = acaoAtual!.copyWith(
+      houveParticipacaoOutroOrgao: houveParticipacaoOutroOrgao,
+      orgaoParticipanteId: orgaoParticipanteId,
+      pontosPositivos: pontosPositivos,
+      dificuldadesEncontradas: dificuldadesEncontradas,
+      recomendacoes: recomendacoes,
     );
 
     unawaited(_salvarRascunhoAtual());

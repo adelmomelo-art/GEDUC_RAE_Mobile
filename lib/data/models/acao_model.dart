@@ -75,6 +75,14 @@ class AcaoModel {
   final String orgaoParticipanteId;
 
   // ============================================================
+  // OBSERVAÇÕES OPERACIONAIS
+  // ============================================================
+
+  final String pontosPositivos;
+  final String dificuldadesEncontradas;
+  final String recomendacoes;
+
+  // ============================================================
   // EVIDÊNCIAS
   // ============================================================
 
@@ -129,6 +137,9 @@ class AcaoModel {
     this.coberturaMidia = false,
     this.houveParticipacaoOutroOrgao = false,
     this.orgaoParticipanteId = '',
+    this.pontosPositivos = '',
+    this.dificuldadesEncontradas = '',
+    this.recomendacoes = '',
     this.fotosUrls = const [],
     this.descricaoEvidencias = '',
     required this.status,
@@ -176,6 +187,9 @@ class AcaoModel {
     bool? coberturaMidia,
     bool? houveParticipacaoOutroOrgao,
     String? orgaoParticipanteId,
+    String? pontosPositivos,
+    String? dificuldadesEncontradas,
+    String? recomendacoes,
     List<String>? fotosUrls,
     String? descricaoEvidencias,
     String? status,
@@ -232,6 +246,10 @@ class AcaoModel {
           houveParticipacaoOutroOrgao ?? this.houveParticipacaoOutroOrgao,
       orgaoParticipanteId:
           orgaoParticipanteId ?? this.orgaoParticipanteId,
+      pontosPositivos: pontosPositivos ?? this.pontosPositivos,
+      dificuldadesEncontradas:
+          dificuldadesEncontradas ?? this.dificuldadesEncontradas,
+      recomendacoes: recomendacoes ?? this.recomendacoes,
       fotosUrls: fotosUrls ?? this.fotosUrls,
       descricaoEvidencias:
           descricaoEvidencias ?? this.descricaoEvidencias,
@@ -281,6 +299,9 @@ class AcaoModel {
         'coberturaMidia': coberturaMidia,
         'houveParticipacaoOutroOrgao': houveParticipacaoOutroOrgao,
         'orgaoParticipanteId': orgaoParticipanteId,
+        'pontosPositivos': pontosPositivos,
+        'dificuldadesEncontradas': dificuldadesEncontradas,
+        'recomendacoes': recomendacoes,
         'fotosUrls': fotosUrls,
         'descricaoEvidencias': descricaoEvidencias,
         'status': status,
@@ -340,6 +361,9 @@ class AcaoModel {
       houveParticipacaoOutroOrgao:
           map['houveParticipacaoOutroOrgao'] ?? false,
       orgaoParticipanteId: map['orgaoParticipanteId'] ?? '',
+      pontosPositivos: map['pontosPositivos'] ?? '',
+      dificuldadesEncontradas: map['dificuldadesEncontradas'] ?? '',
+      recomendacoes: map['recomendacoes'] ?? '',
       fotosUrls: List<String>.from(map['fotosUrls'] ?? []),
       descricaoEvidencias: map['descricaoEvidencias'] ?? '',
       status: map['status'] ?? 'rascunho',

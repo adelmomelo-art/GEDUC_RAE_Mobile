@@ -84,7 +84,7 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
           coberturaMidia: coberturaMidia,
         );
 
-    context.go('/resultados');
+    context.go('/integracao-observacoes');
   }
 
   Widget _secao(String titulo, List<Widget> filhos) {

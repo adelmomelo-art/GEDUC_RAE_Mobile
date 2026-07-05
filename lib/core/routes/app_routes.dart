@@ -13,6 +13,7 @@ import '../../modules/dashboard/bi_geduc_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
 import '../../modules/evidencias/evidencias_page.dart';
 import '../../modules/home/home_page.dart';
+import '../../modules/integracao/integracao_observacoes_page.dart';
 import '../../modules/localizacao/localizacao_page.dart';
 import '../../modules/materiais/materiais_page.dart';
 import '../../modules/recursos/recursos_operacionais_page.dart';
@@ -48,6 +49,10 @@ class AppRoutes {
       GoRoute(
         path: '/recursos-operacionais',
         builder: (context, state) => const RecursosOperacionaisPage(),
+      ),
+      GoRoute(
+        path: '/integracao-observacoes',
+        builder: (context, state) => const IntegracaoObservacoesPage(),
       ),
       GoRoute(
         path: '/resultados',

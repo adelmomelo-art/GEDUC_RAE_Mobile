@@ -57,9 +57,7 @@ class _LoginPageState extends State<LoginPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Erro: $e',
-          ),
+          content: Text('Erro: $e'),
         ),
       );
     } finally {
@@ -110,6 +108,72 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> abrirApresentacaoFaixita() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 8),
+          contentPadding: const EdgeInsets.fromLTRB(22, 8, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: const Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: azulSuave,
+                child: Text(
+                  'F',
+                  style: TextStyle(
+                    color: verdeInstitucional,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Olá! Eu sou a Faixita.',
+                  style: TextStyle(
+                    color: verdeInstitucional,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: const SingleChildScrollView(
+            child: Text(
+              'Bem-vindo à Plataforma Fênix!\n\n'
+              'Ainda estou em treinamento, mas em breve poderei ajudar você com:\n\n'
+              '• preenchimento das ações educativas;\n'
+              '• dúvidas sobre o sistema;\n'
+              '• leitura dos indicadores;\n'
+              '• recomendações operacionais.\n\n'
+              'Vou acompanhar a evolução da plataforma e ajudar a transformar '
+              'dados operacionais em inteligência para tomada de decisão.',
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.45,
+              ),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: verdeInstitucional,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ENTENDI'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     emailController.dispose();
@@ -142,7 +206,7 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
         Container(
-          color: Colors.white.withValues(alpha: 0.42),
+          color: Colors.white.withValues(alpha: 0.55),
         ),
         Container(
           decoration: BoxDecoration(
@@ -150,9 +214,9 @@ class _LoginPageState extends State<LoginPage> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.white.withValues(alpha: 0.60),
-                Colors.white.withValues(alpha: 0.12),
-                Colors.black.withValues(alpha: 0.10),
+                Colors.white.withValues(alpha: 0.64),
+                Colors.white.withValues(alpha: 0.18),
+                Colors.black.withValues(alpha: 0.08),
               ],
             ),
           ),
@@ -161,29 +225,44 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cabecalhoInstitucional() {
+  Widget _cabecalhoInstitucional({
+    required bool compacto,
+  }) {
+    final tituloPrefeitura = compacto ? 24.0 : 30.0;
+    final tituloAmc = compacto ? 30.0 : 38.0;
+    final tamanhoIcone = compacto ? 41.0 : 52.0;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 28, 32, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.fromLTRB(
+        compacto ? 18 : 32,
+        compacto ? 18 : 28,
+        compacto ? 18 : 32,
+        8,
+      ),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: compacto ? 16 : 28,
+        runSpacing: 12,
         children: [
           _marcaTexto(
             icone: Icons.account_balance,
             titulo: 'Fortaleza',
             subtitulo: 'PREFEITURA\nA gente transforma',
+            tamanhoTitulo: tituloPrefeitura,
+            tamanhoIcone: tamanhoIcone,
           ),
-          const SizedBox(width: 28),
           Container(
-            height: 78,
+            height: compacto ? 60 : 78,
             width: 1,
             color: Colors.black26,
           ),
-          const SizedBox(width: 28),
           _marcaTexto(
             icone: Icons.traffic,
             titulo: 'AMC',
             subtitulo: 'AUTARQUIA MUNICIPAL\nDE TRÂNSITO E CIDADANIA',
             destaque: true,
+            tamanhoTitulo: tituloAmc,
+            tamanhoIcone: tamanhoIcone,
           ),
         ],
       ),
@@ -194,13 +273,16 @@ class _LoginPageState extends State<LoginPage> {
     required IconData icone,
     required String titulo,
     required String subtitulo,
+    required double tamanhoTitulo,
+    required double tamanhoIcone,
     bool destaque = false,
   }) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icone,
-          size: 48,
+          size: tamanhoIcone,
           color: destaque ? verdeInstitucional : Colors.black87,
         ),
         const SizedBox(width: 10),
@@ -210,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               titulo,
               style: TextStyle(
-                fontSize: destaque ? 36 : 28,
+                fontSize: tamanhoTitulo,
                 fontWeight: FontWeight.bold,
                 color: destaque ? verdeInstitucional : Colors.black,
               ),
@@ -218,9 +300,9 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               subtitulo,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
-                height: 1.25,
+                height: 1.22,
               ),
             ),
           ],
@@ -229,17 +311,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _logoSistema() {
-    return const Column(
+  Widget _logoSistema({
+    required bool compacto,
+  }) {
+    return Column(
       children: [
         Icon(
           Icons.traffic,
-          size: 78,
+          size: compacto ? 64 : 78,
           color: verdeInstitucional,
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text.rich(
-          TextSpan(
+          const TextSpan(
             children: [
               TextSpan(
                 text: 'GEDUC ',
@@ -257,12 +341,15 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          style: TextStyle(fontSize: 42),
+          style: TextStyle(
+            fontSize: compacto ? 34 : 42,
+          ),
         ),
         Text(
           'Gestão de Ações Educativas',
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: compacto ? 17 : 20,
             fontWeight: FontWeight.w600,
             color: Colors.black54,
           ),
@@ -271,12 +358,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cardLogin() {
+  Widget _cardLogin({
+    required double largura,
+  }) {
     return Container(
-      width: 620,
+      width: largura,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: Colors.white.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -309,6 +398,7 @@ class _LoginPageState extends State<LoginPage> {
               labelText: 'Senha',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
+                tooltip: ocultarSenha ? 'Mostrar senha' : 'Ocultar senha',
                 icon: Icon(
                   ocultarSenha ? Icons.visibility_off : Icons.visibility,
                 ),
@@ -372,15 +462,33 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cardFaixita() {
+  Widget _cardFaixita({
+    required bool compacto,
+    required double largura,
+  }) {
+    final larguraImagem = compacto ? 128.0 : 108.0;
+    final alturaImagem = compacto ? 174.0 : 150.0;
+
     return Container(
-      width: 340,
+      width: largura,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.96),
+        color: Colors.white.withValues(alpha: 0.97),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: verdeInstitucional.withValues(alpha: 0.60),
+        border: Border(
+          left: const BorderSide(
+            color: verdeInstitucional,
+            width: 6,
+          ),
+          top: BorderSide(
+            color: verdeInstitucional.withValues(alpha: 0.40),
+          ),
+          right: BorderSide(
+            color: verdeInstitucional.withValues(alpha: 0.40),
+          ),
+          bottom: BorderSide(
+            color: verdeInstitucional.withValues(alpha: 0.40),
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -394,8 +502,8 @@ class _LoginPageState extends State<LoginPage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           SizedBox(
-            width: 108,
-            height: 150,
+            width: larguraImagem,
+            height: alturaImagem,
             child: Image.asset(
               faixitaLogin,
               fit: BoxFit.contain,
@@ -434,74 +542,25 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 6),
                   const Text(
                     'Estou aqui para ajudar durante o registro das suas ações educativas.',
-                    style: TextStyle(fontSize: 13),
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Atendimento da Faixita será ativado em uma próxima etapa.',
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                    label: const Text('Falar com a Faixita'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: abrirApresentacaoFaixita,
+                      icon: const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 16,
+                      ),
+                      label: const Text('Falar com a Faixita'),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _rodape() {
-    return Container(
-      height: 118,
-      padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(
-            color: Colors.black.withValues(alpha: 0.08),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          _rodapeItem(
-            icone: Icons.verified_user_outlined,
-            titulo: 'Ambiente: HOMOLOGAÇÃO',
-            texto:
-                'Os dados inseridos não são compartilhados com o ambiente de produção.',
-          ),
-          const SizedBox(width: 42),
-          _rodapeItem(
-            icone: Icons.lock_outline,
-            titulo: 'Seus dados estão protegidos',
-            texto: 'Sistema seguro e criptografado conforme LGPD.',
-          ),
-          const Spacer(),
-          const Text(
-            'Versão: 0.30.0\nBuild: CE-030\n05/07/2026 • 15:19',
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 42),
-          const Text(
-            'GEDUC\nEDUCAÇÃO PARA\nO TRÂNSITO, CIDADANIA\nE TRANSFORMAÇÃO SOCIAL',
-            style: TextStyle(
-              color: verdeInstitucional,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              height: 1.2,
             ),
           ),
         ],
@@ -514,19 +573,28 @@ class _LoginPageState extends State<LoginPage> {
     required String titulo,
     required String texto,
   }) {
-    return SizedBox(
-      width: 300,
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: 86,
+      ),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(width: 2),
           CircleAvatar(
-            radius: 24,
+            radius: 22,
             backgroundColor: azulSuave,
             child: Icon(
               icone,
               color: verdeInstitucional,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Text.rich(
               TextSpan(
@@ -541,7 +609,10 @@ class _LoginPageState extends State<LoginPage> {
                   TextSpan(text: texto),
                 ],
               ),
-              style: const TextStyle(fontSize: 12.5, height: 1.35),
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -549,58 +620,218 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _versaoCard() {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 86),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: azulSuave,
+            child: Icon(
+              Icons.info_outline,
+              color: verdeInstitucional,
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Versão: 0.30.0\n'
+              'Build: CE-030\n'
+              'Ambiente de homologação',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _geducCard() {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 86),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: azulSuave,
+            child: Icon(
+              Icons.local_florist_outlined,
+              color: verdeInstitucional,
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'GEDUC\n'
+              'Educação para o trânsito,\n'
+              'cidadania e transformação social',
+              style: TextStyle(
+                color: verdeInstitucional,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                height: 1.28,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rodapeResponsivo({
+    required double larguraDisponivel,
+  }) {
+    const espacamento = 10.0;
+    const paddingHorizontal = 28.0;
+
+    final colunas = larguraDisponivel >= 1100
+        ? 4
+        : larguraDisponivel >= 600
+            ? 2
+            : 1;
+
+    final larguraInterna =
+        (larguraDisponivel - paddingHorizontal).clamp(280.0, double.infinity);
+
+    final larguraItem = colunas == 1
+        ? larguraInterna
+        : (larguraInterna - (espacamento * (colunas - 1))) / colunas;
+
+    final itens = [
+      _rodapeItem(
+        icone: Icons.verified_user_outlined,
+        titulo: 'Ambiente: HOMOLOGAÇÃO',
+        texto:
+            'Os dados inseridos não são compartilhados com o ambiente de produção.',
+      ),
+      _rodapeItem(
+        icone: Icons.lock_outline,
+        titulo: 'Seus dados estão protegidos',
+        texto: 'Sistema seguro e criptografado conforme LGPD.',
+      ),
+      _versaoCard(),
+      _geducCard(),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      color: Colors.white.withValues(alpha: 0.94),
+      child: Wrap(
+        spacing: espacamento,
+        runSpacing: espacamento,
+        children: itens
+            .map(
+              (item) => SizedBox(
+                width: larguraItem,
+                child: item,
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
   Widget _conteudoPrincipal() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 1050;
+        final largura = constraints.maxWidth;
+        final isWide = largura >= 1050;
+        final compacto = largura < 850;
+        final larguraCard = isWide
+            ? 620.0
+            : largura.clamp(320.0, 700.0) - 32;
+        final larguraFaixita = isWide
+            ? 340.0
+            : largura.clamp(320.0, 620.0) - 32;
 
-        return Column(
-          children: [
-            _cabecalhoInstitucional(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    _logoSistema(),
-                    const SizedBox(height: 28),
-                    if (isWide)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _cardLogin(),
-                          const SizedBox(width: 24),
-                          _cardFaixita(),
-                        ],
-                      )
-                    else
-                      Column(
-                        children: [
-                          _cardLogin(),
-                          const SizedBox(height: 20),
-                          _cardFaixita(),
-                        ],
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _cabecalhoInstitucional(
+                  compacto: compacto,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+                  child: Column(
+                    children: [
+                      _logoSistema(
+                        compacto: compacto,
                       ),
-                  ],
+                      const SizedBox(height: 28),
+                      if (isWide)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _cardLogin(
+                              largura: larguraCard,
+                            ),
+                            const SizedBox(width: 20),
+                            Transform.translate(
+                              offset: const Offset(0, -6),
+                              child: _cardFaixita(
+                                compacto: compacto,
+                                largura: larguraFaixita,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Column(
+                          children: [
+                            _cardLogin(
+                              largura: larguraCard,
+                            ),
+                            const SizedBox(height: 12),
+                            Transform.translate(
+                              offset: const Offset(0, -4),
+                              child: _cardFaixita(
+                                compacto: true,
+                                largura: larguraFaixita,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            _rodape(),
-            Container(
-              height: 8,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    verdeInstitucional,
-                    Color(0xFFFFC400),
-                    laranjaInstitucional,
-                  ],
+                _rodapeResponsivo(
+                  larguraDisponivel: largura,
                 ),
-              ),
+                Container(
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        verdeInstitucional,
+                        Color(0xFFFFC400),
+                        laranjaInstitucional,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

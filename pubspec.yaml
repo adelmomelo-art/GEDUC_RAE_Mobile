@@ -28,7 +28,7 @@ dependencies:
 
   # Localização
   geolocator: ^14.0.2
-  geocoding: ^3.0.0
+  geocoding: ^4.0.0
 
   # Fotos
   image_picker: ^1.1.2

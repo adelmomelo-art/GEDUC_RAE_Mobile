@@ -1,12 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/services/localizacao/gps_service.dart';
 import '../../core/services/localizacao/location_exception.dart';
-import '../../data/models/acao_model.dart';
 import '../acoes/controllers/acao_controller.dart';
+import 'controllers/localizacao_controller.dart';
 import 'widgets/endereco_manual_card.dart';
 import 'widgets/faxita_location_card.dart';
 import 'widgets/gps_status_card.dart';
@@ -22,110 +20,85 @@ class LocalizacaoPage extends StatefulWidget {
 }
 
 class _LocalizacaoPageState extends State<LocalizacaoPage> {
-  final _nomeLocalController = TextEditingController();
-  final _enderecoController = TextEditingController();
-  final _bairroController = TextEditingController();
-  final _regionalController = TextEditingController();
-  final _pontoReferenciaController = TextEditingController();
-  final _pesquisaEnderecoController = TextEditingController();
+  late final LocalizacaoController _localizacaoController;
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GpsService _gpsService = const GpsService();
-
-  bool? _estaNoLocal;
-  bool _dadosIniciaisCarregados = false;
-  bool _processando = false;
-  bool _capturandoGps = false;
-
-  double _latitude = 0;
-  double _longitude = 0;
-  double? _precisaoGps;
-  DateTime? _dataHoraCaptura;
-
-  bool get _possuiLocalizacao {
-    return _latitude != 0 || _longitude != 0;
-  }
-
-  bool get _ocupado {
-    return _processando || _capturandoGps;
+  @override
+  void initState() {
+    super.initState();
+    _localizacaoController = LocalizacaoController();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_dadosIniciaisCarregados) {
-      return;
-    }
-
     final acao = context.read<AcaoController>().acaoAtual;
-
-    if (acao != null) {
-      _nomeLocalController.text = acao.nomeLocal;
-      _enderecoController.text = acao.endereco;
-      _bairroController.text = acao.bairro;
-      _regionalController.text = acao.regional;
-      _pontoReferenciaController.text = acao.pontoReferencia.isNotEmpty
-          ? acao.pontoReferencia
-          : acao.equipamentoReferencia;
-
-      _latitude = acao.latitude;
-      _longitude = acao.longitude;
-      _precisaoGps = acao.precisaoGps;
-      _dataHoraCaptura = acao.dataHoraCaptura;
-
-      _estaNoLocal = switch (acao.origemLocalizacao) {
-        OrigemLocalizacao.gps => true,
-        OrigemLocalizacao.enderecoInformado || OrigemLocalizacao.mapa => false,
-        null => null,
-      };
-    }
-
-    _dadosIniciaisCarregados = true;
+    _localizacaoController.carregarDadosIniciais(acao);
   }
 
-  Future<void> _buscarRegionalPorBairro(String bairro) async {
-    final bairroNormalizado = bairro.trim().toLowerCase();
-
-    if (bairroNormalizado.isEmpty) {
-      if (mounted) {
-        setState(() => _regionalController.clear());
-      }
+  Future<void> _capturarLocalizacaoGps() async {
+    if (_localizacaoController.capturandoGps) {
       return;
     }
 
     try {
-      final snapshot = await _firestore
-          .collection('regionais')
-          .where('ativo', isEqualTo: true)
-          .get();
+      final resultado = await _localizacaoController.capturarLocalizacaoGps();
 
-      String regionalEncontrada = '';
-
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final nomeRegional = (data['nomeRegional'] ?? '').toString();
-        final bairros = List<String>.from(
-          data['bairrosVinculados'] ?? const <String>[],
-        );
-
-        final encontrou = bairros.any(
-          (item) => item.trim().toLowerCase() == bairroNormalizado,
-        );
-
-        if (encontrou) {
-          regionalEncontrada = nomeRegional;
-          break;
-        }
+      if (!mounted) {
+        return;
       }
 
-      if (!mounted) return;
+      _localizacaoController.sincronizarComAcao(
+        context.read<AcaoController>(),
+        localizacaoValidada: false,
+      );
 
-      setState(() {
-        _regionalController.text = regionalEncontrada;
-      });
+      final enderecoFoiIdentificado =
+          _localizacaoController.enderecoController.text.trim().isNotEmpty;
+
+      _mostrarMensagem(
+        enderecoFoiIdentificado
+            ? 'Localização e endereço identificados com precisão aproximada '
+                'de ${resultado.precisao.toStringAsFixed(1)} metros.'
+            : 'Localização capturada com precisão aproximada de '
+                '${resultado.precisao.toStringAsFixed(1)} metros. '
+                'Confira e complete os dados do endereço.',
+      );
+    } on LocationException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      await _tratarErroLocalizacao(error);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
+      _mostrarMensagem(
+        'Não foi possível obter a localização neste momento.',
+      );
+    }
+  }
+
+  Future<void> _buscarRegionalPorBairro(String bairro) async {
+    try {
+      final resultado =
+          await _localizacaoController.buscarRegionalPorBairro(bairro);
+
+      if (!mounted || bairro.trim().isEmpty) {
+        return;
+      }
+
+      if (!resultado.encontrada) {
+        _mostrarMensagem(
+          'Não foi encontrada uma Regional vinculada ao bairro informado.',
+        );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
 
       _mostrarMensagem(
         'Não foi possível identificar a Regional neste momento.',
@@ -133,86 +106,63 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     }
   }
 
-  void _selecionarModo(bool estaNoLocal) {
-    if (_ocupado) {
+  void _pesquisarEndereco() {
+    final enderecoPesquisa =
+        _localizacaoController.pesquisaEnderecoController.text.trim();
+
+    if (enderecoPesquisa.isEmpty) {
+      _mostrarMensagem('Informe um endereço para pesquisar.');
       return;
     }
 
-    setState(() {
-      _estaNoLocal = estaNoLocal;
-    });
+    _mostrarMensagem(
+      'A busca de coordenadas pelo endereço será implementada na próxima '
+      'evolução funcional do módulo.',
+    );
   }
 
-  Future<void> _acaoGpsBlocoA() async {
-    if (_capturandoGps) {
+  Future<void> _confirmarEAvancar() async {
+    if (_localizacaoController.ocupado) {
       return;
     }
 
-    setState(() {
-      _capturandoGps = true;
-    });
+    final mensagemValidacao = _localizacaoController.validarParaAvancar();
+
+    if (mensagemValidacao != null) {
+      _mostrarMensagem(mensagemValidacao);
+      return;
+    }
+
+    _localizacaoController.iniciarProcessamento();
 
     try {
-      final resultado = await _gpsService.capturarLocalizacaoAtual(
-        timeout: const Duration(seconds: 30),
+      _localizacaoController.sincronizarComAcao(
+        context.read<AcaoController>(),
+        localizacaoValidada: true,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      setState(() {
-        _latitude = resultado.latitude;
-        _longitude = resultado.longitude;
-        _precisaoGps = resultado.precisao;
-        _dataHoraCaptura = resultado.dataHoraCaptura;
-        _estaNoLocal = true;
-      });
-
-      context.read<AcaoController>().preencherLocalizacao(
-            endereco: _enderecoController.text,
-            bairro: _bairroController.text,
-            regional: _regionalController.text,
-            equipamentoReferencia: _pontoReferenciaController.text,
-            latitude: resultado.latitude,
-            longitude: resultado.longitude,
-            nomeLocal: _nomeLocalController.text,
-            pontoReferencia: _pontoReferenciaController.text,
-            origemLocalizacao: OrigemLocalizacao.gps,
-            precisaoGps: resultado.precisao,
-            dataHoraCaptura: resultado.dataHoraCaptura,
-            localizacaoValidada: false,
-          );
-
-      _mostrarMensagem(
-        'Localização capturada com precisão aproximada de '
-        '${resultado.precisao.toStringAsFixed(1)} metros.',
-      );
-    } on LocationException catch (error) {
-      if (!mounted) return;
-
-      await _tratarErroLocalizacao(error);
-    } catch (_) {
-      if (!mounted) return;
-
-      _mostrarMensagem(
-        'Não foi possível obter a localização neste momento.',
-      );
+      context.go('/caracterizacao');
     } finally {
       if (mounted) {
-        setState(() {
-          _capturandoGps = false;
-        });
+        _localizacaoController.finalizarProcessamento();
       }
     }
   }
 
-  Future<void> _tratarErroLocalizacao(LocationException error) async {
+  Future<void> _tratarErroLocalizacao(
+    LocationException error,
+  ) async {
     switch (error.type) {
       case LocationExceptionType.servicoDesativado:
         await _mostrarDialogoConfiguracao(
           titulo: 'GPS desativado',
           mensagem: error.message,
           rotuloAcao: 'Abrir localização',
-          onConfirmar: _gpsService.abrirConfiguracoesDeLocalizacao,
+          onConfirmar: _localizacaoController.abrirConfiguracoesDeLocalizacao,
         );
 
       case LocationExceptionType.permissaoNegadaPermanentemente:
@@ -220,7 +170,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
           titulo: 'Permissão bloqueada',
           mensagem: error.message,
           rotuloAcao: 'Abrir configurações',
-          onConfirmar: _gpsService.abrirConfiguracoesDoAplicativo,
+          onConfirmar: _localizacaoController.abrirConfiguracoesDoAplicativo,
         );
 
       default:
@@ -261,84 +211,19 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     try {
       await onConfirmar();
     } on LocationException catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       _mostrarMensagem(error.message);
     }
   }
 
-  void _pesquisarEnderecoBlocoA() {
-    if (_pesquisaEnderecoController.text.trim().isEmpty) {
-      _mostrarMensagem('Informe um endereço para pesquisar.');
-      return;
-    }
-
-    _mostrarMensagem(
-      'A pesquisa e a geocodificação serão conectadas no CE-030B.2C.',
-    );
-  }
-
-  Future<void> _confirmarEAvancar() async {
-    if (_ocupado) {
-      return;
-    }
-
-    if (_estaNoLocal == null) {
-      _mostrarMensagem('Informe se você está no local da ação.');
-      return;
-    }
-
-    if (_enderecoController.text.trim().isEmpty ||
-        _bairroController.text.trim().isEmpty ||
-        _regionalController.text.trim().isEmpty) {
-      _mostrarMensagem('Preencha endereço, bairro e Regional.');
-      return;
-    }
-
-    if (_pontoReferenciaController.text.trim().isEmpty) {
-      _mostrarMensagem('Informe o ponto de referência.');
-      return;
-    }
-
-    if (!_possuiLocalizacao) {
-      _mostrarMensagem(
-        _estaNoLocal == true
-            ? 'Capture a localização pelo GPS antes de avançar.'
-            : 'Pesquise ou selecione a localização no mapa antes de avançar.',
-      );
-      return;
-    }
-
-    setState(() => _processando = true);
-
-    try {
-      context.read<AcaoController>().preencherLocalizacao(
-            endereco: _enderecoController.text,
-            bairro: _bairroController.text,
-            regional: _regionalController.text,
-            equipamentoReferencia: _pontoReferenciaController.text,
-            latitude: _latitude,
-            longitude: _longitude,
-            nomeLocal: _nomeLocalController.text,
-            pontoReferencia: _pontoReferenciaController.text,
-            origemLocalizacao: _estaNoLocal!
-                ? OrigemLocalizacao.gps
-                : OrigemLocalizacao.enderecoInformado,
-            precisaoGps: _precisaoGps,
-            dataHoraCaptura: _dataHoraCaptura,
-            localizacaoValidada: true,
-            localizacaoEditadaManualmente: _estaNoLocal == false,
-          );
-
-      if (!mounted) return;
-      context.go('/caracterizacao');
-    } finally {
-      if (mounted) {
-        setState(() => _processando = false);
-      }
-    }
-  }
-
   void _mostrarMensagem(String mensagem) {
+    if (!mounted) {
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensagem)),
     );
@@ -346,104 +231,102 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 
   @override
   void dispose() {
-    _nomeLocalController.dispose();
-    _enderecoController.dispose();
-    _bairroController.dispose();
-    _regionalController.dispose();
-    _pontoReferenciaController.dispose();
-    _pesquisaEnderecoController.dispose();
+    _localizacaoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final mensagemFaxita = switch (_estaNoLocal) {
-      true when _capturandoGps =>
-        'Estou buscando o melhor sinal disponível. Aguarde alguns segundos.',
-      true when _possuiLocalizacao =>
-        'Localização capturada. Confira os dados e confirme antes de avançar.',
-      true =>
-        'Use o botão de localização para capturar as coordenadas da ação.',
-      false => 'Informe o endereço onde a ação aconteceu e confira a posição '
-          'antes de avançar.',
-      null => 'Vamos registrar corretamente o local da ação. Primeiro, '
-          'informe se você está no local onde ela aconteceu.',
-    };
+    return AnimatedBuilder(
+      animation: _localizacaoController,
+      builder: (context, _) {
+        final controller = _localizacaoController;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Voltar',
-          onPressed: _ocupado ? null : () => context.go('/nova-acao'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('Localização da Ação'),
-      ),
-      bottomNavigationBar: LocalizacaoActionBar(
-        onVoltar: _ocupado ? null : () => context.go('/nova-acao'),
-        onAtualizarLocalizacao:
-            _estaNoLocal == true && !_ocupado ? _acaoGpsBlocoA : null,
-        onAcaoPrincipal: _ocupado ? null : _confirmarEAvancar,
-        rotuloAcaoPrincipal: 'Confirmar e avançar',
-        processando: _ocupado,
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                FaxitaLocationCard(
-                  mensagem: mensagemFaxita,
-                  tone: _estaNoLocal == null
-                      ? FaxitaLocationTone.informativo
-                      : FaxitaLocationTone.sucesso,
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: 'Voltar',
+              onPressed:
+                  controller.ocupado ? null : () => context.go('/nova-acao'),
+              icon: const Icon(Icons.arrow_back),
+            ),
+            title: const Text('Localização da Ação'),
+          ),
+          bottomNavigationBar: LocalizacaoActionBar(
+            onVoltar:
+                controller.ocupado ? null : () => context.go('/nova-acao'),
+            onAtualizarLocalizacao:
+                controller.estaNoLocal == true && !controller.ocupado
+                    ? _capturarLocalizacaoGps
+                    : null,
+            onAcaoPrincipal: controller.ocupado ? null : _confirmarEAvancar,
+            rotuloAcaoPrincipal: 'Confirmar e avançar',
+            processando: controller.ocupado,
+          ),
+          body: SafeArea(
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    FaxitaLocationCard(
+                      mensagem: controller.mensagemFaxita,
+                      tone: controller.estaNoLocal == null
+                          ? FaxitaLocationTone.informativo
+                          : FaxitaLocationTone.sucesso,
+                    ),
+                    const SizedBox(height: 12),
+                    _ModoLocalizacaoCard(
+                      valor: controller.estaNoLocal,
+                      habilitado: !controller.ocupado,
+                      onChanged: controller.selecionarModo,
+                    ),
+                    const SizedBox(height: 12),
+                    if (controller.estaNoLocal == false) ...[
+                      EnderecoManualCard(
+                        pesquisaController:
+                            controller.pesquisaEnderecoController,
+                        onPesquisar:
+                            controller.ocupado ? null : _pesquisarEndereco,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    MapaLocalizacaoWidget(
+                      latitude: controller.latitude,
+                      longitude: controller.longitude,
+                      possuiLocalizacao: controller.possuiLocalizacao,
+                      onCentralizar:
+                          controller.estaNoLocal == true && !controller.ocupado
+                              ? _capturarLocalizacaoGps
+                              : null,
+                    ),
+                    const SizedBox(height: 12),
+                    GpsStatusCard(
+                      latitude: controller.latitude,
+                      longitude: controller.longitude,
+                      precisaoGps: controller.precisaoGps,
+                      dataHoraCaptura: controller.dataHoraCaptura,
+                    ),
+                    const SizedBox(height: 12),
+                    LocalizacaoFormCard(
+                      nomeLocalController: controller.nomeLocalController,
+                      enderecoController: controller.enderecoController,
+                      bairroController: controller.bairroController,
+                      regionalController: controller.regionalController,
+                      pontoReferenciaController:
+                          controller.pontoReferenciaController,
+                      onBairroChanged: _buscarRegionalPorBairro,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _ModoLocalizacaoCard(
-                  valor: _estaNoLocal,
-                  habilitado: !_ocupado,
-                  onChanged: _selecionarModo,
-                ),
-                const SizedBox(height: 12),
-                if (_estaNoLocal == false) ...[
-                  EnderecoManualCard(
-                    pesquisaController: _pesquisaEnderecoController,
-                    onPesquisar: _ocupado ? null : _pesquisarEnderecoBlocoA,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                MapaLocalizacaoWidget(
-                  latitude: _latitude,
-                  longitude: _longitude,
-                  possuiLocalizacao: _possuiLocalizacao,
-                  onCentralizar:
-                      _estaNoLocal == true && !_ocupado ? _acaoGpsBlocoA : null,
-                ),
-                const SizedBox(height: 12),
-                GpsStatusCard(
-                  latitude: _latitude,
-                  longitude: _longitude,
-                  precisaoGps: _precisaoGps,
-                  dataHoraCaptura: _dataHoraCaptura,
-                ),
-                const SizedBox(height: 12),
-                LocalizacaoFormCard(
-                  nomeLocalController: _nomeLocalController,
-                  enderecoController: _enderecoController,
-                  bairroController: _bairroController,
-                  regionalController: _regionalController,
-                  pontoReferenciaController: _pontoReferenciaController,
-                  onBairroChanged: _buscarRegionalPorBairro,
-                ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

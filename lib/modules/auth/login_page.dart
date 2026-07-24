@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
+import '../../core/navigation/navigation_manager.dart';
 import '../../core/services/usuario_service.dart';
+import 'widgets/faixita_card.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,7 +41,10 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      context.go('/home');
+      NavigationManager.replace(
+        context,
+        NavigationManager.homeRoute,
+      );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
@@ -462,112 +465,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cardFaixita({
-    required bool compacto,
-    required double largura,
-  }) {
-    final larguraImagem = compacto ? 128.0 : 108.0;
-    final alturaImagem = compacto ? 174.0 : 150.0;
-
-    return Container(
-      width: largura,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.97),
-        borderRadius: BorderRadius.circular(18),
-        border: Border(
-          left: const BorderSide(
-            color: verdeInstitucional,
-            width: 6,
-          ),
-          top: BorderSide(
-            color: verdeInstitucional.withValues(alpha: 0.40),
-          ),
-          right: BorderSide(
-            color: verdeInstitucional.withValues(alpha: 0.40),
-          ),
-          bottom: BorderSide(
-            color: verdeInstitucional.withValues(alpha: 0.40),
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-            color: Colors.black.withValues(alpha: 0.12),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          SizedBox(
-            width: larguraImagem,
-            height: alturaImagem,
-            child: Image.asset(
-              faixitaLogin,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return const CircleAvatar(
-                  radius: 42,
-                  backgroundColor: azulSuave,
-                  child: Text(
-                    'F',
-                    style: TextStyle(
-                      color: verdeInstitucional,
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Olá! Eu sou a Faixita!',
-                    style: TextStyle(
-                      color: verdeInstitucional,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Estou aqui para ajudar durante o registro das suas ações educativas.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: abrirApresentacaoFaixita,
-                      icon: const Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16,
-                      ),
-                      label: const Text('Falar com a Faixita'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _rodapeItem({
     required IconData icone,
     required String titulo,
@@ -788,9 +685,11 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(width: 20),
                             Transform.translate(
                               offset: const Offset(0, -6),
-                              child: _cardFaixita(
+                              child: FaixitaCard(
                                 compacto: compacto,
                                 largura: larguraFaixita,
+                                imagemAsset: faixitaLogin,
+                                onPressed: abrirApresentacaoFaixita,
                               ),
                             ),
                           ],
@@ -804,9 +703,11 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 12),
                             Transform.translate(
                               offset: const Offset(0, -4),
-                              child: _cardFaixita(
+                              child: FaixitaCard(
                                 compacto: true,
                                 largura: larguraFaixita,
+                                imagemAsset: faixitaLogin,
+                                onPressed: abrirApresentacaoFaixita,
                               ),
                             ),
                           ],

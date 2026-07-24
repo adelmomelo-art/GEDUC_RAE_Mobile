@@ -1,0 +1,2 @@
+# Google Maps — chave local; nunca enviar ao Git.
+/android/secrets.properties

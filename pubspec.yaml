@@ -10,8 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-     
+
+  # Compartilhamento e arquivos
   share_plus: ^12.0.0
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -29,6 +29,10 @@ dependencies:
   # Localização
   geolocator: ^14.0.2
   geocoding: ^4.0.0
+
+  # Mapa aberto — OpenStreetMap
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
   # Fotos
   image_picker: ^1.1.2

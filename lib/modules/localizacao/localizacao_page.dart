@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 
+import '../../data/models/acao_model.dart';
 import '../acoes/controllers/acao_controller.dart';
+import 'widgets/endereco_manual_card.dart';
+import 'widgets/faxita_location_card.dart';
+import 'widgets/gps_status_card.dart';
+import 'widgets/localizacao_action_bar.dart';
+import 'widgets/localizacao_form_card.dart';
+import 'widgets/mapa_localizacao_widget.dart';
 
 class LocalizacaoPage extends StatefulWidget {
   const LocalizacaoPage({super.key});
@@ -16,279 +20,363 @@ class LocalizacaoPage extends StatefulWidget {
 }
 
 class _LocalizacaoPageState extends State<LocalizacaoPage> {
-  final enderecoController = TextEditingController();
-  final bairroController = TextEditingController();
-  final regionalController = TextEditingController();
-  final equipamentoReferenciaController = TextEditingController();
+  final _nomeLocalController = TextEditingController();
+  final _enderecoController = TextEditingController();
+  final _bairroController = TextEditingController();
+  final _regionalController = TextEditingController();
+  final _pontoReferenciaController = TextEditingController();
+  final _pesquisaEnderecoController = TextEditingController();
 
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  double latitude = 0;
-  double longitude = 0;
-  bool carregandoLocalizacao = false;
+  bool? _estaNoLocal;
+  bool _dadosIniciaisCarregados = false;
+  bool _processando = false;
 
-  Future<void> buscarRegionalPorBairro(String bairro) async {
-    if (bairro.trim().isEmpty) return;
+  double _latitude = 0;
+  double _longitude = 0;
+  double? _precisaoGps;
+  DateTime? _dataHoraCaptura;
 
-    final snapshot = await firestore
-        .collection('regionais')
-        .where('ativo', isEqualTo: true)
-        .get();
-
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final nomeRegional = data['nomeRegional'] ?? '';
-      final bairros = List<String>.from(data['bairrosVinculados'] ?? []);
-
-      final encontrou = bairros.any(
-        (item) => item.toLowerCase().trim() == bairro.toLowerCase().trim(),
-      );
-
-      if (encontrou) {
-        regionalController.text = nomeRegional;
-        return;
-      }
-    }
-
-    regionalController.text = '';
+  bool get _possuiLocalizacao {
+    return _latitude != 0 || _longitude != 0;
   }
 
-  Future<void> obterLocalizacaoReal() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_dadosIniciaisCarregados) {
+      return;
+    }
+
+    final acao = context.read<AcaoController>().acaoAtual;
+
+    if (acao != null) {
+      _nomeLocalController.text = acao.nomeLocal;
+      _enderecoController.text = acao.endereco;
+      _bairroController.text = acao.bairro;
+      _regionalController.text = acao.regional;
+      _pontoReferenciaController.text = acao.pontoReferencia.isNotEmpty
+          ? acao.pontoReferencia
+          : acao.equipamentoReferencia;
+
+      _latitude = acao.latitude;
+      _longitude = acao.longitude;
+      _precisaoGps = acao.precisaoGps;
+      _dataHoraCaptura = acao.dataHoraCaptura;
+
+      _estaNoLocal = switch (acao.origemLocalizacao) {
+        OrigemLocalizacao.gps => true,
+        OrigemLocalizacao.enderecoInformado ||
+        OrigemLocalizacao.mapa =>
+          false,
+        null => null,
+      };
+    }
+
+    _dadosIniciaisCarregados = true;
+  }
+
+  Future<void> _buscarRegionalPorBairro(String bairro) async {
+    final bairroNormalizado = bairro.trim().toLowerCase();
+
+    if (bairroNormalizado.isEmpty) {
+      if (mounted) {
+        setState(() => _regionalController.clear());
+      }
+      return;
+    }
+
     try {
-      setState(() => carregandoLocalizacao = true);
+      final snapshot = await _firestore
+          .collection('regionais')
+          .where('ativo', isEqualTo: true)
+          .get();
 
-      final servicoAtivo = await Geolocator.isLocationServiceEnabled();
+      String regionalEncontrada = '';
 
-      if (!servicoAtivo) {
-        throw Exception('Serviço de localização desativado.');
-      }
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final nomeRegional = (data['nomeRegional'] ?? '').toString();
+        final bairros = List<String>.from(
+          data['bairrosVinculados'] ?? const <String>[],
+        );
 
-      LocationPermission permissao = await Geolocator.checkPermission();
+        final encontrou = bairros.any(
+          (item) => item.trim().toLowerCase() == bairroNormalizado,
+        );
 
-      if (permissao == LocationPermission.denied) {
-        permissao = await Geolocator.requestPermission();
-      }
-
-      if (permissao == LocationPermission.denied) {
-        throw Exception('Permissão de localização negada.');
-      }
-
-      if (permissao == LocationPermission.deniedForever) {
-        throw Exception('Permissão negada permanentemente.');
-      }
-
-      final posicao = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-
-      String endereco = 'Endereço não identificado';
-      String bairro = 'Bairro não identificado';
-
-      if (!kIsWeb) {
-        try {
-          final enderecos = await placemarkFromCoordinates(
-            posicao.latitude,
-            posicao.longitude,
-          );
-
-          if (enderecos.isNotEmpty) {
-            final p = enderecos.first;
-
-            final rua = p.street ?? '';
-            final numero = p.subThoroughfare ?? '';
-            final subBairro = p.subLocality ?? '';
-            final localidade = p.locality ?? '';
-
-            endereco = [rua, numero]
-                .where((item) => item.trim().isNotEmpty)
-                .join(', ');
-
-            if (endereco.trim().isEmpty) {
-              endereco = 'Endereço não identificado';
-            }
-
-            bairro = subBairro.trim().isNotEmpty
-                ? subBairro
-                : localidade.trim().isNotEmpty
-                    ? localidade
-                    : 'Bairro não identificado';
-          }
-        } catch (_) {
-          endereco = 'Endereço não identificado';
-          bairro = 'Bairro não identificado';
+        if (encontrou) {
+          regionalEncontrada = nomeRegional;
+          break;
         }
       }
 
       if (!mounted) return;
 
       setState(() {
-        latitude = posicao.latitude;
-        longitude = posicao.longitude;
-        enderecoController.text = endereco;
-        bairroController.text = bairro == 'Bairro não identificado' ? '' : bairro;
-        regionalController.text = '';
-        carregandoLocalizacao = false;
+        _regionalController.text = regionalEncontrada;
       });
-
-      await buscarRegionalPorBairro(bairroController.text);
-
+    } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Localização capturada. Complete os dados se necessário.',
+            'Não foi possível identificar a Regional neste momento.',
           ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() => carregandoLocalizacao = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao obter localização: $e'),
         ),
       );
     }
   }
 
-  void confirmarLocalizacao() {
-    if (latitude == 0 || longitude == 0) {
+  void _selecionarModo(bool estaNoLocal) {
+    setState(() {
+      _estaNoLocal = estaNoLocal;
+    });
+  }
+
+  void _acaoGpsBlocoA() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'A captura por GPS será conectada no Bloco B.',
+        ),
+      ),
+    );
+  }
+
+  void _pesquisarEnderecoBlocoA() {
+    if (_pesquisaEnderecoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Clique em OBTER LOCALIZAÇÃO antes de avançar.'),
+          content: Text('Informe um endereço para pesquisar.'),
         ),
       );
       return;
     }
 
-    if (enderecoController.text.trim().isEmpty ||
-        bairroController.text.trim().isEmpty ||
-        regionalController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha endereço, bairro e regional.'),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'A pesquisa e a geocodificação serão conectadas no Bloco B.',
         ),
+      ),
+    );
+  }
+
+  Future<void> _confirmarEAvancar() async {
+    if (_estaNoLocal == null) {
+      _mostrarMensagem('Informe se você está no local da ação.');
+      return;
+    }
+
+    if (_enderecoController.text.trim().isEmpty ||
+        _bairroController.text.trim().isEmpty ||
+        _regionalController.text.trim().isEmpty) {
+      _mostrarMensagem('Preencha endereço, bairro e Regional.');
+      return;
+    }
+
+    if (_pontoReferenciaController.text.trim().isEmpty) {
+      _mostrarMensagem('Informe o ponto de referência.');
+      return;
+    }
+
+    if (!_possuiLocalizacao) {
+      _mostrarMensagem(
+        'A coordenada será obtida no Bloco B. '
+        'Por enquanto, valide somente a interface.',
       );
       return;
     }
 
-    if (equipamentoReferenciaController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Informe o equipamento ou ponto de referência.'),
-        ),
-      );
-      return;
+    setState(() => _processando = true);
+
+    try {
+      context.read<AcaoController>().preencherLocalizacao(
+            endereco: _enderecoController.text,
+            bairro: _bairroController.text,
+            regional: _regionalController.text,
+            equipamentoReferencia: _pontoReferenciaController.text,
+            latitude: _latitude,
+            longitude: _longitude,
+            nomeLocal: _nomeLocalController.text,
+            pontoReferencia: _pontoReferenciaController.text,
+            origemLocalizacao: _estaNoLocal!
+                ? OrigemLocalizacao.gps
+                : OrigemLocalizacao.enderecoInformado,
+            precisaoGps: _precisaoGps,
+            dataHoraCaptura: _dataHoraCaptura,
+            localizacaoValidada: true,
+          );
+
+      if (!mounted) return;
+      context.go('/caracterizacao');
+    } finally {
+      if (mounted) {
+        setState(() => _processando = false);
+      }
     }
+  }
 
-    context.read<AcaoController>().preencherLocalizacao(
-          endereco: enderecoController.text.trim(),
-          bairro: bairroController.text.trim(),
-          regional: regionalController.text.trim(),
-          equipamentoReferencia: equipamentoReferenciaController.text.trim(),
-          latitude: latitude,
-          longitude: longitude,
-        );
-
-    context.go('/caracterizacao');
+  void _mostrarMensagem(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem)),
+    );
   }
 
   @override
   void dispose() {
-    enderecoController.dispose();
-    bairroController.dispose();
-    regionalController.dispose();
-    equipamentoReferenciaController.dispose();
+    _nomeLocalController.dispose();
+    _enderecoController.dispose();
+    _bairroController.dispose();
+    _regionalController.dispose();
+    _pontoReferenciaController.dispose();
+    _pesquisaEnderecoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final mensagemFaxita = switch (_estaNoLocal) {
+      true =>
+        'Ótimo! No próximo bloco vou usar o GPS para localizar a ação '
+            'e preencher os dados automaticamente.',
+      false =>
+        'Sem problemas. Informe o endereço onde a ação aconteceu e '
+            'confira a posição antes de avançar.',
+      null =>
+        'Vamos registrar corretamente o local da ação. Primeiro, '
+            'informe se você está no local onde ela aconteceu.',
+    };
+
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Voltar',
+          onPressed: () => context.go('/nova-acao'),
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: const Text('Localização da Ação'),
       ),
-      body: ListView(
+      bottomNavigationBar: LocalizacaoActionBar(
+        onVoltar: () => context.go('/nova-acao'),
+        onAtualizarLocalizacao:
+            _estaNoLocal == true ? _acaoGpsBlocoA : null,
+        onAcaoPrincipal: _confirmarEAvancar,
+        rotuloAcaoPrincipal: 'Confirmar e avançar',
+        processando: _processando,
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                FaxitaLocationCard(
+                  mensagem: mensagemFaxita,
+                  tone: _estaNoLocal == null
+                      ? FaxitaLocationTone.informativo
+                      : FaxitaLocationTone.sucesso,
+                ),
+                const SizedBox(height: 12),
+                _ModoLocalizacaoCard(
+                  valor: _estaNoLocal,
+                  onChanged: _selecionarModo,
+                ),
+                const SizedBox(height: 12),
+                if (_estaNoLocal == false) ...[
+                  EnderecoManualCard(
+                    pesquisaController: _pesquisaEnderecoController,
+                    onPesquisar: _pesquisarEnderecoBlocoA,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                MapaLocalizacaoWidget(
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  possuiLocalizacao: _possuiLocalizacao,
+                  onCentralizar:
+                      _estaNoLocal == true ? _acaoGpsBlocoA : null,
+                ),
+                const SizedBox(height: 12),
+                GpsStatusCard(
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  precisaoGps: _precisaoGps,
+                  dataHoraCaptura: _dataHoraCaptura,
+                ),
+                const SizedBox(height: 12),
+                LocalizacaoFormCard(
+                  nomeLocalController: _nomeLocalController,
+                  enderecoController: _enderecoController,
+                  bairroController: _bairroController,
+                  regionalController: _regionalController,
+                  pontoReferenciaController:
+                      _pontoReferenciaController,
+                  onBairroChanged: _buscarRegionalPorBairro,
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModoLocalizacaoCard extends StatelessWidget {
+  const _ModoLocalizacaoCard({
+    required this.valor,
+    required this.onChanged,
+  });
+
+  final bool? valor;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
         padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            color: Colors.blue.shade50,
-            child: ListTile(
-              leading: const Icon(Icons.location_on),
-              title: const Text('Localização atual'),
-              subtitle: Text(
-                'Latitude: $latitude\nLongitude: $longitude',
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Você está no local da ação?',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: carregandoLocalizacao ? null : obterLocalizacaoReal,
-            icon: carregandoLocalizacao
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location),
-            label: Text(
-              carregandoLocalizacao
-                  ? 'OBTENDO LOCALIZAÇÃO...'
-                  : 'OBTER LOCALIZAÇÃO',
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment<bool>(
+                  value: true,
+                  icon: Icon(Icons.my_location),
+                  label: Text('Sim, estou no local'),
+                ),
+                ButtonSegment<bool>(
+                  value: false,
+                  icon: Icon(Icons.edit_location_alt_outlined),
+                  label: Text('Não estou no local'),
+                ),
+              ],
+              selected: valor == null ? const <bool>{} : {valor!},
+              emptySelectionAllowed: true,
+              onSelectionChanged: (selecao) {
+                if (selecao.isNotEmpty) {
+                  onChanged(selecao.first);
+                }
+              },
             ),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: enderecoController,
-            decoration: const InputDecoration(
-              labelText: 'Endereço',
-              hintText: 'Informe o endereço da ação',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: bairroController,
-            onChanged: buscarRegionalPorBairro,
-            decoration: const InputDecoration(
-              labelText: 'Bairro',
-              hintText: 'Informe o bairro',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: regionalController,
-            decoration: const InputDecoration(
-              labelText: 'Regional',
-              hintText: 'Ex: SER 03',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: equipamentoReferenciaController,
-            decoration: const InputDecoration(
-              labelText: 'Equipamento ou ponto de referência',
-              hintText: 'Ex: escola, praça, terminal, shopping, empresa...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: confirmarLocalizacao,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('CONFIRMAR E AVANÇAR'),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

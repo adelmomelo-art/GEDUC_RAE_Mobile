@@ -1,6 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/services/firebase_acao_service.dart';
@@ -9,7 +9,8 @@ import '../../data/models/acao_model.dart';
 import '../../data/models/usuario_model.dart';
 import '../acoes/controllers/acao_controller.dart';
 import 'widgets/atalhos_widget.dart';
-import 'widgets/home_header.dart';
+import 'widgets/centro_operacoes_header.dart';
+import 'widgets/faixita_operacional_card.dart';
 import 'widgets/indicadores_widget.dart';
 import 'widgets/status_widget.dart';
 import 'widgets/ultimos_raes_widget.dart';
@@ -37,7 +38,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    carregarPortal();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      carregarPortal();
+    });
   }
 
   Future<void> carregarPortal() async {
@@ -77,10 +82,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> sair() async {
     await FirebaseAuth.instance.signOut();
-
-    if (!mounted) return;
-
-    context.go('/login');
   }
 
   Future<void> atualizarPortal() async {
@@ -91,12 +92,51 @@ class _HomePageState extends State<HomePage> {
     await carregarPortal();
   }
 
+  Future<void> abrirOrientacoesFaixita() async {
+    final possuiRascunho =
+        context.read<AcaoController>().possuiRascunhoEmAndamento;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: const Text(
+            'Orientações da Faixita',
+            style: TextStyle(
+              color: Color(0xFF007A78),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            possuiRascunho
+                ? 'Existe um rascunho salvo neste dispositivo. Recomendo continuar essa ação antes de iniciar um novo registro.'
+                : 'Nenhum rascunho está pendente. Você pode iniciar uma nova ação, consultar os registros ou acompanhar os indicadores operacionais.',
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ENTENDI'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final acaoController = context.watch<AcaoController>();
 
     if (carregando) {
       return const Scaffold(
+        backgroundColor: Color(0xFFF3F7F7),
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -104,87 +144,127 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Portal Executivo GEDUC'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: atualizarPortal,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: sair,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          HomeHeader(
-            usuario: usuario,
-          ),
-          const SizedBox(height: 16),
-          if (acaoController.possuiRascunhoEmAndamento) ...[
-            _RascunhoCard(
-              titulo: acaoController.resumoRascunho,
-              onContinuar: () {
-                context.go(acaoController.rotaContinuacaoRascunho);
-              },
-              onDescartar: () async {
-                final confirmar = await showDialog<bool>(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Descartar rascunho?'),
-                      content: const Text(
-                        'Essa ação removerá o rascunho salvo neste dispositivo.',
+      backgroundColor: const Color(0xFFF3F7F7),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: atualizarPortal,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              CentroOperacoesHeader(
+                usuario: usuario,
+                onAtualizar: atualizarPortal,
+                onSair: sair,
+              ),
+              const SizedBox(height: 16),
+              if (acaoController.possuiRascunhoEmAndamento) ...[
+                _RascunhoCard(
+                  titulo: acaoController.resumoRascunho,
+                  onContinuar: () {
+                    context.go(acaoController.rotaContinuacaoRascunho);
+                  },
+                  onDescartar: () async {
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) {
+                        return AlertDialog(
+                          title: const Text('Descartar rascunho?'),
+                          content: const Text(
+                            'Essa ação removerá o rascunho salvo neste dispositivo.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: const Text('Descartar'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirmar != true) return;
+
+                    await acaoController.descartarRascunho();
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Rascunho descartado.'),
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancelar'),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              IndicadoresWidget(
+                totalAcoes: totalAcoes,
+                totalPessoas: totalPessoas,
+                totalVeiculos: totalVeiculos,
+                totalCredenciais: totalCredenciais,
+              ),
+              const SizedBox(height: 16),
+              AtalhosWidget(
+                usuario: usuario,
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 950;
+
+                  if (!isWide) {
+                    return Column(
+                      children: [
+                        UltimosRaesWidget(
+                          acoes: ultimosRaes,
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Descartar'),
+                        const SizedBox(height: 16),
+                        FaixitaOperacionalCard(
+                          possuiRascunho:
+                              acaoController.possuiRascunhoEmAndamento,
+                          totalAcoes: totalAcoes,
+                          totalPessoas: totalPessoas,
+                          onOrientacoes: abrirOrientacoesFaixita,
                         ),
                       ],
                     );
-                  },
-                );
+                  }
 
-                if (confirmar != true) return;
-
-                await acaoController.descartarRascunho();
-
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Rascunho descartado.'),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-          IndicadoresWidget(
-            totalAcoes: totalAcoes,
-            totalPessoas: totalPessoas,
-            totalVeiculos: totalVeiculos,
-            totalCredenciais: totalCredenciais,
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: UltimosRaesWidget(
+                          acoes: ultimosRaes,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: FaixitaOperacionalCard(
+                          possuiRascunho:
+                              acaoController.possuiRascunhoEmAndamento,
+                          totalAcoes: totalAcoes,
+                          totalPessoas: totalPessoas,
+                          onOrientacoes: abrirOrientacoesFaixita,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              const StatusWidget(),
+            ],
           ),
-          const SizedBox(height: 16),
-          AtalhosWidget(
-            usuario: usuario,
-          ),
-          const SizedBox(height: 16),
-          UltimosRaesWidget(
-            acoes: ultimosRaes,
-          ),
-          const SizedBox(height: 16),
-          const StatusWidget(),
-        ],
+        ),
       ),
     );
   }
@@ -201,45 +281,93 @@ class _RascunhoCard extends StatelessWidget {
   final VoidCallback onContinuar;
   final Future<void> Function() onDescartar;
 
+  static const Color verdeInstitucional = Color(0xFF007A78);
+  static const Color laranjaInstitucional = Color(0xFFF37021);
+
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.orange.shade50,
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      color: const Color(0xFFFFF5E8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: laranjaInstitucional.withValues(alpha: 0.35),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Row(
+        padding: const EdgeInsets.all(18),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compacto = constraints.maxWidth < 620;
+
+            final conteudo = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.edit_note,
-                  color: Colors.orange,
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note,
+                      color: laranjaInstitucional,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Rascunho em andamento',
+                        style: TextStyle(
+                          color: verdeInstitucional,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Rascunho em andamento',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  titulo,
+                  style: const TextStyle(height: 1.35),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(titulo),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: onContinuar,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('CONTINUAR RASCUNHO'),
-            ),
-            TextButton.icon(
-              onPressed: onDescartar,
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('DESCARTAR RASCUNHO'),
-            ),
-          ],
+            );
+
+            final acoes = Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: onContinuar,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('CONTINUAR'),
+                ),
+                TextButton.icon(
+                  onPressed: onDescartar,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('DESCARTAR'),
+                ),
+              ],
+            );
+
+            if (compacto) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  conteudo,
+                  const SizedBox(height: 14),
+                  acoes,
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: conteudo),
+                const SizedBox(width: 18),
+                acoes,
+              ],
+            );
+          },
         ),
       ),
     );

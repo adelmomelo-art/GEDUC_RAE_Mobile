@@ -16,26 +16,32 @@ class NovaAcaoPage extends StatefulWidget {
 
 class _NovaAcaoPageState extends State<NovaAcaoPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final TextEditingController _nomeAcaoController = TextEditingController();
 
+  DateTime dataSelecionada = DateTime.now();
   String? turno;
   TipoAcaoModel? tipoSelecionado;
 
   String? coordenadorId;
   String? coordenadorNome;
 
-  bool acaoPlanejada = false;
+  bool acaoPlanejada = true;
 
   List<TipoAcaoModel> tiposAcoes = [];
   List<Map<String, dynamic>> coordenadores = [];
 
   bool carregando = true;
 
-  final dataHoje = DateFormat('dd/MM/yyyy').format(DateTime.now());
-
   @override
   void initState() {
     super.initState();
     carregarDados();
+  }
+
+  @override
+  void dispose() {
+    _nomeAcaoController.dispose();
+    super.dispose();
   }
 
   Future<void> carregarDados() async {
@@ -80,6 +86,44 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     }
   }
 
+  Future<void> selecionarData() async {
+    final data = await showDatePicker(
+      context: context,
+      initialDate: dataSelecionada,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Selecione a data da ação',
+      cancelText: 'CANCELAR',
+      confirmText: 'CONFIRMAR',
+    );
+
+    if (data == null || !mounted) return;
+
+    setState(() {
+      dataSelecionada = data;
+    });
+  }
+
+  Future<void> pesquisarTipoAcao() async {
+    final selecionado = await showModalBottomSheet<TipoAcaoModel>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return _PesquisaTipoAcaoSheet(
+          tiposAcoes: tiposAcoes,
+        );
+      },
+    );
+
+    if (selecionado == null || !mounted) return;
+
+    setState(() {
+      tipoSelecionado = selecionado;
+      _nomeAcaoController.text = selecionado.nomeAcao;
+    });
+  }
+
   void avancar() {
     if (turno == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +147,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     }
 
     context.read<AcaoController>().preencherDadosAcao(
+          dataAcao: dataSelecionada,
           turno: turno!,
           nomeAcao: tipoSelecionado!.nomeAcao,
           tipoAcao: tipoSelecionado!.tipoAcao,
@@ -124,11 +169,14 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       );
     }
 
+    final dataFormatada = DateFormat('dd/MM/yyyy').format(dataSelecionada);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nova Ação'),
         actions: [
           IconButton(
+            tooltip: 'Atualizar cadastros',
             icon: const Icon(Icons.refresh),
             onPressed: () {
               setState(() {
@@ -142,12 +190,15 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TextFormField(
-            initialValue: dataHoje,
-            enabled: false,
-            decoration: const InputDecoration(
-              labelText: 'Data',
-              border: OutlineInputBorder(),
+          InkWell(
+            onTap: selecionarData,
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Data da ação',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.calendar_month),
+              ),
+              child: Text(dataFormatada),
             ),
           ),
           const SizedBox(height: 16),
@@ -161,6 +212,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
               DropdownMenuItem(value: 'Manhã', child: Text('Manhã')),
               DropdownMenuItem(value: 'Tarde', child: Text('Tarde')),
               DropdownMenuItem(value: 'Noite', child: Text('Noite')),
+              DropdownMenuItem(value: 'Madrugada', child: Text('Madrugada')),
             ],
             onChanged: (valor) {
               setState(() {
@@ -169,31 +221,23 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
             },
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<TipoAcaoModel>(
-            initialValue: tipoSelecionado,
+          TextFormField(
+            controller: _nomeAcaoController,
+            readOnly: true,
             decoration: const InputDecoration(
               labelText: 'Nome da ação',
+              hintText: 'Toque para pesquisar',
               border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.search),
             ),
-            items: tiposAcoes.map((tipo) {
-              return DropdownMenuItem(
-                value: tipo,
-                child: Text(tipo.nomeAcao),
-              );
-            }).toList(),
-            onChanged: (valor) {
-              setState(() {
-                tipoSelecionado = valor;
-              });
-            },
+            onTap: pesquisarTipoAcao,
           ),
           const SizedBox(height: 16),
           SwitchListTile(
+            contentPadding: EdgeInsets.zero,
             value: acaoPlanejada,
             title: const Text('A ação foi previamente planejada?'),
-            subtitle: const Text(
-              'Campo oriundo do formulário GEDUC/RAE.',
-            ),
+            subtitle: Text(acaoPlanejada ? 'Sim' : 'Não'),
             onChanged: (valor) {
               setState(() {
                 acaoPlanejada = valor;
@@ -241,6 +285,8 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    Text('Data: $dataFormatada'),
+                    Text('Turno: ${turno ?? 'Não informado'}'),
                     Text('Nome: ${tipoSelecionado!.nomeAcao}'),
                     Text('Tipo: ${tipoSelecionado!.tipoAcao}'),
                     Text(
@@ -254,24 +300,23 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                     Text(
                       'Ação planejada: ${acaoPlanejada ? 'Sim' : 'Não'}',
                     ),
+                    Text(
+                      'Coordenador: '
+                      '${coordenadorNome ?? 'Não informado'}',
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'Materiais sugeridos:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    ...tipoSelecionado!.materiaisSugeridos.map(
-                      (material) => Text('• $material'),
-                    ),
+                    if (tipoSelecionado!.materiaisSugeridos.isEmpty)
+                      const Text('Nenhum material sugerido.')
+                    else
+                      ...tipoSelecionado!.materiaisSugeridos.map(
+                        (material) => Text('• $material'),
+                      ),
                   ],
                 ),
-              ),
-            ),
-          if (coordenadorNome != null)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Coordenador'),
-                subtitle: Text(coordenadorNome!),
               ),
             ),
           const SizedBox(height: 30),
@@ -284,6 +329,90 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PesquisaTipoAcaoSheet extends StatefulWidget {
+  const _PesquisaTipoAcaoSheet({
+    required this.tiposAcoes,
+  });
+
+  final List<TipoAcaoModel> tiposAcoes;
+
+  @override
+  State<_PesquisaTipoAcaoSheet> createState() =>
+      _PesquisaTipoAcaoSheetState();
+}
+
+class _PesquisaTipoAcaoSheetState extends State<_PesquisaTipoAcaoSheet> {
+  final TextEditingController _pesquisaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pesquisaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final termo = _pesquisaController.text.trim().toLowerCase();
+
+    final resultados = widget.tiposAcoes.where((tipo) {
+      return termo.isEmpty ||
+          tipo.nomeAcao.toLowerCase().contains(termo) ||
+          tipo.tipoAcao.toLowerCase().contains(termo);
+    }).toList();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        top: 16,
+        right: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+      ),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.75,
+        child: Column(
+          children: [
+            TextField(
+              controller: _pesquisaController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar ação',
+                hintText: 'Digite o nome ou o tipo da ação',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (_) {
+                setState(() {});
+              },
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: resultados.isEmpty
+                  ? const Center(
+                      child: Text('Nenhuma ação encontrada.'),
+                    )
+                  : ListView.separated(
+                      itemCount: resultados.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final tipo = resultados[index];
+
+                        return ListTile(
+                          title: Text(tipo.nomeAcao),
+                          subtitle: Text(tipo.tipoAcao),
+                          onTap: () {
+                            Navigator.of(context).pop(tipo);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

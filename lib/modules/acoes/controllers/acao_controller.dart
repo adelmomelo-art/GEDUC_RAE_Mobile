@@ -68,7 +68,8 @@ class AcaoController extends ChangeNotifier {
       return '/nova-acao';
     }
 
-    if (acao.endereco.isEmpty && acao.latitude == 0) {
+    if (!acao.localizacaoValidada ||
+        (acao.endereco.isEmpty && acao.latitude == 0)) {
       return '/localizacao';
     }
 
@@ -150,8 +151,15 @@ class AcaoController extends ChangeNotifier {
       bairro: '',
       regional: '',
       equipamentoReferencia: '',
+      nomeLocal: '',
+      pontoReferencia: '',
       latitude: 0,
       longitude: 0,
+      origemLocalizacao: null,
+      precisaoGps: null,
+      dataHoraCaptura: null,
+      localizacaoValidada: false,
+      localizacaoEditadaManualmente: false,
       fatorRiscoIds: const [],
       mudancaComportamentoId: '',
       formacaoId: '',
@@ -221,6 +229,7 @@ class AcaoController extends ChangeNotifier {
   }
 
   void preencherDadosAcao({
+    required DateTime dataAcao,
     required String turno,
     required String nomeAcao,
     required String tipoAcao,
@@ -233,6 +242,7 @@ class AcaoController extends ChangeNotifier {
     if (acaoAtual == null) criarRascunhoInicial();
 
     acaoAtual = acaoAtual!.copyWith(
+      dataAcao: dataAcao,
       turno: turno,
       nomeAcao: nomeAcao,
       tipoAcao: tipoAcao,
@@ -254,18 +264,52 @@ class AcaoController extends ChangeNotifier {
     required String equipamentoReferencia,
     required double latitude,
     required double longitude,
+    String nomeLocal = '',
+    String? pontoReferencia,
+    OrigemLocalizacao? origemLocalizacao,
+    double? precisaoGps,
+    DateTime? dataHoraCaptura,
+    bool localizacaoValidada = true,
+    bool localizacaoEditadaManualmente = false,
   }) {
     if (acaoAtual == null) criarRascunhoInicial();
 
+    final referenciaNormalizada =
+        (pontoReferencia ?? equipamentoReferencia).trim();
+
+    final origemNormalizada = origemLocalizacao ??
+        ((latitude != 0 || longitude != 0)
+            ? OrigemLocalizacao.gps
+            : OrigemLocalizacao.enderecoInformado);
+
     acaoAtual = acaoAtual!.copyWith(
-      endereco: endereco,
-      bairro: bairro,
-      regional: regional,
-      equipamentoReferencia: equipamentoReferencia,
+      endereco: endereco.trim(),
+      bairro: bairro.trim(),
+      regional: regional.trim(),
+      equipamentoReferencia: referenciaNormalizada,
+      nomeLocal: nomeLocal.trim(),
+      pontoReferencia: referenciaNormalizada,
       latitude: latitude,
       longitude: longitude,
+      origemLocalizacao: origemNormalizada,
+      precisaoGps: precisaoGps,
+      dataHoraCaptura: dataHoraCaptura ?? DateTime.now(),
+      localizacaoValidada: localizacaoValidada,
+      localizacaoEditadaManualmente: localizacaoEditadaManualmente,
     );
 
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  void invalidarLocalizacao() {
+    final acao = acaoAtual;
+
+    if (acao == null || !acao.localizacaoValidada) {
+      return;
+    }
+
+    acaoAtual = acao.copyWith(localizacaoValidada: false);
     unawaited(_salvarRascunhoAtual());
     notifyListeners();
   }
@@ -432,13 +476,15 @@ class AcaoController extends ChangeNotifier {
       return false;
     }
 
-    if (acao.endereco.isEmpty && acao.latitude == 0) {
-      erro = 'Informe a localização.';
+    if (!acao.localizacaoValidada ||
+        (acao.endereco.isEmpty && acao.latitude == 0)) {
+      erro = 'Confirme e valide a localização da ação.';
       return false;
     }
 
-    if (acao.equipamentoReferencia.isEmpty) {
-      erro = 'Informe o equipamento ou ponto de referência.';
+    if (acao.pontoReferencia.isEmpty &&
+        acao.equipamentoReferencia.isEmpty) {
+      erro = 'Informe o ponto de referência.';
       return false;
     }
 

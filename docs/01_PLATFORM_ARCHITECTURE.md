@@ -527,3 +527,97 @@ Julho de 2026
 # NOSSO COMPROMISSO
 
 **Construímos uma arquitetura que preserva conhecimento, reduz complexidade, fortalece decisões e contribui para a preservação da vida.**
+# MARCOS DO PROJETO
+
+## MP-001 — Primeira Tela Padrão Ouro
+
+**Data:** 15/07/2026
+
+**Tela homologada:**
+AOV-001 — Login
+
+**Status:**
+🏆 PADRÃO OURO
+
+**Homologação:**
+
+- ✅ Flutter Analyze: 0 Issues
+- ✅ Git: Working Tree Clean
+- ✅ Testado no Google Chrome
+- ✅ Testado no Samsung Galaxy Tab S6 Lite
+- ✅ Login funcionando
+- ✅ Recuperação de senha funcionando
+- ✅ Faixita implementada
+- ✅ Responsividade homologada
+
+**Observação:**
+
+Esta tela estabelece o padrão oficial de qualidade da Plataforma Fênix. Todas as próximas telas deverão seguir o mesmo processo de desenvolvimento, auditoria operacional visual (AOV) e homologação antes de serem consideradas concluídas.
+
+# 10. Marcos de Arquitetura e Homologação
+
+## MP-001 — Primeira Tela Homologada (Padrão Ouro)
+
+**Data:** 15/07/2026
+
+### Descrição
+
+A tela de Login da Plataforma Fênix foi a primeira interface oficialmente homologada segundo o processo de Auditoria Operacional Visual (AOV).
+
+Esta homologação consolida o padrão de desenvolvimento adotado pelo projeto, estabelecendo que nenhuma interface será considerada concluída apenas por atender aos requisitos técnicos. Todas as telas deverão passar pelas etapas de validação funcional, visual e operacional antes de receber o status de conclusão.
+
+### Tela Homologada
+
+**AOV-001 — Login**
+
+### Ambiente de Homologação
+
+- Flutter Analyze: **0 Issues**
+- Git: **Working Tree Clean**
+- Navegador Google Chrome
+- Samsung Galaxy Tab S6 Lite
+
+### Funcionalidades Validadas
+
+- Login institucional
+- Recuperação de senha
+- Identidade visual oficial
+- Fundo institucional de Fortaleza
+- Faixita integrada à interface
+- Responsividade para desktop e tablet
+- Rodapé institucional responsivo
+
+### Padrão de Engenharia
+
+A partir deste marco, todas as interfaces da Plataforma Fênix deverão seguir obrigatoriamente o fluxo abaixo:
+
+1. Implementação
+2. Flutter Analyze
+3. Homologação Técnica (HT)
+4. Auditoria Operacional Visual (AOV)
+5. Correções
+6. Homologação Final
+7. Git (Working Tree Clean)
+
+### Classificação
+
+🏆 **PADRÃO OURO**
+
+Este marco estabelece oficialmente o padrão de qualidade da Plataforma Fênix para todas as futuras implementações.
+### Atualização do MP-001
+
+Após os testes em dispositivo Android real, foi realizada a reengenharia do componente da Faixita, transformando-o em um widget reutilizável (`faixita_card.dart`).
+
+A correção eliminou conflitos de layout relacionados a constraints, garantindo compatibilidade entre Web, Desktop e Android.
+
+Resultado final:
+
+- Flutter Analyze: 0 Issues
+- Git: Working Tree Clean
+- Testes em Chrome: Aprovado
+- Testes em Galaxy Tab S6 Lite (Retrato): Aprovado
+- Testes em Galaxy Tab S6 Lite (Paisagem): Aprovado
+
+Status final da AOV-001:
+
+🏆 HOMOLOGADA – PADRÃO OURO

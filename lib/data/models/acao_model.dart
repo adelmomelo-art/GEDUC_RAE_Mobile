@@ -1,3 +1,38 @@
+enum OrigemLocalizacao {
+  gps,
+  enderecoInformado,
+  mapa,
+}
+
+extension OrigemLocalizacaoExtension on OrigemLocalizacao {
+  String get valorPersistencia {
+    switch (this) {
+      case OrigemLocalizacao.gps:
+        return 'gps';
+      case OrigemLocalizacao.enderecoInformado:
+        return 'enderecoInformado';
+      case OrigemLocalizacao.mapa:
+        return 'mapa';
+    }
+  }
+
+  static OrigemLocalizacao? fromValue(dynamic value) {
+    final texto = value?.toString().trim();
+
+    switch (texto) {
+      case 'gps':
+        return OrigemLocalizacao.gps;
+      case 'enderecoInformado':
+      case 'endereco_informado':
+        return OrigemLocalizacao.enderecoInformado;
+      case 'mapa':
+        return OrigemLocalizacao.mapa;
+      default:
+        return null;
+    }
+  }
+}
+
 class AcaoModel {
   // ============================================================
   // IDENTIFICAÇÃO
@@ -38,9 +73,23 @@ class AcaoModel {
   final String endereco;
   final String bairro;
   final String regional;
+
+  /// Campo legado preservado para compatibilidade com registros anteriores.
   final String equipamentoReferencia;
+
+  /// Nome institucional ou popular do local da ação.
+  final String nomeLocal;
+
+  /// Complemento operacional para facilitar a identificação do ponto.
+  final String pontoReferencia;
+
   final double latitude;
   final double longitude;
+  final OrigemLocalizacao? origemLocalizacao;
+  final double? precisaoGps;
+  final DateTime? dataHoraCaptura;
+  final bool localizacaoValidada;
+  final bool localizacaoEditadaManualmente;
 
   // ============================================================
   // CARACTERIZAÇÃO DA AÇÃO
@@ -118,8 +167,15 @@ class AcaoModel {
     required this.bairro,
     required this.regional,
     this.equipamentoReferencia = '',
+    this.nomeLocal = '',
+    this.pontoReferencia = '',
     required this.latitude,
     required this.longitude,
+    this.origemLocalizacao,
+    this.precisaoGps,
+    this.dataHoraCaptura,
+    this.localizacaoValidada = false,
+    this.localizacaoEditadaManualmente = false,
     this.fatorRiscoIds = const [],
     this.mudancaComportamentoId = '',
     this.formacaoId = '',
@@ -168,8 +224,15 @@ class AcaoModel {
     String? bairro,
     String? regional,
     String? equipamentoReferencia,
+    String? nomeLocal,
+    String? pontoReferencia,
     double? latitude,
     double? longitude,
+    OrigemLocalizacao? origemLocalizacao,
+    double? precisaoGps,
+    DateTime? dataHoraCaptura,
+    bool? localizacaoValidada,
+    bool? localizacaoEditadaManualmente,
     List<String>? fatorRiscoIds,
     String? mudancaComportamentoId,
     String? formacaoId,
@@ -219,8 +282,17 @@ class AcaoModel {
       regional: regional ?? this.regional,
       equipamentoReferencia:
           equipamentoReferencia ?? this.equipamentoReferencia,
+      nomeLocal: nomeLocal ?? this.nomeLocal,
+      pontoReferencia: pontoReferencia ?? this.pontoReferencia,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      origemLocalizacao: origemLocalizacao ?? this.origemLocalizacao,
+      precisaoGps: precisaoGps ?? this.precisaoGps,
+      dataHoraCaptura: dataHoraCaptura ?? this.dataHoraCaptura,
+      localizacaoValidada:
+          localizacaoValidada ?? this.localizacaoValidada,
+      localizacaoEditadaManualmente: localizacaoEditadaManualmente ??
+          this.localizacaoEditadaManualmente,
       fatorRiscoIds: fatorRiscoIds ?? this.fatorRiscoIds,
       mudancaComportamentoId:
           mudancaComportamentoId ?? this.mudancaComportamentoId,
@@ -280,8 +352,15 @@ class AcaoModel {
         'bairro': bairro,
         'regional': regional,
         'equipamentoReferencia': equipamentoReferencia,
+        'nomeLocal': nomeLocal,
+        'pontoReferencia': pontoReferencia,
         'latitude': latitude,
         'longitude': longitude,
+        'origemLocalizacao': origemLocalizacao?.valorPersistencia,
+        'precisaoGps': precisaoGps,
+        'dataHoraCaptura': dataHoraCaptura?.toIso8601String(),
+        'localizacaoValidada': localizacaoValidada,
+        'localizacaoEditadaManualmente': localizacaoEditadaManualmente,
         'fatorRiscoIds': fatorRiscoIds,
         'mudancaComportamentoId': mudancaComportamentoId,
         'formacaoId': formacaoId,
@@ -311,67 +390,129 @@ class AcaoModel {
   Map<String, dynamic> toJson() => toMap();
 
   factory AcaoModel.fromMap(Map<String, dynamic> map) {
-    final dataAcaoTexto = map['dataAcao']?.toString();
-
-    final dataAcao = dataAcaoTexto == null || dataAcaoTexto.isEmpty
-        ? DateTime.now()
-        : DateTime.tryParse(dataAcaoTexto) ?? DateTime.now();
+    final pontoReferencia = _texto(
+      map['pontoReferencia'],
+      fallback: _texto(map['equipamentoReferencia']),
+    );
 
     return AcaoModel(
-      id: map['id'] ?? '',
-      numeroRAE: map['numeroRAE'] ?? '',
-      anoRAE: map['anoRAE'] ?? 0,
-      dataAcao: dataAcao,
-      turno: map['turno'] ?? '',
-      nomeAcao: map['nomeAcao'] ?? '',
-      tipoAcao: map['tipoAcao'] ?? '',
-      publicoEstimado: map['publicoEstimado'] ?? 0,
-      publicoMinimo: map['publicoMinimo'] ?? 0,
-      acaoPlanejada: map['acaoPlanejada'] ?? false,
-      horaInicio: map['horaInicio'] ?? '',
-      horaFinal: map['horaFinal'],
-      pessoasAlcancadas: map['pessoasAlcancadas'] ?? 0,
-      veiculosAbordados: map['veiculosAbordados'] ?? 0,
-      credenciaisEmitidas: map['credenciaisEmitidas'] ?? 0,
-      metaAtingida: map['metaAtingida'] ?? false,
-      motivoMetaNaoAtingida: map['motivoMetaNaoAtingida'],
-      endereco: map['endereco'] ?? '',
-      bairro: map['bairro'] ?? '',
-      regional: map['regional'] ?? '',
-      equipamentoReferencia: map['equipamentoReferencia'] ?? '',
-      latitude: (map['latitude'] ?? 0).toDouble(),
-      longitude: (map['longitude'] ?? 0).toDouble(),
-      fatorRiscoIds: List<String>.from(map['fatorRiscoIds'] ?? []),
-      mudancaComportamentoId: map['mudancaComportamentoId'] ?? '',
-      formacaoId: map['formacaoId'] ?? '',
-      publicoId: map['publicoId'] ?? '',
-      tipoParticipacaoIds:
-          List<String>.from(map['tipoParticipacaoIds'] ?? []),
-      focoTematicoIds: List<String>.from(map['focoTematicoIds'] ?? []),
-      perfilUsuarioIds: List<String>.from(map['perfilUsuarioIds'] ?? []),
-      sexoPredominanteId: map['sexoPredominanteId'] ?? '',
-      instituicaoParceira: map['instituicaoParceira'] ?? '',
-      coordenadorId: map['coordenadorId'] ?? '',
-      coordenadorNome: map['coordenadorNome'] ?? '',
-      agentesTransito: map['agentesTransito'] ?? 0,
-      equipeTerceirizada: map['equipeTerceirizada'] ?? 0,
-      materialUtilizadoIds:
-          List<String>.from(map['materialUtilizadoIds'] ?? []),
-      coberturaMidia: map['coberturaMidia'] ?? false,
+      id: _texto(map['id']),
+      numeroRAE: _texto(map['numeroRAE']),
+      anoRAE: _inteiro(map['anoRAE']),
+      dataAcao: _dataHora(map['dataAcao']) ?? DateTime.now(),
+      turno: _texto(map['turno']),
+      nomeAcao: _texto(map['nomeAcao']),
+      tipoAcao: _texto(map['tipoAcao']),
+      publicoEstimado: _inteiro(map['publicoEstimado']),
+      publicoMinimo: _inteiro(map['publicoMinimo']),
+      acaoPlanejada: _booleano(map['acaoPlanejada']),
+      horaInicio: _texto(map['horaInicio']),
+      horaFinal: map['horaFinal']?.toString(),
+      pessoasAlcancadas: _inteiro(map['pessoasAlcancadas']),
+      veiculosAbordados: _inteiro(map['veiculosAbordados']),
+      credenciaisEmitidas: _inteiro(map['credenciaisEmitidas']),
+      metaAtingida: _booleano(map['metaAtingida']),
+      motivoMetaNaoAtingida: map['motivoMetaNaoAtingida']?.toString(),
+      endereco: _texto(map['endereco']),
+      bairro: _texto(map['bairro']),
+      regional: _texto(map['regional']),
+      equipamentoReferencia: _texto(map['equipamentoReferencia']),
+      nomeLocal: _texto(map['nomeLocal']),
+      pontoReferencia: pontoReferencia,
+      latitude: _decimal(map['latitude']),
+      longitude: _decimal(map['longitude']),
+      origemLocalizacao:
+          OrigemLocalizacaoExtension.fromValue(map['origemLocalizacao']),
+      precisaoGps: _decimalOpcional(map['precisaoGps']),
+      dataHoraCaptura: _dataHora(map['dataHoraCaptura']),
+      localizacaoValidada: _booleano(map['localizacaoValidada']),
+      localizacaoEditadaManualmente:
+          _booleano(map['localizacaoEditadaManualmente']),
+      fatorRiscoIds: _listaTexto(map['fatorRiscoIds']),
+      mudancaComportamentoId: _texto(map['mudancaComportamentoId']),
+      formacaoId: _texto(map['formacaoId']),
+      publicoId: _texto(map['publicoId']),
+      tipoParticipacaoIds: _listaTexto(map['tipoParticipacaoIds']),
+      focoTematicoIds: _listaTexto(map['focoTematicoIds']),
+      perfilUsuarioIds: _listaTexto(map['perfilUsuarioIds']),
+      sexoPredominanteId: _texto(map['sexoPredominanteId']),
+      instituicaoParceira: _texto(map['instituicaoParceira']),
+      coordenadorId: _texto(map['coordenadorId']),
+      coordenadorNome: _texto(map['coordenadorNome']),
+      agentesTransito: _inteiro(map['agentesTransito']),
+      equipeTerceirizada: _inteiro(map['equipeTerceirizada']),
+      materialUtilizadoIds: _listaTexto(map['materialUtilizadoIds']),
+      coberturaMidia: _booleano(map['coberturaMidia']),
       houveParticipacaoOutroOrgao:
-          map['houveParticipacaoOutroOrgao'] ?? false,
-      orgaoParticipanteId: map['orgaoParticipanteId'] ?? '',
-      pontosPositivos: map['pontosPositivos'] ?? '',
-      dificuldadesEncontradas: map['dificuldadesEncontradas'] ?? '',
-      recomendacoes: map['recomendacoes'] ?? '',
-      fotosUrls: List<String>.from(map['fotosUrls'] ?? []),
-      descricaoEvidencias: map['descricaoEvidencias'] ?? '',
-      status: map['status'] ?? 'rascunho',
-      sincronizado: map['sincronizado'] ?? false,
+          _booleano(map['houveParticipacaoOutroOrgao']),
+      orgaoParticipanteId: _texto(map['orgaoParticipanteId']),
+      pontosPositivos: _texto(map['pontosPositivos']),
+      dificuldadesEncontradas: _texto(map['dificuldadesEncontradas']),
+      recomendacoes: _texto(map['recomendacoes']),
+      fotosUrls: _listaTexto(map['fotosUrls']),
+      descricaoEvidencias: _texto(map['descricaoEvidencias']),
+      status: _texto(map['status'], fallback: 'rascunho'),
+      sincronizado: _booleano(map['sincronizado']),
     );
   }
 
   factory AcaoModel.fromJson(Map<String, dynamic> json) {
     return AcaoModel.fromMap(json);
+  }
+
+  static String _texto(dynamic value, {String fallback = ''}) {
+    final texto = value?.toString();
+    return texto == null || texto.isEmpty ? fallback : texto;
+  }
+
+  static int _inteiro(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _decimal(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double? _decimalOpcional(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  static bool _booleano(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+
+    final texto = value?.toString().toLowerCase();
+    return texto == 'true' || texto == '1' || texto == 'sim';
+  }
+
+  static List<String> _listaTexto(dynamic value) {
+    if (value is! Iterable) return const [];
+    return value.map((item) => item.toString()).toList(growable: false);
+  }
+
+  static DateTime? _dataHora(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+
+    try {
+      final dynamic dataConvertida = value.toDate();
+      if (dataConvertida is DateTime) return dataConvertida;
+    } catch (_) {
+      // Mantém compatibilidade sem criar dependência direta do Firestore.
+    }
+
+    return DateTime.tryParse(value.toString());
   }
 }

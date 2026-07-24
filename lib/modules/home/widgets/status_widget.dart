@@ -5,108 +5,193 @@ class StatusWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final itens = <_StatusItem>[
+      const _StatusItem(
+        icon: Icons.cloud_done_rounded,
+        titulo: 'Firebase',
+        descricao: 'Banco em nuvem ativo',
+        cor: Colors.teal,
+      ),
+      const _StatusItem(
+        icon: Icons.sync_rounded,
+        titulo: 'Sincronização',
+        descricao: 'Serviços preparados',
+        cor: Colors.green,
+      ),
+      const _StatusItem(
+        icon: Icons.qr_code_2_rounded,
+        titulo: 'RAE Digital',
+        descricao: 'QR Code e PDF disponíveis',
+        cor: Colors.blue,
+      ),
+      const _StatusItem(
+        icon: Icons.analytics_rounded,
+        titulo: 'BI GEDUC',
+        descricao: 'Indicadores disponíveis',
+        cor: Colors.purple,
+      ),
+      const _StatusItem(
+        icon: Icons.verified_rounded,
+        titulo: 'Plataforma',
+        descricao: 'Sistema em evolução',
+        cor: Colors.orange,
+      ),
+      const _StatusItem(
+        icon: Icons.gps_fixed_rounded,
+        titulo: 'Localização',
+        descricao: 'GPS disponível',
+        cor: Colors.indigo,
+      ),
+    ];
+
     return Card(
       elevation: 2,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
-                  Icons.monitor_heart,
-                  color: Colors.blue,
+                  Icons.monitor_heart_rounded,
+                  color: colorScheme.primary,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Status Operacional',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const espacamento = 12.0;
+                final larguraCard =
+                    (constraints.maxWidth - espacamento) / 2;
 
-            const SizedBox(height: 12),
-
-            _statusItem(
-              icon: Icons.cloud_done,
-              titulo: 'Firebase',
-              descricao: 'Banco de dados em nuvem ativo',
-              cor: Colors.teal,
-            ),
-
-            _divisor(),
-
-            _statusItem(
-              icon: Icons.sync,
-              titulo: 'Sincronização',
-              descricao: 'Serviços preparados para envio e consulta',
-              cor: Colors.green,
-            ),
-
-            _divisor(),
-
-            _statusItem(
-              icon: Icons.qr_code,
-              titulo: 'RAE Digital',
-              descricao: 'QR Code, PDF e compartilhamento disponíveis',
-              cor: Colors.blue,
-            ),
-
-            _divisor(),
-
-            _statusItem(
-              icon: Icons.analytics,
-              titulo: 'BI GEDUC',
-              descricao: 'Indicadores executivos disponíveis',
-              cor: Colors.purple,
-            ),
-
-            _divisor(),
-
-            _statusItem(
-              icon: Icons.verified,
-              titulo: 'Plataforma',
-              descricao: 'Sistema operacional em evolução contínua',
-              cor: Colors.orange,
+                return Wrap(
+                  spacing: espacamento,
+                  runSpacing: espacamento,
+                  children: [
+                    for (final item in itens)
+                      SizedBox(
+                        width: larguraCard,
+                        child: _StatusCard(item: item),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _statusItem({
-    required IconData icon,
-    required String titulo,
-    required String descricao,
-    required Color cor,
-  }) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        icon,
-        color: cor,
-        size: 30,
+class _StatusCard extends StatelessWidget {
+  final _StatusItem item;
+
+  const _StatusCard({
+    required this.item,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: 104,
       ),
-      title: Text(
-        titulo,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.40,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant,
         ),
       ),
-      subtitle: Text(descricao),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: item.cor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              item.icon,
+              color: item.cor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.descricao,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.check_circle_rounded,
+            color: item.cor,
+            size: 21,
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _divisor() {
-    return const Divider(height: 1);
-  }
+class _StatusItem {
+  final IconData icon;
+  final String titulo;
+  final String descricao;
+  final Color cor;
+
+  const _StatusItem({
+    required this.icon,
+    required this.titulo,
+    required this.descricao,
+    required this.cor,
+  });
 }

@@ -81,3 +81,8 @@ macos/Pods/
 
 .DS_Store
 Thumbs.db
+# ===========================
+
+/android/secrets.properties
+
+# ===========================

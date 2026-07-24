@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../modules/acoes/caracterizacao_acao_page.dart';
@@ -7,6 +8,7 @@ import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
 import '../../modules/admin/admin_home_page.dart';
 import '../../modules/admin/admin_page.dart';
+import '../../modules/admin/domain_list_page.dart';
 import '../../modules/auth/login_page.dart';
 import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
@@ -22,18 +24,41 @@ import '../../modules/regionais/regionais_page.dart';
 import '../../modules/sincronizacao/sincronizacao_page.dart';
 import '../../modules/tipos_acoes/tipos_acoes_page.dart';
 import '../../modules/usuarios/usuarios_page.dart';
-import '../../modules/admin/domain_list_page.dart';
+import '../auth/auth_router_refresh.dart';
 
 class AppRoutes {
+  AppRoutes._();
+
+  static const String loginPath = '/login';
+  static const String homePath = '/home';
+
+  static final AuthRouterRefresh _authRouterRefresh = AuthRouterRefresh();
+
   static final router = GoRouter(
-    initialLocation: '/login',
+    initialLocation: loginPath,
+    refreshListenable: _authRouterRefresh,
+    redirect: (context, state) {
+      final usuarioAutenticado =
+          FirebaseAuth.instance.currentUser != null;
+      final estaNoLogin = state.uri.path == loginPath;
+
+      if (!usuarioAutenticado && !estaNoLogin) {
+        return loginPath;
+      }
+
+      if (usuarioAutenticado && estaNoLogin) {
+        return homePath;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
-        path: '/login',
+        path: loginPath,
         builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
-        path: '/home',
+        path: homePath,
         builder: (context, state) => const HomePage(),
       ),
       GoRoute(

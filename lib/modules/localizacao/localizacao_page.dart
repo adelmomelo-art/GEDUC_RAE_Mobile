@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/services/localizacao/gps_service.dart';
+import '../../core/services/localizacao/location_exception.dart';
 import '../../data/models/acao_model.dart';
 import '../acoes/controllers/acao_controller.dart';
 import 'widgets/endereco_manual_card.dart';
@@ -28,10 +30,12 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
   final _pesquisaEnderecoController = TextEditingController();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GpsService _gpsService = const GpsService();
 
   bool? _estaNoLocal;
   bool _dadosIniciaisCarregados = false;
   bool _processando = false;
+  bool _capturandoGps = false;
 
   double _latitude = 0;
   double _longitude = 0;
@@ -40,6 +44,10 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 
   bool get _possuiLocalizacao {
     return _latitude != 0 || _longitude != 0;
+  }
+
+  bool get _ocupado {
+    return _processando || _capturandoGps;
   }
 
   @override
@@ -68,9 +76,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 
       _estaNoLocal = switch (acao.origemLocalizacao) {
         OrigemLocalizacao.gps => true,
-        OrigemLocalizacao.enderecoInformado ||
-        OrigemLocalizacao.mapa =>
-          false,
+        OrigemLocalizacao.enderecoInformado || OrigemLocalizacao.mapa => false,
         null => null,
       };
     }
@@ -121,52 +127,161 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     } catch (_) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível identificar a Regional neste momento.',
-          ),
-        ),
+      _mostrarMensagem(
+        'Não foi possível identificar a Regional neste momento.',
       );
     }
   }
 
   void _selecionarModo(bool estaNoLocal) {
+    if (_ocupado) {
+      return;
+    }
+
     setState(() {
       _estaNoLocal = estaNoLocal;
     });
   }
 
-  void _acaoGpsBlocoA() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'A captura por GPS será conectada no Bloco B.',
-        ),
-      ),
+  Future<void> _acaoGpsBlocoA() async {
+    if (_capturandoGps) {
+      return;
+    }
+
+    setState(() {
+      _capturandoGps = true;
+    });
+
+    try {
+      final resultado = await _gpsService.capturarLocalizacaoAtual(
+        timeout: const Duration(seconds: 30),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _latitude = resultado.latitude;
+        _longitude = resultado.longitude;
+        _precisaoGps = resultado.precisao;
+        _dataHoraCaptura = resultado.dataHoraCaptura;
+        _estaNoLocal = true;
+      });
+
+      context.read<AcaoController>().preencherLocalizacao(
+            endereco: _enderecoController.text,
+            bairro: _bairroController.text,
+            regional: _regionalController.text,
+            equipamentoReferencia: _pontoReferenciaController.text,
+            latitude: resultado.latitude,
+            longitude: resultado.longitude,
+            nomeLocal: _nomeLocalController.text,
+            pontoReferencia: _pontoReferenciaController.text,
+            origemLocalizacao: OrigemLocalizacao.gps,
+            precisaoGps: resultado.precisao,
+            dataHoraCaptura: resultado.dataHoraCaptura,
+            localizacaoValidada: false,
+          );
+
+      _mostrarMensagem(
+        'Localização capturada com precisão aproximada de '
+        '${resultado.precisao.toStringAsFixed(1)} metros.',
+      );
+    } on LocationException catch (error) {
+      if (!mounted) return;
+
+      await _tratarErroLocalizacao(error);
+    } catch (_) {
+      if (!mounted) return;
+
+      _mostrarMensagem(
+        'Não foi possível obter a localização neste momento.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _capturandoGps = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _tratarErroLocalizacao(LocationException error) async {
+    switch (error.type) {
+      case LocationExceptionType.servicoDesativado:
+        await _mostrarDialogoConfiguracao(
+          titulo: 'GPS desativado',
+          mensagem: error.message,
+          rotuloAcao: 'Abrir localização',
+          onConfirmar: _gpsService.abrirConfiguracoesDeLocalizacao,
+        );
+
+      case LocationExceptionType.permissaoNegadaPermanentemente:
+        await _mostrarDialogoConfiguracao(
+          titulo: 'Permissão bloqueada',
+          mensagem: error.message,
+          rotuloAcao: 'Abrir configurações',
+          onConfirmar: _gpsService.abrirConfiguracoesDoAplicativo,
+        );
+
+      default:
+        _mostrarMensagem(error.message);
+    }
+  }
+
+  Future<void> _mostrarDialogoConfiguracao({
+    required String titulo,
+    required String mensagem,
+    required String rotuloAcao,
+    required Future<void> Function() onConfirmar,
+  }) async {
+    final abrir = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Agora não'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(rotuloAcao),
+            ),
+          ],
+        );
+      },
     );
+
+    if (abrir != true || !mounted) {
+      return;
+    }
+
+    try {
+      await onConfirmar();
+    } on LocationException catch (error) {
+      if (!mounted) return;
+      _mostrarMensagem(error.message);
+    }
   }
 
   void _pesquisarEnderecoBlocoA() {
     if (_pesquisaEnderecoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Informe um endereço para pesquisar.'),
-        ),
-      );
+      _mostrarMensagem('Informe um endereço para pesquisar.');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'A pesquisa e a geocodificação serão conectadas no Bloco B.',
-        ),
-      ),
+    _mostrarMensagem(
+      'A pesquisa e a geocodificação serão conectadas no CE-030B.2C.',
     );
   }
 
   Future<void> _confirmarEAvancar() async {
+    if (_ocupado) {
+      return;
+    }
+
     if (_estaNoLocal == null) {
       _mostrarMensagem('Informe se você está no local da ação.');
       return;
@@ -186,8 +301,9 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 
     if (!_possuiLocalizacao) {
       _mostrarMensagem(
-        'A coordenada será obtida no Bloco B. '
-        'Por enquanto, valide somente a interface.',
+        _estaNoLocal == true
+            ? 'Capture a localização pelo GPS antes de avançar.'
+            : 'Pesquise ou selecione a localização no mapa antes de avançar.',
       );
       return;
     }
@@ -210,6 +326,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
             precisaoGps: _precisaoGps,
             dataHoraCaptura: _dataHoraCaptura,
             localizacaoValidada: true,
+            localizacaoEditadaManualmente: _estaNoLocal == false,
           );
 
       if (!mounted) return;
@@ -241,33 +358,34 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
   @override
   Widget build(BuildContext context) {
     final mensagemFaxita = switch (_estaNoLocal) {
+      true when _capturandoGps =>
+        'Estou buscando o melhor sinal disponível. Aguarde alguns segundos.',
+      true when _possuiLocalizacao =>
+        'Localização capturada. Confira os dados e confirme antes de avançar.',
       true =>
-        'Ótimo! No próximo bloco vou usar o GPS para localizar a ação '
-            'e preencher os dados automaticamente.',
-      false =>
-        'Sem problemas. Informe o endereço onde a ação aconteceu e '
-            'confira a posição antes de avançar.',
-      null =>
-        'Vamos registrar corretamente o local da ação. Primeiro, '
-            'informe se você está no local onde ela aconteceu.',
+        'Use o botão de localização para capturar as coordenadas da ação.',
+      false => 'Informe o endereço onde a ação aconteceu e confira a posição '
+          'antes de avançar.',
+      null => 'Vamos registrar corretamente o local da ação. Primeiro, '
+          'informe se você está no local onde ela aconteceu.',
     };
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Voltar',
-          onPressed: () => context.go('/nova-acao'),
+          onPressed: _ocupado ? null : () => context.go('/nova-acao'),
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text('Localização da Ação'),
       ),
       bottomNavigationBar: LocalizacaoActionBar(
-        onVoltar: () => context.go('/nova-acao'),
+        onVoltar: _ocupado ? null : () => context.go('/nova-acao'),
         onAtualizarLocalizacao:
-            _estaNoLocal == true ? _acaoGpsBlocoA : null,
-        onAcaoPrincipal: _confirmarEAvancar,
+            _estaNoLocal == true && !_ocupado ? _acaoGpsBlocoA : null,
+        onAcaoPrincipal: _ocupado ? null : _confirmarEAvancar,
         rotuloAcaoPrincipal: 'Confirmar e avançar',
-        processando: _processando,
+        processando: _ocupado,
       ),
       body: SafeArea(
         bottom: false,
@@ -286,13 +404,14 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                 const SizedBox(height: 12),
                 _ModoLocalizacaoCard(
                   valor: _estaNoLocal,
+                  habilitado: !_ocupado,
                   onChanged: _selecionarModo,
                 ),
                 const SizedBox(height: 12),
                 if (_estaNoLocal == false) ...[
                   EnderecoManualCard(
                     pesquisaController: _pesquisaEnderecoController,
-                    onPesquisar: _pesquisarEnderecoBlocoA,
+                    onPesquisar: _ocupado ? null : _pesquisarEnderecoBlocoA,
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -301,7 +420,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                   longitude: _longitude,
                   possuiLocalizacao: _possuiLocalizacao,
                   onCentralizar:
-                      _estaNoLocal == true ? _acaoGpsBlocoA : null,
+                      _estaNoLocal == true && !_ocupado ? _acaoGpsBlocoA : null,
                 ),
                 const SizedBox(height: 12),
                 GpsStatusCard(
@@ -316,8 +435,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                   enderecoController: _enderecoController,
                   bairroController: _bairroController,
                   regionalController: _regionalController,
-                  pontoReferenciaController:
-                      _pontoReferenciaController,
+                  pontoReferenciaController: _pontoReferenciaController,
                   onBairroChanged: _buscarRegionalPorBairro,
                 ),
                 const SizedBox(height: 24),
@@ -333,10 +451,12 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 class _ModoLocalizacaoCard extends StatelessWidget {
   const _ModoLocalizacaoCard({
     required this.valor,
+    required this.habilitado,
     required this.onChanged,
   });
 
   final bool? valor;
+  final bool habilitado;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -369,11 +489,13 @@ class _ModoLocalizacaoCard extends StatelessWidget {
               ],
               selected: valor == null ? const <bool>{} : {valor!},
               emptySelectionAllowed: true,
-              onSelectionChanged: (selecao) {
-                if (selecao.isNotEmpty) {
-                  onChanged(selecao.first);
-                }
-              },
+              onSelectionChanged: habilitado
+                  ? (selecao) {
+                      if (selecao.isNotEmpty) {
+                        onChanged(selecao.first);
+                      }
+                    }
+                  : null,
             ),
           ],
         ),

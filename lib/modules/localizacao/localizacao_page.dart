@@ -22,6 +22,9 @@ class LocalizacaoPage extends StatefulWidget {
 class _LocalizacaoPageState extends State<LocalizacaoPage> {
   late final LocalizacaoController _localizacaoController;
 
+  String? _mensagemFaxitaTemporaria;
+  FaxitaLocationTone? _toneFaxitaTemporario;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +43,8 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     if (_localizacaoController.capturandoGps) {
       return;
     }
+
+    _limparFeedbackFaxita();
 
     try {
       final resultado = await _localizacaoController.capturarLocalizacaoGps();
@@ -69,19 +74,23 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
+      _registrarErroFaxita(error.message);
       await _tratarErroLocalizacao(error);
     } catch (_) {
       if (!mounted) {
         return;
       }
 
-      _mostrarMensagem(
-        'Não foi possível obter a localização neste momento.',
-      );
+      const mensagem =
+          'Não foi possível obter a localização neste momento.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
     }
   }
 
   Future<void> _buscarRegionalPorBairro(String bairro) async {
+    _limparFeedbackFaxita();
+
     try {
       final resultado =
           await _localizacaoController.buscarRegionalPorBairro(bairro);
@@ -91,8 +100,15 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       }
 
       if (!resultado.encontrada) {
+        final mensagem = 'Identifiquei o bairro “${bairro.trim()}”, mas não '
+            'encontrei uma Regional correspondente na base territorial. '
+            'Preencha a Regional manualmente e depois revise o cadastro '
+            'de bairros no Firebase.';
+
+        _registrarErroFaxita(mensagem);
         _mostrarMensagem(
-          'Não foi encontrada uma Regional vinculada ao bairro informado.',
+          'Regional não identificada. O campo foi liberado para '
+          'preenchimento manual.',
         );
       }
     } catch (_) {
@@ -100,9 +116,11 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
-      _mostrarMensagem(
-        'Não foi possível identificar a Regional neste momento.',
-      );
+      const mensagem =
+          'Não foi possível identificar a Regional neste momento. '
+          'Preencha o campo manualmente.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
     }
   }
 
@@ -111,7 +129,9 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         _localizacaoController.pesquisaEnderecoController.text.trim();
 
     if (enderecoPesquisa.isEmpty) {
-      _mostrarMensagem('Informe um endereço para pesquisar.');
+      const mensagem = 'Informe um endereço para pesquisar.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
       return;
     }
 
@@ -129,10 +149,12 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     final mensagemValidacao = _localizacaoController.validarParaAvancar();
 
     if (mensagemValidacao != null) {
+      _registrarErroFaxita(mensagemValidacao);
       _mostrarMensagem(mensagemValidacao);
       return;
     }
 
+    _limparFeedbackFaxita();
     _localizacaoController.iniciarProcessamento();
 
     try {
@@ -215,8 +237,66 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
+      _registrarErroFaxita(error.message);
       _mostrarMensagem(error.message);
     }
+  }
+
+  void _selecionarModo(bool valor) {
+    _limparFeedbackFaxita();
+    _localizacaoController.selecionarModo(valor);
+  }
+
+  void _dadosForamEditados() {
+    _limparFeedbackFaxita();
+    _localizacaoController.notificarEdicaoDeDados();
+  }
+
+  void _regionalFoiEditada(String valor) {
+    _limparFeedbackFaxita();
+    _localizacaoController.registrarEdicaoManualDaRegional(valor);
+  }
+
+  void _registrarErroFaxita(String mensagem) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _mensagemFaxitaTemporaria = mensagem;
+      _toneFaxitaTemporario = FaxitaLocationTone.erro;
+    });
+  }
+
+  void _limparFeedbackFaxita() {
+    if (!mounted ||
+        (_mensagemFaxitaTemporaria == null &&
+            _toneFaxitaTemporario == null)) {
+      return;
+    }
+
+    setState(() {
+      _mensagemFaxitaTemporaria = null;
+      _toneFaxitaTemporario = null;
+    });
+  }
+
+  FaxitaLocationTone _obterToneFaxita(
+    LocalizacaoController controller,
+  ) {
+    if (_toneFaxitaTemporario != null) {
+      return _toneFaxitaTemporario!;
+    }
+
+    if (controller.ocupado || controller.estaNoLocal == null) {
+      return FaxitaLocationTone.atencao;
+    }
+
+    if (controller.validarParaAvancar() == null) {
+      return FaxitaLocationTone.sucesso;
+    }
+
+    return FaxitaLocationTone.informativo;
   }
 
   void _mostrarMensagem(String mensagem) {
@@ -272,16 +352,15 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     FaxitaLocationCard(
-                      mensagem: controller.mensagemFaxita,
-                      tone: controller.estaNoLocal == null
-                          ? FaxitaLocationTone.informativo
-                          : FaxitaLocationTone.sucesso,
+                      mensagem: _mensagemFaxitaTemporaria ??
+                          controller.mensagemFaxita,
+                      tone: _obterToneFaxita(controller),
                     ),
                     const SizedBox(height: 12),
                     _ModoLocalizacaoCard(
                       valor: controller.estaNoLocal,
                       habilitado: !controller.ocupado,
-                      onChanged: controller.selecionarModo,
+                      onChanged: _selecionarModo,
                     ),
                     const SizedBox(height: 12),
                     if (controller.estaNoLocal == false) ...[
@@ -318,6 +397,8 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                       pontoReferenciaController:
                           controller.pontoReferenciaController,
                       onBairroChanged: _buscarRegionalPorBairro,
+                      onRegionalChanged: _regionalFoiEditada,
+                      onDadosChanged: _dadosForamEditados,
                     ),
                     const SizedBox(height: 24),
                   ],
@@ -351,7 +432,7 @@ class _ModoLocalizacaoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Você está no local da ação?',
+              'Escolha uma opção',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

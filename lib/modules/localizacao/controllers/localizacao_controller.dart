@@ -10,18 +10,6 @@ import '../../acoes/controllers/acao_controller.dart';
 
 /// Controller responsável por coordenar todo o fluxo operacional
 /// de localização da ação.
-///
-/// Responsabilidades:
-/// - armazenar o estado da tela de localização;
-/// - controlar os campos de endereço;
-/// - capturar coordenadas por GPS;
-/// - realizar geocodificação reversa;
-/// - identificar automaticamente a Regional;
-/// - sincronizar os dados com o [AcaoController];
-/// - preparar o módulo para seleção manual pelo mapa.
-///
-/// A interface não deve acessar diretamente GPS, Firestore ou
-/// serviços de geocodificação.
 class LocalizacaoController extends ChangeNotifier {
   LocalizacaoController({
     GpsService? gpsService,
@@ -59,6 +47,9 @@ class LocalizacaoController extends ChangeNotifier {
 
   OrigemLocalizacao? _origemLocalizacao;
   bool _localizacaoEditadaManualmente = false;
+  bool _regionalEditadaManualmente = false;
+
+  int _identificadorConsultaRegional = 0;
 
   bool? get estaNoLocal => _estaNoLocal;
   bool get dadosIniciaisCarregados => _dadosIniciaisCarregados;
@@ -78,8 +69,36 @@ class LocalizacaoController extends ChangeNotifier {
     return _localizacaoEditadaManualmente;
   }
 
+  bool get regionalEditadaManualmente => _regionalEditadaManualmente;
+
   bool get possuiLocalizacao {
-    return _latitude != 0 || _longitude != 0;
+    return _coordenadasValidas(
+      latitude: _latitude,
+      longitude: _longitude,
+    );
+  }
+
+  bool get possuiEndereco {
+    return enderecoController.text.trim().isNotEmpty;
+  }
+
+  bool get possuiBairro {
+    return bairroController.text.trim().isNotEmpty;
+  }
+
+  bool get possuiRegional {
+    return regionalController.text.trim().isNotEmpty;
+  }
+
+  bool get possuiPontoReferencia {
+    return pontoReferenciaController.text.trim().isNotEmpty;
+  }
+
+  bool get localizacaoBaseConfirmada {
+    return possuiLocalizacao &&
+        possuiEndereco &&
+        possuiBairro &&
+        possuiRegional;
   }
 
   bool get ocupado {
@@ -103,8 +122,14 @@ class LocalizacaoController extends ChangeNotifier {
       return 'Estou identificando automaticamente a Regional.';
     }
 
+    if (validarParaAvancar() == null) {
+      return 'Os dados da localização estão completos e prontos para '
+          'confirmação.';
+    }
+
     if (_estaNoLocal == true && possuiLocalizacao) {
-      return 'Localização capturada. Confira os dados antes de avançar.';
+      return 'Localização capturada. Confira os dados e complete o ponto '
+          'de referência antes de avançar.';
     }
 
     if (_estaNoLocal == true) {
@@ -113,7 +138,8 @@ class LocalizacaoController extends ChangeNotifier {
     }
 
     if (_estaNoLocal == false && possuiLocalizacao) {
-      return 'Confira no mapa se a localização informada está correta.';
+      return 'Confira no mapa se a localização informada está correta e '
+          'complete os dados do local.';
     }
 
     if (_estaNoLocal == false) {
@@ -121,8 +147,7 @@ class LocalizacaoController extends ChangeNotifier {
           'posição no mapa.';
     }
 
-    return 'Vamos registrar corretamente o local da ação. Primeiro, '
-        'informe se você está no local onde ela aconteceu.';
+    return 'Você está no local onde a ação está acontecendo?';
   }
 
   /// Carrega apenas uma vez os dados previamente registrados na ação.
@@ -136,6 +161,7 @@ class LocalizacaoController extends ChangeNotifier {
       enderecoController.text = acao.endereco;
       bairroController.text = acao.bairro;
       regionalController.text = acao.regional;
+      _regionalEditadaManualmente = false;
 
       pontoReferenciaController.text = acao.pontoReferencia.isNotEmpty
           ? acao.pontoReferencia
@@ -168,11 +194,19 @@ class LocalizacaoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Captura as coordenadas atuais e, em seguida, tenta identificar
-  /// automaticamente endereço, bairro e Regional.
-  ///
-  /// Exceções de localização são propagadas para que a página possa
-  /// exibir diálogos de permissão ou abertura das configurações.
+  void notificarEdicaoDeDados() {
+    notifyListeners();
+  }
+
+  void registrarEdicaoManualDaRegional(String valor) {
+    _regionalEditadaManualmente = valor.trim().isNotEmpty;
+
+    // Invalida eventual consulta automática ainda em andamento.
+    _identificadorConsultaRegional++;
+
+    notifyListeners();
+  }
+
   Future<LocalizacaoResult> capturarLocalizacaoGps() async {
     if (_capturandoGps) {
       throw LocationException.localizacaoIndisponivel();
@@ -208,11 +242,6 @@ class LocalizacaoController extends ChangeNotifier {
     }
   }
 
-  /// Converte as coordenadas atuais em endereço.
-  ///
-  /// A ausência de endereço não invalida as coordenadas capturadas.
-  /// Dessa forma, uma indisponibilidade temporária da geocodificação
-  /// não elimina o resultado obtido pelo GPS.
   Future<EnderecoGeocodificado?> preencherEnderecoPelasCoordenadas({
     required double latitude,
     required double longitude,
@@ -241,7 +270,7 @@ class LocalizacaoController extends ChangeNotifier {
       if (bairroController.text.trim().isNotEmpty) {
         await buscarRegionalPorBairro(
           bairroController.text,
-          limparQuandoNaoEncontrada: false,
+          limparQuandoNaoEncontrada: true,
         );
       }
 
@@ -255,12 +284,14 @@ class LocalizacaoController extends ChangeNotifier {
     }
   }
 
-  /// Consulta a Regional vinculada ao bairro informado.
   Future<RegionalResult> buscarRegionalPorBairro(
     String bairro, {
     bool limparQuandoNaoEncontrada = true,
   }) async {
     final bairroInformado = bairro.trim();
+    final identificadorConsulta = ++_identificadorConsultaRegional;
+
+    _regionalEditadaManualmente = false;
 
     if (bairroInformado.isEmpty) {
       regionalController.clear();
@@ -279,21 +310,28 @@ class LocalizacaoController extends ChangeNotifier {
         bairroInformado,
       );
 
-      if (resultado.encontrada) {
-        regionalController.text = resultado.nome;
-      } else if (limparQuandoNaoEncontrada) {
+      if (identificadorConsulta != _identificadorConsultaRegional) {
+        return resultado;
+      }
+
+      if (resultado.encontrada && resultado.nome.trim().isNotEmpty) {
+        regionalController.text = resultado.nome.trim();
+        _regionalEditadaManualmente = false;
+      } else if (limparQuandoNaoEncontrada &&
+          !_regionalEditadaManualmente) {
         regionalController.clear();
       }
 
       notifyListeners();
       return resultado;
     } finally {
-      _consultandoRegional = false;
-      notifyListeners();
+      if (identificadorConsulta == _identificadorConsultaRegional) {
+        _consultandoRegional = false;
+        notifyListeners();
+      }
     }
   }
 
-  /// Atualiza a coordenada após seleção ou movimentação manual no mapa.
   Future<void> atualizarPorSelecaoManual({
     required double latitude,
     required double longitude,
@@ -321,7 +359,6 @@ class LocalizacaoController extends ChangeNotifier {
     );
   }
 
-  /// Sincroniza o estado atual com o modelo da ação.
   void sincronizarComAcao(
     AcaoController acaoController, {
     required bool localizacaoValidada,
@@ -346,19 +383,25 @@ class LocalizacaoController extends ChangeNotifier {
     );
   }
 
-  /// Valida os dados necessários antes da navegação.
   String? validarParaAvancar() {
     if (_estaNoLocal == null) {
       return 'Informe se você está no local da ação.';
     }
 
-    if (enderecoController.text.trim().isEmpty ||
-        bairroController.text.trim().isEmpty ||
-        regionalController.text.trim().isEmpty) {
-      return 'Preencha endereço, bairro e Regional.';
+    if (!possuiEndereco) {
+      return 'Informe o endereço da ação.';
     }
 
-    if (pontoReferenciaController.text.trim().isEmpty) {
+    if (!possuiBairro) {
+      return 'Informe o bairro da ação.';
+    }
+
+    if (!possuiRegional) {
+      return 'Informe a Regional. Caso ela não seja identificada '
+          'automaticamente, preencha o campo manualmente.';
+    }
+
+    if (!possuiPontoReferencia) {
       return 'Informe o ponto de referência.';
     }
 

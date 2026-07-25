@@ -9,6 +9,8 @@ class LocalizacaoFormCard extends StatelessWidget {
     required this.regionalController,
     required this.pontoReferenciaController,
     this.onBairroChanged,
+    this.onRegionalChanged,
+    this.onDadosChanged,
   });
 
   final TextEditingController nomeLocalController;
@@ -17,6 +19,8 @@ class LocalizacaoFormCard extends StatelessWidget {
   final TextEditingController regionalController;
   final TextEditingController pontoReferenciaController;
   final ValueChanged<String>? onBairroChanged;
+  final ValueChanged<String>? onRegionalChanged;
+  final VoidCallback? onDadosChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,7 @@ class LocalizacaoFormCard extends StatelessWidget {
             const SizedBox(height: 16),
             TextField(
               controller: nomeLocalController,
+              onChanged: (_) => onDadosChanged?.call(),
               decoration: const InputDecoration(
                 labelText: 'Nome do local',
                 hintText: 'Ex.: Escola Paulo Freire',
@@ -45,6 +50,7 @@ class LocalizacaoFormCard extends StatelessWidget {
             const SizedBox(height: 14),
             TextField(
               controller: enderecoController,
+              onChanged: (_) => onDadosChanged?.call(),
               decoration: const InputDecoration(
                 labelText: 'Endereço *',
                 hintText: 'Informe o endereço da ação',
@@ -59,7 +65,10 @@ class LocalizacaoFormCard extends StatelessWidget {
 
                 final bairro = TextField(
                   controller: bairroController,
-                  onChanged: onBairroChanged,
+                  onChanged: (valor) {
+                    onDadosChanged?.call();
+                    onBairroChanged?.call(valor);
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Bairro *',
                     prefixIcon: Icon(Icons.location_city_outlined),
@@ -69,11 +78,15 @@ class LocalizacaoFormCard extends StatelessWidget {
 
                 final regional = TextField(
                   controller: regionalController,
-                  readOnly: true,
+                  onChanged: (valor) {
+                    onRegionalChanged?.call(valor);
+                    onDadosChanged?.call();
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Regional *',
                     prefixIcon: Icon(Icons.map_outlined),
-                    helperText: 'Preenchida automaticamente pelo bairro.',
+                    helperText: 'Preenchida automaticamente. Caso não seja '
+                        'identificada, informe manualmente.',
                     border: OutlineInputBorder(),
                   ),
                 );
@@ -101,6 +114,7 @@ class LocalizacaoFormCard extends StatelessWidget {
             const SizedBox(height: 14),
             TextField(
               controller: pontoReferenciaController,
+              onChanged: (_) => onDadosChanged?.call(),
               decoration: const InputDecoration(
                 labelText: 'Ponto de referência *',
                 hintText: 'Ex.: em frente ao terminal',

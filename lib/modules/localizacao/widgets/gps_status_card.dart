@@ -36,11 +36,14 @@ class GpsStatusCard extends StatelessWidget {
   String _formatarDataHora(DateTime? valor) {
     if (valor == null) return 'Ainda não registrada';
 
+    final horarioLocal = valor.toLocal();
+
     String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
 
-    return '${doisDigitos(valor.day)}/${doisDigitos(valor.month)}/'
-        '${valor.year} às ${doisDigitos(valor.hour)}:'
-        '${doisDigitos(valor.minute)}';
+    return '${doisDigitos(horarioLocal.day)}/'
+        '${doisDigitos(horarioLocal.month)}/'
+        '${horarioLocal.year} às ${doisDigitos(horarioLocal.hour)}:'
+        '${doisDigitos(horarioLocal.minute)}';
   }
 
   @override

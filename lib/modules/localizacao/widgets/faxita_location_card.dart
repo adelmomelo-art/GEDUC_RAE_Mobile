@@ -25,7 +25,7 @@ class FaxitaLocationCard extends StatelessWidget {
     return switch (tone) {
       FaxitaLocationTone.informativo => scheme.primaryContainer,
       FaxitaLocationTone.sucesso => Colors.green.shade50,
-      FaxitaLocationTone.atencao => Colors.orange.shade50,
+      FaxitaLocationTone.atencao => Colors.amber.shade50,
       FaxitaLocationTone.erro => scheme.errorContainer,
     };
   }
@@ -36,7 +36,7 @@ class FaxitaLocationCard extends StatelessWidget {
     return switch (tone) {
       FaxitaLocationTone.informativo => scheme.onPrimaryContainer,
       FaxitaLocationTone.sucesso => Colors.green.shade900,
-      FaxitaLocationTone.atencao => Colors.orange.shade900,
+      FaxitaLocationTone.atencao => Colors.amber.shade900,
       FaxitaLocationTone.erro => scheme.onErrorContainer,
     };
   }
@@ -45,7 +45,7 @@ class FaxitaLocationCard extends StatelessWidget {
     return switch (tone) {
       FaxitaLocationTone.informativo => Icons.assistant_outlined,
       FaxitaLocationTone.sucesso => Icons.check_circle_outline,
-      FaxitaLocationTone.atencao => Icons.info_outline,
+      FaxitaLocationTone.atencao => Icons.hourglass_top_outlined,
       FaxitaLocationTone.erro => Icons.error_outline,
     };
   }

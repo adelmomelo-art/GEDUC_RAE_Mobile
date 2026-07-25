@@ -141,6 +141,20 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     );
   }
 
+  void _salvarEVoltar() {
+    if (_localizacaoController.ocupado) {
+      return;
+    }
+
+    _limparFeedbackFaxita();
+    _localizacaoController.sincronizarComAcao(
+      context.read<AcaoController>(),
+      localizacaoValidada: false,
+    );
+
+    context.go('/nova-acao');
+  }
+
   Future<void> _confirmarEAvancar() async {
     if (_localizacaoController.ocupado) {
       return;
@@ -322,19 +336,24 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       builder: (context, _) {
         final controller = _localizacaoController;
 
-        return Scaffold(
-          appBar: AppBar(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
+              _salvarEVoltar();
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
             leading: IconButton(
               tooltip: 'Voltar',
-              onPressed:
-                  controller.ocupado ? null : () => context.go('/nova-acao'),
+              onPressed: controller.ocupado ? null : _salvarEVoltar,
               icon: const Icon(Icons.arrow_back),
             ),
             title: const Text('Localização da Ação'),
           ),
           bottomNavigationBar: LocalizacaoActionBar(
-            onVoltar:
-                controller.ocupado ? null : () => context.go('/nova-acao'),
+            onVoltar: controller.ocupado ? null : _salvarEVoltar,
             onAtualizarLocalizacao:
                 controller.estaNoLocal == true && !controller.ocupado
                     ? _capturarLocalizacaoGps
@@ -404,6 +423,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                   ],
                 ),
               ),
+            ),
             ),
           ),
         );

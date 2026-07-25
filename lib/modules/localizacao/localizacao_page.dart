@@ -124,7 +124,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     }
   }
 
-  void _pesquisarEndereco() {
+  Future<void> _pesquisarEndereco() async {
     final enderecoPesquisa =
         _localizacaoController.pesquisaEnderecoController.text.trim();
 
@@ -135,10 +135,58 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       return;
     }
 
-    _mostrarMensagem(
-      'A busca de coordenadas pelo endereço será implementada na próxima '
-      'evolução funcional do módulo.',
-    );
+    _limparFeedbackFaxita();
+
+    try {
+      final resultado =
+          await _localizacaoController.pesquisarEnderecoInformado();
+
+      if (!mounted) {
+        return;
+      }
+
+      _localizacaoController.sincronizarComAcao(
+        context.read<AcaoController>(),
+        localizacaoValidada: false,
+      );
+
+      final bairro = _localizacaoController.bairroController.text.trim();
+      final regional = _localizacaoController.regionalController.text.trim();
+
+      setState(() {
+        _mensagemFaxitaTemporaria =
+            'Endereço localizado no mapa. Confira os dados preenchidos'
+            '${bairro.isNotEmpty ? ', o bairro $bairro' : ''}'
+            '${regional.isNotEmpty ? ' e a Regional $regional' : ''} '
+            'antes de confirmar.';
+        _toneFaxitaTemporario = FaxitaLocationTone.sucesso;
+      });
+
+      _mostrarMensagem(
+        'Endereço localizado em '
+        '${resultado.latitude.toStringAsFixed(6)}, '
+        '${resultado.longitude.toStringAsFixed(6)}.',
+      );
+    } on LocationException catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      const mensagem =
+          'Não encontrei uma localização válida para esse endereço. '
+          'Acrescente número, bairro e cidade e tente novamente.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      const mensagem =
+          'Não foi possível pesquisar o endereço neste momento.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
+    }
   }
 
   void _salvarEVoltar() {
@@ -388,6 +436,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                             controller.pesquisaEnderecoController,
                         onPesquisar:
                             controller.ocupado ? null : _pesquisarEndereco,
+                        pesquisando: controller.consultandoEndereco,
                       ),
                       const SizedBox(height: 12),
                     ],

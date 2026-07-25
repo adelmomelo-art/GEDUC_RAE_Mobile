@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/services/localizacao/endereco_geocoding_service.dart';
 import '../../../core/services/localizacao/gps_service.dart';
 import '../../../core/services/localizacao/localizacao_result.dart';
 import '../../../core/services/localizacao/location_exception.dart';
@@ -12,14 +13,18 @@ import '../../acoes/controllers/acao_controller.dart';
 /// de localização da ação.
 class LocalizacaoController extends ChangeNotifier {
   LocalizacaoController({
+    EnderecoGeocodingService? enderecoGeocodingService,
     GpsService? gpsService,
     ReverseGeocodingService? reverseGeocodingService,
     RegionalService? regionalService,
-  })  : _gpsService = gpsService ?? const GpsService(),
+  })  : _enderecoGeocodingService =
+            enderecoGeocodingService ?? const EnderecoGeocodingService(),
+        _gpsService = gpsService ?? const GpsService(),
         _reverseGeocodingService =
             reverseGeocodingService ?? const ReverseGeocodingService(),
         _regionalService = regionalService ?? RegionalService();
 
+  final EnderecoGeocodingService _enderecoGeocodingService;
   final GpsService _gpsService;
   final ReverseGeocodingService _reverseGeocodingService;
   final RegionalService _regionalService;
@@ -238,6 +243,72 @@ class LocalizacaoController extends ChangeNotifier {
       return resultado;
     } finally {
       _capturandoGps = false;
+      notifyListeners();
+    }
+  }
+
+
+  /// Pesquisa coordenadas a partir de um endereço informado pelo usuário.
+  ///
+  /// Após localizar o ponto, executa geocodificação reversa para preencher
+  /// endereço e bairro de forma consistente e tenta identificar a Regional.
+  Future<CoordenadasEnderecoResult> pesquisarEnderecoInformado() async {
+    if (_consultandoEndereco) {
+      throw LocationException.localizacaoIndisponivel();
+    }
+
+    final termoPesquisa = pesquisaEnderecoController.text.trim();
+
+    if (termoPesquisa.isEmpty) {
+      throw LocationException.localizacaoIndisponivel();
+    }
+
+    _consultandoEndereco = true;
+    notifyListeners();
+
+    try {
+      final resultado =
+          await _enderecoGeocodingService.buscarCoordenadas(termoPesquisa);
+
+      _latitude = resultado.latitude;
+      _longitude = resultado.longitude;
+      _precisaoGps = null;
+      _dataHoraCaptura = DateTime.now();
+      _estaNoLocal = false;
+      _origemLocalizacao = OrigemLocalizacao.enderecoInformado;
+      _localizacaoEditadaManualmente = true;
+
+      final enderecoGeocodificado =
+          await _reverseGeocodingService.buscarEndereco(
+        latitude: resultado.latitude,
+        longitude: resultado.longitude,
+      );
+
+      final enderecoPrincipal = _montarEnderecoPrincipal(enderecoGeocodificado);
+
+      if (enderecoPrincipal.isNotEmpty) {
+        enderecoController.text = enderecoPrincipal;
+      } else {
+        enderecoController.text = termoPesquisa;
+      }
+
+      if (enderecoGeocodificado.bairro.isNotEmpty) {
+        bairroController.text = enderecoGeocodificado.bairro;
+      }
+
+      if (bairroController.text.trim().isNotEmpty) {
+        await buscarRegionalPorBairro(
+          bairroController.text,
+          limparQuandoNaoEncontrada: true,
+        );
+      }
+
+      notifyListeners();
+      return resultado;
+    } on LocationException {
+      rethrow;
+    } finally {
+      _consultandoEndereco = false;
       notifyListeners();
     }
   }

@@ -189,6 +189,69 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     }
   }
 
+  Future<void> _selecionarLocalNoMapa(
+    double latitude,
+    double longitude,
+  ) async {
+    if (_localizacaoController.ocupado ||
+        _localizacaoController.estaNoLocal != false) {
+      return;
+    }
+
+    _limparFeedbackFaxita();
+
+    try {
+      await _localizacaoController.atualizarPorSelecaoManual(
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _localizacaoController.sincronizarComAcao(
+        context.read<AcaoController>(),
+        localizacaoValidada: false,
+      );
+
+      final bairro = _localizacaoController.bairroController.text.trim();
+      final regional = _localizacaoController.regionalController.text.trim();
+
+      setState(() {
+        _mensagemFaxitaTemporaria =
+            'Ponto selecionado no mapa. Confira o endereço'
+            '${bairro.isNotEmpty ? ', o bairro $bairro' : ''}'
+            '${regional.isNotEmpty ? ' e a Regional $regional' : ''} '
+            'antes de confirmar.';
+        _toneFaxitaTemporario = FaxitaLocationTone.sucesso;
+      });
+
+      _mostrarMensagem(
+        'Localização selecionada em '
+        '${latitude.toStringAsFixed(6)}, '
+        '${longitude.toStringAsFixed(6)}.',
+      );
+    } on LocationException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      _registrarErroFaxita(error.message);
+      _mostrarMensagem(error.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      const mensagem =
+          'Não foi possível identificar o endereço deste ponto. '
+          'Tente novamente ou preencha os dados manualmente.';
+      _registrarErroFaxita(mensagem);
+      _mostrarMensagem(mensagem);
+    }
+  }
+
   void _salvarEVoltar() {
     if (_localizacaoController.ocupado) {
       return;
@@ -447,6 +510,12 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                       onCentralizar:
                           controller.estaNoLocal == true && !controller.ocupado
                               ? _capturarLocalizacaoGps
+                              : null,
+                      selecaoHabilitada:
+                          controller.estaNoLocal == false && !controller.ocupado,
+                      onSelecionarLocal:
+                          controller.estaNoLocal == false && !controller.ocupado
+                              ? _selecionarLocalNoMapa
                               : null,
                     ),
                     const SizedBox(height: 12),

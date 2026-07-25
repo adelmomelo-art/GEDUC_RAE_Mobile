@@ -9,11 +9,8 @@ import 'package:latlong2/latlong.dart';
 /// - mostrar o marcador da ação;
 /// - centralizar automaticamente após uma captura de GPS;
 /// - permitir movimentação e zoom pelo usuário;
+/// - permitir a seleção manual de coordenadas por toque no mapa;
 /// - manter um ponto inicial seguro quando ainda não houver coordenadas.
-///
-/// A seleção manual de coordenadas pelo mapa será implementada em uma
-/// etapa posterior. Neste momento, o mapa apenas apresenta e centraliza
-/// a localização capturada.
 class MapaLocalizacaoWidget extends StatefulWidget {
   const MapaLocalizacaoWidget({
     super.key,
@@ -22,6 +19,8 @@ class MapaLocalizacaoWidget extends StatefulWidget {
     required this.possuiLocalizacao,
     this.altura = 320,
     this.onCentralizar,
+    this.onSelecionarLocal,
+    this.selecaoHabilitada = false,
   });
 
   final double latitude;
@@ -32,6 +31,12 @@ class MapaLocalizacaoWidget extends StatefulWidget {
   /// Quando não existe uma localização, solicita à página a captura
   /// das coordenadas pelo GPS.
   final VoidCallback? onCentralizar;
+
+  /// Recebe as coordenadas selecionadas pelo usuário no mapa.
+  final void Function(double latitude, double longitude)? onSelecionarLocal;
+
+  /// Controla se o toque no mapa pode selecionar uma nova localização.
+  final bool selecaoHabilitada;
 
   @override
   State<MapaLocalizacaoWidget> createState() => _MapaLocalizacaoWidgetState();
@@ -129,6 +134,15 @@ class _MapaLocalizacaoWidgetState extends State<MapaLocalizacaoWidget> {
                       _centralizarAposRenderizacao();
                     }
                   },
+                  onTap: widget.selecaoHabilitada &&
+                          widget.onSelecionarLocal != null
+                      ? (_, coordenada) {
+                          widget.onSelecionarLocal!(
+                            coordenada.latitude,
+                            coordenada.longitude,
+                          );
+                        }
+                      : null,
                 ),
                 children: [
                   TileLayer(
@@ -215,7 +229,7 @@ class _MapaLocalizacaoWidgetState extends State<MapaLocalizacaoWidget> {
             ),
 
             // Mensagem exibida enquanto ainda não houver coordenadas.
-            if (!widget.possuiLocalizacao)
+            if (!widget.possuiLocalizacao && !widget.selecaoHabilitada)
               Positioned(
                 left: 16,
                 right: 16,
@@ -271,6 +285,53 @@ class _MapaLocalizacaoWidgetState extends State<MapaLocalizacaoWidget> {
                 ),
               ),
             ),
+
+            if (widget.selecaoHabilitada)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: widget.possuiLocalizacao ? 48 : 46,
+                child: Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.94),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.touch_app_outlined,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Toque no mapa para marcar o local da ação.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
             // Atribuição obrigatória do OpenStreetMap.
             Positioned(

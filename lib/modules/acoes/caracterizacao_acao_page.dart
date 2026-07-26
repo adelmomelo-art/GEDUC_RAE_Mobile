@@ -34,16 +34,16 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   };
 
   final publicos = const {
-    'publico_criancas': 'Crianças',
-    'publico_adolescentes': 'Adolescentes',
-    'publico_adultos': 'Adultos',
-    'publico_idosos': 'Idosos',
+    'publico_interno': 'Público interno',
+    'publico_externo': 'Público externo',
+    'publico_misto': 'Público interno e externo',
   };
 
   final sexos = const {
-    'sexo_feminino': 'Feminino',
-    'sexo_masculino': 'Masculino',
-    'sexo_misto': 'Misto',
+    'sexo_feminino': 'Predominantemente feminino',
+    'sexo_masculino': 'Predominantemente masculino',
+    'sexo_misto': 'Público misto/equilibrado',
+    'sexo_nao_identificado': 'Não foi possível identificar',
   };
 
   final mudancas = const {
@@ -67,11 +67,21 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   };
 
   final perfisUsuario = const {
-    'perfil_pedestre': 'Pedestre',
-    'perfil_ciclista': 'Ciclista',
-    'perfil_motociclista': 'Motociclista',
-    'perfil_condutor': 'Condutor',
-    'perfil_passageiro': 'Passageiro',
+    'perfil_crianca': 'Crianças',
+    'perfil_adolescente': 'Adolescentes',
+    'perfil_adulto': 'Adultos',
+    'perfil_idoso': 'Pessoas idosas',
+    'perfil_estudante': 'Estudantes',
+    'perfil_servidor': 'Servidores públicos',
+    'perfil_trabalhador': 'Trabalhadores',
+    'perfil_pedestre': 'Pedestres',
+    'perfil_ciclista': 'Ciclistas',
+    'perfil_motociclista': 'Motociclistas',
+    'perfil_condutor': 'Condutores',
+    'perfil_passageiro': 'Passageiros',
+    'perfil_pcd': 'Pessoas com deficiência',
+    'perfil_profissional_transito': 'Profissionais do trânsito',
+    'perfil_comunidade': 'Comunidade em geral',
   };
 
   final fatoresRisco = const {
@@ -93,6 +103,49 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
         fatorRiscoIds.isNotEmpty;
   }
 
+
+  String? _normalizarPublicoLegado(String valor) {
+    switch (valor) {
+      case 'publico_criancas':
+        perfilUsuarioIds.add('perfil_crianca');
+        return null;
+      case 'publico_adolescentes':
+        perfilUsuarioIds.add('perfil_adolescente');
+        return null;
+      case 'publico_adultos':
+        perfilUsuarioIds.add('perfil_adulto');
+        return null;
+      case 'publico_idosos':
+        perfilUsuarioIds.add('perfil_idoso');
+        return null;
+      default:
+        return publicos.containsKey(valor) ? valor : null;
+    }
+  }
+
+  String get _resumoPublicoSelecionado {
+    final tipo = publicoId == null ? null : publicos[publicoId];
+    final perfis = perfilUsuarioIds
+        .map((id) => perfisUsuario[id])
+        .whereType<String>()
+        .toList();
+
+    if (tipo == null && perfis.isEmpty) {
+      return 'Informe se o público é interno, externo ou misto e selecione '
+          'ao menos um perfil de usuário.';
+    }
+
+    if (tipo != null && perfis.isEmpty) {
+      return '$tipo selecionado. Agora identifique os perfis atendidos.';
+    }
+
+    final quantidade = perfis.length;
+    final descricaoPerfis =
+        quantidade == 1 ? perfis.first : '$quantidade perfis selecionados';
+
+    return '${tipo ?? 'Tipo de público pendente'} • $descricaoPerfis';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -105,7 +158,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
     if (acao != null) {
       formacaoId = acao.formacaoId.isEmpty ? null : acao.formacaoId;
-      publicoId = acao.publicoId.isEmpty ? null : acao.publicoId;
+      publicoId = _normalizarPublicoLegado(acao.publicoId);
       sexoPredominanteId =
           acao.sexoPredominanteId.isEmpty ? null : acao.sexoPredominanteId;
       mudancaComportamentoId = acao.mudancaComportamentoId.isEmpty
@@ -493,9 +546,9 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 ],
               ),
               _secao(
-                titulo: 'Público atendido',
+                titulo: 'Público-alvo',
                 descricao:
-                    'Registre a composição predominante do público da ação.',
+                    'Identifique a origem institucional e os perfis atendidos.',
                 icone: Icons.groups_outlined,
                 filhos: [
                   _dropdown(
@@ -505,19 +558,48 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                     onChanged: (value) =>
                         _atualizar(() => publicoId = value),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Considere como público interno os servidores e equipes '
+                    'do próprio órgão. Público externo corresponde à '
+                    'comunidade e às instituições atendidas.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 18),
                   _rotuloObrigatorio('Perfil do usuário'),
                   _checkboxGroup(
                     options: perfisUsuario,
                     selected: perfilUsuarioIds,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _dropdown(
                     label: 'Sexo predominante',
                     value: sexoPredominanteId,
                     options: sexos,
                     onChanged: (value) =>
                         _atualizar(() => sexoPredominanteId = value),
+                  ),
+                  const SizedBox(height: 14),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.summarize_outlined, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(_resumoPublicoSelecionado),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

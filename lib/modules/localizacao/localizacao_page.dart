@@ -481,6 +481,8 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    const _CabecalhoLocalizacao(),
+                    const SizedBox(height: 12),
                     FaxitaLocationCard(
                       mensagem: _mensagemFaxitaTemporaria ??
                           controller.mensagemFaxita,
@@ -537,6 +539,8 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                       onRegionalChanged: _regionalFoiEditada,
                       onDadosChanged: _dadosForamEditados,
                     ),
+                    const SizedBox(height: 12),
+                    _ResumoLocalizacaoCard(controller: controller),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -546,6 +550,230 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
           ),
         );
       },
+    );
+  }
+}
+
+
+class _CabecalhoLocalizacao extends StatelessWidget {
+  const _CabecalhoLocalizacao();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [scheme.primary, scheme.primaryContainer],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: scheme.onPrimary.withValues(alpha: 0.14),
+            foregroundColor: scheme.onPrimary,
+            child: const Icon(Icons.location_on_outlined, size: 30),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Localização da Ação',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: scheme.onPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Defina o ponto exato da atividade educativa.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onPrimary.withValues(alpha: 0.88),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResumoLocalizacaoCard extends StatelessWidget {
+  const _ResumoLocalizacaoCard({required this.controller});
+
+  final LocalizacaoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final endereco = controller.enderecoController.text.trim();
+    final bairro = controller.bairroController.text.trim();
+    final regional = controller.regionalController.text.trim();
+    final referencia = controller.pontoReferenciaController.text.trim();
+    final valido = controller.validarParaAvancar() == null;
+
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: valido
+                      ? Colors.green.shade50
+                      : scheme.primaryContainer,
+                  foregroundColor: valido
+                      ? Colors.green.shade800
+                      : scheme.onPrimaryContainer,
+                  child: Icon(
+                    valido
+                        ? Icons.check_circle_outline
+                        : Icons.summarize_outlined,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Resumo da localização',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      Text(
+                        valido
+                            ? 'Dados suficientes para avançar.'
+                            : 'Revise os dados antes de confirmar.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 28),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final duasColunas = constraints.maxWidth >= 680;
+                final itens = <Widget>[
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.place_outlined,
+                    rotulo: 'Endereço',
+                    valor: endereco.isEmpty ? 'Não informado' : endereco,
+                  ),
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.location_city_outlined,
+                    rotulo: 'Bairro',
+                    valor: bairro.isEmpty ? 'Não informado' : bairro,
+                  ),
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.account_balance_outlined,
+                    rotulo: 'Regional',
+                    valor: regional.isEmpty ? 'Não informada' : regional,
+                  ),
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.assistant_direction_outlined,
+                    rotulo: 'Ponto de referência',
+                    valor: referencia.isEmpty ? 'Não informado' : referencia,
+                  ),
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.gps_fixed_outlined,
+                    rotulo: 'Coordenadas',
+                    valor: controller.possuiLocalizacao
+                        ? '${controller.latitude.toStringAsFixed(6)}, '
+                            '${controller.longitude.toStringAsFixed(6)}'
+                        : 'Não definidas',
+                  ),
+                  _ResumoLocalizacaoItem(
+                    icone: Icons.route_outlined,
+                    rotulo: 'Origem',
+                    valor: controller.estaNoLocal == true
+                        ? 'GPS no local'
+                        : controller.estaNoLocal == false
+                            ? 'Pesquisa ou mapa'
+                            : 'Não definida',
+                  ),
+                ];
+
+                if (!duasColunas) {
+                  return Column(children: itens);
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Column(children: itens.take(3).toList())),
+                    const SizedBox(width: 16),
+                    Expanded(child: Column(children: itens.skip(3).toList())),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumoLocalizacaoItem extends StatelessWidget {
+  const _ResumoLocalizacaoItem({
+    required this.icone,
+    required this.rotulo,
+    required this.valor,
+  });
+
+  final IconData icone;
+  final String rotulo;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icone, size: 20, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  rotulo,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  valor,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -569,13 +797,6 @@ class _ModoLocalizacaoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Escolha uma opção',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 12),
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment<bool>(

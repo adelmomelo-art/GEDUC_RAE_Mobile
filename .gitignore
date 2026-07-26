@@ -86,3 +86,5 @@ Thumbs.db
 /android/secrets.properties
 
 # ===========================
+# Apresentações grandes
+assets/images/*.pptx

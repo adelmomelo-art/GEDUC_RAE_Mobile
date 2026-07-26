@@ -17,12 +17,15 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   String? publicoId;
   String? sexoPredominanteId;
   String? mudancaComportamentoId;
+
   final instituicaoParceiraController = TextEditingController();
 
   final tipoParticipacaoIds = <String>{};
   final focoTematicoIds = <String>{};
   final perfilUsuarioIds = <String>{};
   final fatorRiscoIds = <String>{};
+
+  bool _restaurandoDados = true;
 
   final formacoes = const {
     'formacao_palestra': 'Palestra',
@@ -79,91 +82,218 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     'risco_alcool': 'Álcool e direção',
   };
 
+  bool get _camposObrigatoriosPreenchidos {
+    return formacaoId != null &&
+        publicoId != null &&
+        sexoPredominanteId != null &&
+        mudancaComportamentoId != null &&
+        tipoParticipacaoIds.isNotEmpty &&
+        focoTematicoIds.isNotEmpty &&
+        perfilUsuarioIds.isNotEmpty &&
+        fatorRiscoIds.isNotEmpty;
+  }
+
   @override
   void initState() {
     super.initState();
+    _restaurarRascunho();
+    instituicaoParceiraController.addListener(_aoAlterarInstituicao);
+  }
 
+  void _restaurarRascunho() {
     final acao = context.read<AcaoController>().acaoAtual;
 
-    if (acao == null) return;
+    if (acao != null) {
+      formacaoId = acao.formacaoId.isEmpty ? null : acao.formacaoId;
+      publicoId = acao.publicoId.isEmpty ? null : acao.publicoId;
+      sexoPredominanteId =
+          acao.sexoPredominanteId.isEmpty ? null : acao.sexoPredominanteId;
+      mudancaComportamentoId = acao.mudancaComportamentoId.isEmpty
+          ? null
+          : acao.mudancaComportamentoId;
 
-    formacaoId = acao.formacaoId.isEmpty ? null : acao.formacaoId;
-    publicoId = acao.publicoId.isEmpty ? null : acao.publicoId;
-    sexoPredominanteId =
-        acao.sexoPredominanteId.isEmpty ? null : acao.sexoPredominanteId;
-    mudancaComportamentoId = acao.mudancaComportamentoId.isEmpty
-        ? null
-        : acao.mudancaComportamentoId;
+      tipoParticipacaoIds.addAll(acao.tipoParticipacaoIds);
+      focoTematicoIds.addAll(acao.focoTematicoIds);
+      perfilUsuarioIds.addAll(acao.perfilUsuarioIds);
+      fatorRiscoIds.addAll(acao.fatorRiscoIds);
+      instituicaoParceiraController.text = acao.instituicaoParceira;
+    }
 
-    tipoParticipacaoIds.addAll(acao.tipoParticipacaoIds);
-    focoTematicoIds.addAll(acao.focoTematicoIds);
-    perfilUsuarioIds.addAll(acao.perfilUsuarioIds);
-    fatorRiscoIds.addAll(acao.fatorRiscoIds);
-    instituicaoParceiraController.text = acao.instituicaoParceira;
+    _restaurandoDados = false;
   }
 
   @override
   void dispose() {
+    instituicaoParceiraController.removeListener(_aoAlterarInstituicao);
     instituicaoParceiraController.dispose();
     super.dispose();
   }
 
-  void salvar() {
-    if (formacaoId == null ||
-        publicoId == null ||
-        sexoPredominanteId == null ||
-        mudancaComportamentoId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha os campos obrigatórios.'),
-        ),
-      );
-      return;
+  void _aoAlterarInstituicao() {
+    if (!_restaurandoDados) {
+      _persistirRascunho();
     }
+  }
 
-    if (tipoParticipacaoIds.isEmpty ||
-        focoTematicoIds.isEmpty ||
-        perfilUsuarioIds.isEmpty ||
-        fatorRiscoIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecione ao menos uma opção em cada bloco.'),
-        ),
-      );
-      return;
-    }
-
+  void _persistirRascunho() {
     context.read<AcaoController>().preencherCaracterizacao(
           fatorRiscoIds: fatorRiscoIds.toList(),
-          mudancaComportamentoId: mudancaComportamentoId!,
-          formacaoId: formacaoId!,
-          publicoId: publicoId!,
+          mudancaComportamentoId: mudancaComportamentoId ?? '',
+          formacaoId: formacaoId ?? '',
+          publicoId: publicoId ?? '',
           tipoParticipacaoIds: tipoParticipacaoIds.toList(),
           focoTematicoIds: focoTematicoIds.toList(),
           perfilUsuarioIds: perfilUsuarioIds.toList(),
-          sexoPredominanteId: sexoPredominanteId!,
+          sexoPredominanteId: sexoPredominanteId ?? '',
           instituicaoParceira: instituicaoParceiraController.text.trim(),
         );
+  }
 
+  void _atualizar(VoidCallback alteracao) {
+    setState(alteracao);
+    _persistirRascunho();
+  }
+
+  void _voltar() {
+    _persistirRascunho();
+    context.go('/localizacao');
+  }
+
+  void _salvarEAvancar() {
+    if (!_camposObrigatoriosPreenchidos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'A Faxita identificou campos obrigatórios ainda não preenchidos.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    _persistirRascunho();
     context.go('/recursos-operacionais');
   }
 
-  Widget _secao(String titulo, List<Widget> filhos) {
+  Widget _faxitaCard() {
+    final concluido = _camposObrigatoriosPreenchidos;
+    final corFundo = concluido
+        ? const Color(0xFFE8F5E9)
+        : const Color(0xFFFFF8E1);
+    final corBorda = concluido
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFFF9A825);
+    final icone = concluido
+        ? Icons.check_circle_outline
+        : Icons.info_outline;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: corFundo,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: corBorda, width: 1.4),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: corBorda,
+            foregroundColor: Colors.white,
+            child: Icon(icone),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Faxita',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  concluido
+                      ? 'Caracterização preenchida. Os dados obrigatórios estão completos e você já pode avançar.'
+                      : 'Vamos caracterizar a ação educativa. Os campos identificados com * são obrigatórios. Preencha a formação, o público, os temas, os riscos e a avaliação comportamental.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _secao({
+    required String titulo,
+    required String descricao,
+    required IconData icone,
+    required List<Widget> filhos,
+  }) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              titulo,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  icone,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        descricao,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ...filhos,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rotuloObrigatorio(String texto) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text.rich(
+        TextSpan(
+          text: texto,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+          children: [
+            TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
-            const SizedBox(height: 12),
-            ...filhos,
           ],
         ),
       ),
@@ -178,15 +308,21 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   }) {
     return DropdownButtonFormField<String>(
       initialValue: value,
+      isExpanded: true,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: '$label *',
         border: const OutlineInputBorder(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       items: options.entries
           .map(
-            (entry) => DropdownMenuItem(
+            (entry) => DropdownMenuItem<String>(
               value: entry.key,
-              child: Text(entry.value),
+              child: Text(
+                entry.value,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )
           .toList(),
@@ -198,122 +334,231 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     required Map<String, String> options,
     required Set<String> selected,
   }) {
-    return Column(
-      children: options.entries.map((entry) {
-        return CheckboxListTile(
-          value: selected.contains(entry.key),
-          title: Text(entry.value),
-          onChanged: (value) {
-            setState(() {
-              if (value == true) {
-                selected.add(entry.key);
-              } else {
-                selected.remove(entry.key);
-              }
-            });
-          },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final duasColunas = constraints.maxWidth >= 700;
+        final largura = duasColunas
+            ? (constraints.maxWidth - 12) / 2
+            : constraints.maxWidth;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: options.entries.map((entry) {
+            final marcado = selected.contains(entry.key);
+
+            return SizedBox(
+              width: largura,
+              child: Material(
+                color: marcado
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                child: CheckboxListTile(
+                  value: marcado,
+                  dense: true,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  title: Text(entry.value),
+                  onChanged: (value) {
+                    _atualizar(() {
+                      if (value == true) {
+                        selected.add(entry.key);
+                      } else {
+                        selected.remove(entry.key);
+                      }
+                    });
+                  },
+                ),
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
+    );
+  }
+
+  Widget _campoInstituicaoParceira() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Instituição ou empresa parceira',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Campo opcional',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: instituicaoParceiraController,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            hintText: 'Ex.: PM, GMF, DETRAN, Honda',
+            prefixIcon: Icon(Icons.handshake_outlined),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _barraInferior() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _voltar,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Voltar'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: FilledButton.icon(
+                onPressed: _salvarEAvancar,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Confirmar e avançar'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Caracterização da Ação'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _secao(
-            'Contexto da ação',
-            [
-              _dropdown(
-                label: 'Formação',
-                value: formacaoId,
-                options: formacoes,
-                onChanged: (value) => setState(() => formacaoId = value),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _voltar();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Caracterização da Ação'),
+        ),
+        bottomNavigationBar: _barraInferior(),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _faxitaCard(),
+              const SizedBox(height: 12),
+              _secao(
+                titulo: 'Dados institucionais da ação',
+                descricao:
+                    'Defina o formato da atividade e a forma de participação.',
+                icone: Icons.account_balance_outlined,
+                filhos: [
+                  _dropdown(
+                    label: 'Formação',
+                    value: formacaoId,
+                    options: formacoes,
+                    onChanged: (value) =>
+                        _atualizar(() => formacaoId = value),
+                  ),
+                  const SizedBox(height: 16),
+                  _rotuloObrigatorio('Tipo de participação'),
+                  _checkboxGroup(
+                    options: tiposParticipacao,
+                    selected: tipoParticipacaoIds,
+                  ),
+                  const SizedBox(height: 18),
+                  _campoInstituicaoParceira(),
+                ],
+              ),
+              _secao(
+                titulo: 'Público atendido',
+                descricao:
+                    'Registre a composição predominante do público da ação.',
+                icone: Icons.groups_outlined,
+                filhos: [
+                  _dropdown(
+                    label: 'Público',
+                    value: publicoId,
+                    options: publicos,
+                    onChanged: (value) =>
+                        _atualizar(() => publicoId = value),
+                  ),
+                  const SizedBox(height: 16),
+                  _rotuloObrigatorio('Perfil do usuário'),
+                  _checkboxGroup(
+                    options: perfisUsuario,
+                    selected: perfilUsuarioIds,
+                  ),
+                  const SizedBox(height: 16),
+                  _dropdown(
+                    label: 'Sexo predominante',
+                    value: sexoPredominanteId,
+                    options: sexos,
+                    onChanged: (value) =>
+                        _atualizar(() => sexoPredominanteId = value),
+                  ),
+                ],
+              ),
+              _secao(
+                titulo: 'Temas e fatores de risco',
+                descricao:
+                    'Identifique os conteúdos trabalhados e os riscos observados.',
+                icone: Icons.health_and_safety_outlined,
+                filhos: [
+                  _rotuloObrigatorio('Foco temático'),
+                  _checkboxGroup(
+                    options: focosTematicos,
+                    selected: focoTematicoIds,
+                  ),
+                  const SizedBox(height: 16),
+                  _rotuloObrigatorio('Principais fatores de risco observados'),
+                  _checkboxGroup(
+                    options: fatoresRisco,
+                    selected: fatorRiscoIds,
+                  ),
+                ],
+              ),
+              _secao(
+                titulo: 'Avaliação comportamental',
+                descricao:
+                    'Registre se houve mudança de comportamento observável.',
+                icone: Icons.psychology_alt_outlined,
+                filhos: [
+                  _dropdown(
+                    label: 'Houve mudança de comportamento observável?',
+                    value: mudancaComportamentoId,
+                    options: mudancas,
+                    onChanged: (value) =>
+                        _atualizar(() => mudancaComportamentoId = value),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-              _dropdown(
-                label: 'Público',
-                value: publicoId,
-                options: publicos,
-                onChanged: (value) => setState(() => publicoId = value),
-              ),
-              const SizedBox(height: 16),
-              const Text('Tipo de participação'),
-              _checkboxGroup(
-                options: tiposParticipacao,
-                selected: tipoParticipacaoIds,
-              ),
             ],
           ),
-          _secao(
-            'Perfil do público',
-            [
-              const Text('Perfil do usuário'),
-              _checkboxGroup(
-                options: perfisUsuario,
-                selected: perfilUsuarioIds,
-              ),
-              const SizedBox(height: 16),
-              _dropdown(
-                label: 'Sexo predominante',
-                value: sexoPredominanteId,
-                options: sexos,
-                onChanged: (value) =>
-                    setState(() => sexoPredominanteId = value),
-              ),
-            ],
-          ),
-          _secao(
-            'Tema e riscos observados',
-            [
-              const Text('Foco temático'),
-              _checkboxGroup(
-                options: focosTematicos,
-                selected: focoTematicoIds,
-              ),
-              const SizedBox(height: 16),
-              const Text('Principais fatores de risco observados'),
-              _checkboxGroup(
-                options: fatoresRisco,
-                selected: fatorRiscoIds,
-              ),
-            ],
-          ),
-          _secao(
-            'Avaliação comportamental',
-            [
-              _dropdown(
-                label: 'Houve mudança de comportamento observável?',
-                value: mudancaComportamentoId,
-                options: mudancas,
-                onChanged: (value) =>
-                    setState(() => mudancaComportamentoId = value),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: instituicaoParceiraController,
-                decoration: const InputDecoration(
-                  labelText: 'Instituição ou empresa parceira',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('SALVAR E AVANÇAR'),
-              onPressed: salvar,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

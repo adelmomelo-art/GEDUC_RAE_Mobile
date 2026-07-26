@@ -12,6 +12,12 @@ class CaracterizacaoAcaoPage extends StatefulWidget {
       _CaracterizacaoAcaoPageState();
 }
 
+enum _StatusSecao {
+  naoIniciada,
+  emAndamento,
+  completa,
+}
+
 class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   String? formacaoId;
   String? publicoId;
@@ -92,17 +98,41 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     'risco_alcool': 'Álcool e direção',
   };
 
-  bool get _camposObrigatoriosPreenchidos {
-    return formacaoId != null &&
-        publicoId != null &&
-        sexoPredominanteId != null &&
-        mudancaComportamentoId != null &&
-        tipoParticipacaoIds.isNotEmpty &&
-        focoTematicoIds.isNotEmpty &&
-        perfilUsuarioIds.isNotEmpty &&
-        fatorRiscoIds.isNotEmpty;
+  bool get _dadosInstitucionaisCompletos {
+    return formacaoId != null && tipoParticipacaoIds.isNotEmpty;
   }
 
+  bool get _publicoAlvoCompleto {
+    return publicoId != null &&
+        perfilUsuarioIds.isNotEmpty &&
+        sexoPredominanteId != null;
+  }
+
+  bool get _temasERiscosCompletos {
+    return focoTematicoIds.isNotEmpty && fatorRiscoIds.isNotEmpty;
+  }
+
+  bool get _avaliacaoComportamentalCompleta {
+    return mudancaComportamentoId != null;
+  }
+
+  bool get _camposObrigatoriosPreenchidos {
+    return _dadosInstitucionaisCompletos &&
+        _publicoAlvoCompleto &&
+        _temasERiscosCompletos &&
+        _avaliacaoComportamentalCompleta;
+  }
+
+  int get _secoesCompletas {
+    return [
+      _dadosInstitucionaisCompletos,
+      _publicoAlvoCompleto,
+      _temasERiscosCompletos,
+      _avaliacaoComportamentalCompleta,
+    ].where((completa) => completa).length;
+  }
+
+  double get _progressoCaracterizacao => _secoesCompletas / 4;
 
   String? _normalizarPublicoLegado(String valor) {
     switch (valor) {
@@ -121,6 +151,26 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
       default:
         return publicos.containsKey(valor) ? valor : null;
     }
+  }
+
+  String _descricaoSelecionados(
+    Set<String> selecionados,
+    Map<String, String> opcoes,
+  ) {
+    final itens = selecionados
+        .map((id) => opcoes[id])
+        .whereType<String>()
+        .toList();
+
+    if (itens.isEmpty) {
+      return 'Não informado';
+    }
+
+    if (itens.length <= 2) {
+      return itens.join(' e ');
+    }
+
+    return '${itens.take(2).join(', ')} e mais ${itens.length - 2}';
   }
 
   String get _resumoPublicoSelecionado {
@@ -144,6 +194,46 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
         quantidade == 1 ? perfis.first : '$quantidade perfis selecionados';
 
     return '${tipo ?? 'Tipo de público pendente'} • $descricaoPerfis';
+  }
+
+  String get _mensagemFaxita {
+    if (_camposObrigatoriosPreenchidos) {
+      final formacao = formacoes[formacaoId] ?? 'atividade educativa';
+      final publico = publicos[publicoId] ?? 'público informado';
+      final perfis = _descricaoSelecionados(
+        perfilUsuarioIds,
+        perfisUsuario,
+      ).toLowerCase();
+      final temas = _descricaoSelecionados(
+        focoTematicoIds,
+        focosTematicos,
+      ).toLowerCase();
+      final mudanca =
+          (mudancas[mudancaComportamentoId] ?? 'não informada').toLowerCase();
+
+      return 'Caracterização concluída. A ação foi registrada como '
+          '$formacao, destinada a $publico, com atendimento a $perfis. '
+          'Os temas principais foram $temas e a mudança de comportamento '
+          'foi classificada como $mudanca.';
+    }
+
+    final pendencias = <String>[];
+
+    if (!_dadosInstitucionaisCompletos) {
+      pendencias.add('dados institucionais');
+    }
+    if (!_publicoAlvoCompleto) {
+      pendencias.add('público-alvo');
+    }
+    if (!_temasERiscosCompletos) {
+      pendencias.add('temas e riscos');
+    }
+    if (!_avaliacaoComportamentalCompleta) {
+      pendencias.add('avaliação comportamental');
+    }
+
+    return 'A caracterização está com $_secoesCompletas de 4 seções '
+        'concluídas. Complete ${pendencias.join(', ')} para avançar.';
   }
 
   @override
@@ -228,6 +318,113 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     context.go('/recursos-operacionais');
   }
 
+  _StatusSecao _statusDadosInstitucionais() {
+    if (_dadosInstitucionaisCompletos) {
+      return _StatusSecao.completa;
+    }
+
+    if (formacaoId != null ||
+        tipoParticipacaoIds.isNotEmpty ||
+        instituicaoParceiraController.text.trim().isNotEmpty) {
+      return _StatusSecao.emAndamento;
+    }
+
+    return _StatusSecao.naoIniciada;
+  }
+
+  _StatusSecao _statusPublicoAlvo() {
+    if (_publicoAlvoCompleto) {
+      return _StatusSecao.completa;
+    }
+
+    if (publicoId != null ||
+        perfilUsuarioIds.isNotEmpty ||
+        sexoPredominanteId != null) {
+      return _StatusSecao.emAndamento;
+    }
+
+    return _StatusSecao.naoIniciada;
+  }
+
+  _StatusSecao _statusTemasERiscos() {
+    if (_temasERiscosCompletos) {
+      return _StatusSecao.completa;
+    }
+
+    if (focoTematicoIds.isNotEmpty || fatorRiscoIds.isNotEmpty) {
+      return _StatusSecao.emAndamento;
+    }
+
+    return _StatusSecao.naoIniciada;
+  }
+
+  _StatusSecao _statusAvaliacaoComportamental() {
+    if (_avaliacaoComportamentalCompleta) {
+      return _StatusSecao.completa;
+    }
+
+    return _StatusSecao.naoIniciada;
+  }
+
+  ({Color fundo, Color borda, IconData icone, String texto})
+      _aparenciaStatus(_StatusSecao status) {
+    switch (status) {
+      case _StatusSecao.completa:
+        return (
+          fundo: const Color(0xFFE8F5E9),
+          borda: const Color(0xFF2E7D32),
+          icone: Icons.check_circle_outline,
+          texto: 'Completo',
+        );
+      case _StatusSecao.emAndamento:
+        return (
+          fundo: const Color(0xFFFFF8E1),
+          borda: const Color(0xFFF9A825),
+          icone: Icons.timelapse_outlined,
+          texto: 'Em andamento',
+        );
+      case _StatusSecao.naoIniciada:
+        return (
+          fundo: const Color(0xFFF5F5F5),
+          borda: const Color(0xFF757575),
+          icone: Icons.radio_button_unchecked,
+          texto: 'Não iniciado',
+        );
+    }
+  }
+
+  Widget _indicadorStatus(_StatusSecao status) {
+    final aparencia = _aparenciaStatus(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: aparencia.fundo,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: aparencia.borda),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            aparencia.icone,
+            size: 16,
+            color: aparencia.borda,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            aparencia.texto,
+            style: TextStyle(
+              color: aparencia.borda,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _faxitaCard() {
     final concluido = _camposObrigatoriosPreenchidos;
     final corFundo = concluido
@@ -236,9 +433,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     final corBorda = concluido
         ? const Color(0xFF2E7D32)
         : const Color(0xFFF9A825);
-    final icone = concluido
-        ? Icons.check_circle_outline
-        : Icons.info_outline;
+    final icone =
+        concluido ? Icons.check_circle_outline : Icons.auto_awesome_outlined;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -270,10 +466,25 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
+                Text(_mensagemFaxita),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: _progressoCaracterizacao,
+                    minHeight: 7,
+                    backgroundColor: Colors.white.withValues(alpha: 0.65),
+                    color: corBorda,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Text(
-                  concluido
-                      ? 'Caracterização preenchida. Os dados obrigatórios estão completos e você já pode avançar.'
-                      : 'Vamos caracterizar a ação educativa. Os campos identificados com * são obrigatórios. Preencha a formação, o público, os temas, os riscos e a avaliação comportamental.',
+                  '$_secoesCompletas de 4 seções concluídas',
+                  style: TextStyle(
+                    color: corBorda,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -287,6 +498,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     required String titulo,
     required String descricao,
     required IconData icone,
+    required _StatusSecao status,
     required List<Widget> filhos,
   }) {
     return Card(
@@ -323,6 +535,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 10),
+                _indicadorStatus(status),
               ],
             ),
             const SizedBox(height: 18),
@@ -465,6 +679,135 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     );
   }
 
+  Widget _linhaResumo({
+    required String titulo,
+    required String valor,
+    IconData icone = Icons.check_circle_outline,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icone,
+            size: 19,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                text: '$titulo: ',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+                children: [
+                  TextSpan(
+                    text: valor,
+                    style: const TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resumoExecutivo() {
+    final formacao = formacoes[formacaoId] ?? 'Não informado';
+    final publico = publicos[publicoId] ?? 'Não informado';
+    final sexo = sexos[sexoPredominanteId] ?? 'Não informado';
+    final mudanca = mudancas[mudancaComportamentoId] ?? 'Não informado';
+    final instituicao = instituicaoParceiraController.text.trim();
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.summarize_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Resumo executivo da caracterização',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Síntese dinâmica para conferência antes de avançar.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const Divider(height: 28),
+            _linhaResumo(
+              titulo: 'Formação',
+              valor: formacao,
+            ),
+            _linhaResumo(
+              titulo: 'Participação',
+              valor: _descricaoSelecionados(
+                tipoParticipacaoIds,
+                tiposParticipacao,
+              ),
+            ),
+            if (instituicao.isNotEmpty)
+              _linhaResumo(
+                titulo: 'Instituição parceira',
+                valor: instituicao,
+                icone: Icons.handshake_outlined,
+              ),
+            _linhaResumo(
+              titulo: 'Público',
+              valor: publico,
+            ),
+            _linhaResumo(
+              titulo: 'Perfis atendidos',
+              valor: _descricaoSelecionados(
+                perfilUsuarioIds,
+                perfisUsuario,
+              ),
+            ),
+            _linhaResumo(
+              titulo: 'Sexo predominante',
+              valor: sexo,
+            ),
+            _linhaResumo(
+              titulo: 'Temas',
+              valor: _descricaoSelecionados(
+                focoTematicoIds,
+                focosTematicos,
+              ),
+            ),
+            _linhaResumo(
+              titulo: 'Fatores de risco',
+              valor: _descricaoSelecionados(
+                fatorRiscoIds,
+                fatoresRisco,
+              ),
+            ),
+            _linhaResumo(
+              titulo: 'Mudança de comportamento',
+              valor: mudanca,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _barraInferior() {
     return SafeArea(
       top: false,
@@ -527,6 +870,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 descricao:
                     'Defina o formato da atividade e a forma de participação.',
                 icone: Icons.account_balance_outlined,
+                status: _statusDadosInstitucionais(),
                 filhos: [
                   _dropdown(
                     label: 'Formação',
@@ -550,6 +894,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 descricao:
                     'Identifique a origem institucional e os perfis atendidos.',
                 icone: Icons.groups_outlined,
+                status: _statusPublicoAlvo(),
                 filhos: [
                   _dropdown(
                     label: 'Público',
@@ -608,6 +953,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 descricao:
                     'Identifique os conteúdos trabalhados e os riscos observados.',
                 icone: Icons.health_and_safety_outlined,
+                status: _statusTemasERiscos(),
                 filhos: [
                   _rotuloObrigatorio('Foco temático'),
                   _checkboxGroup(
@@ -627,6 +973,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 descricao:
                     'Registre se houve mudança de comportamento observável.',
                 icone: Icons.psychology_alt_outlined,
+                status: _statusAvaliacaoComportamental(),
                 filhos: [
                   _dropdown(
                     label: 'Houve mudança de comportamento observável?',
@@ -637,6 +984,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                   ),
                 ],
               ),
+              _resumoExecutivo(),
               const SizedBox(height: 16),
             ],
           ),

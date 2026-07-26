@@ -20,7 +20,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
   final dificuldadesController = TextEditingController();
   final recomendacoesController = TextEditingController();
 
-  final orgaos = const {
+  final Map<String, String> orgaos = const {
     'orgao_amc': 'AMC',
     'orgao_detran': 'DETRAN',
     'orgao_sefin': 'SEFIN',
@@ -36,34 +36,109 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
 
     final acao = context.read<AcaoController>().acaoAtual;
 
-    if (acao == null) return;
+    if (acao != null) {
+      houveParticipacaoOutroOrgao = acao.houveParticipacaoOutroOrgao;
+      orgaoParticipanteId =
+          acao.orgaoParticipanteId.isEmpty ? null : acao.orgaoParticipanteId;
+      pontosPositivosController.text = acao.pontosPositivos;
+      dificuldadesController.text = acao.dificuldadesEncontradas;
+      recomendacoesController.text = acao.recomendacoes;
+    }
 
-    houveParticipacaoOutroOrgao = acao.houveParticipacaoOutroOrgao;
-    orgaoParticipanteId =
-        acao.orgaoParticipanteId.isEmpty ? null : acao.orgaoParticipanteId;
-    pontosPositivosController.text = acao.pontosPositivos;
-    dificuldadesController.text = acao.dificuldadesEncontradas;
-    recomendacoesController.text = acao.recomendacoes;
+    pontosPositivosController.addListener(_atualizarInterface);
+    dificuldadesController.addListener(_atualizarInterface);
+    recomendacoesController.addListener(_atualizarInterface);
   }
 
   @override
   void dispose() {
-    pontosPositivosController.dispose();
-    dificuldadesController.dispose();
-    recomendacoesController.dispose();
+    pontosPositivosController
+      ..removeListener(_atualizarInterface)
+      ..dispose();
+
+    dificuldadesController
+      ..removeListener(_atualizarInterface)
+      ..dispose();
+
+    recomendacoesController
+      ..removeListener(_atualizarInterface)
+      ..dispose();
+
     super.dispose();
   }
 
-  void salvar() {
-    if (houveParticipacaoOutroOrgao && orgaoParticipanteId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Informe qual órgão participou da ação.'),
-        ),
-      );
-      return;
+  void _atualizarInterface() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  bool get _temPontosPositivos =>
+      pontosPositivosController.text.trim().isNotEmpty;
+
+  bool get _temDificuldades =>
+      dificuldadesController.text.trim().isNotEmpty;
+
+  bool get _temRecomendacoes =>
+      recomendacoesController.text.trim().isNotEmpty;
+
+  bool get _integracaoValida =>
+      !houveParticipacaoOutroOrgao || orgaoParticipanteId != null;
+
+  _StatusPreenchimento get _statusPreenchimento {
+    final semIntegracao = !houveParticipacaoOutroOrgao;
+    final semObservacoes =
+        !_temPontosPositivos && !_temDificuldades && !_temRecomendacoes;
+
+    if (semIntegracao && semObservacoes) {
+      return _StatusPreenchimento.naoIniciado;
     }
 
+    if (!_integracaoValida) {
+      return _StatusPreenchimento.emAndamento;
+    }
+
+    return _StatusPreenchimento.completo;
+  }
+
+  String get _mensagemFaxita {
+    if (houveParticipacaoOutroOrgao && orgaoParticipanteId == null) {
+      return 'Informe qual órgão participou da ação para concluir esta etapa.';
+    }
+
+    if (!houveParticipacaoOutroOrgao &&
+        !_temPontosPositivos &&
+        !_temDificuldades &&
+        !_temRecomendacoes) {
+      return 'Registre as informações de integração institucional e as observações operacionais da ação.';
+    }
+
+    if (houveParticipacaoOutroOrgao &&
+        !_temPontosPositivos &&
+        !_temDificuldades &&
+        !_temRecomendacoes) {
+      return 'A integração institucional foi registrada. Acrescente observações que possam apoiar ações futuras.';
+    }
+
+    if (_temRecomendacoes) {
+      return 'Há recomendações registradas que poderão subsidiar o planejamento de próximas ações.';
+    }
+
+    if (!houveParticipacaoOutroOrgao) {
+      return 'A ação foi registrada sem participação de outro órgão. Revise as observações antes de avançar.';
+    }
+
+    return 'As informações de integração e observações foram preenchidas. Revise o resumo antes de avançar.';
+  }
+
+  String get _nomeOrgaoSelecionado {
+    if (!houveParticipacaoOutroOrgao) {
+      return 'Não se aplica';
+    }
+
+    return orgaos[orgaoParticipanteId] ?? 'Não informado';
+  }
+
+  void _persistirRascunho() {
     context.read<AcaoController>().preencherIntegracaoObservacoes(
           houveParticipacaoOutroOrgao: houveParticipacaoOutroOrgao,
           orgaoParticipanteId:
@@ -72,27 +147,154 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
           dificuldadesEncontradas: dificuldadesController.text.trim(),
           recomendacoes: recomendacoesController.text.trim(),
         );
+  }
 
+  void _voltar() {
+    FocusScope.of(context).unfocus();
+    _persistirRascunho();
+    context.go('/recursos-operacionais');
+  }
+
+  void _salvarEAvancar() {
+    FocusScope.of(context).unfocus();
+
+    if (!_integracaoValida) {
+      _mostrarErro('Informe qual órgão participou da ação.');
+      return;
+    }
+
+    _persistirRascunho();
     context.go('/resultados');
   }
 
-  Widget _secao(String titulo, List<Widget> filhos) {
+  void _mostrarErro(String mensagem) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(mensagem)),
+      );
+  }
+
+  Widget _cardSecao({
+    required String titulo,
+    required IconData icone,
+    required List<Widget> children,
+    String? subtitulo,
+  }) {
+    final theme = Theme.of(context);
+
     return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              titulo,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  icone,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (subtitulo != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitulo,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            ...filhos,
+            const SizedBox(height: 16),
+            ...children,
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _painelFaxita() {
+    final theme = Theme.of(context);
+    final status = _statusPreenchimento;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary,
+            child: const Icon(Icons.auto_awesome),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Faxita',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _chipStatus(status),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(_mensagemFaxita),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chipStatus(_StatusPreenchimento status) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Text(
+        status.rotulo,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -102,100 +304,261 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
     required String label,
     required TextEditingController controller,
     required String hint,
+    required IconData icone,
   }) {
     return TextField(
       controller: controller,
       minLines: 3,
       maxLines: 6,
+      textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        alignLabelWithHint: true,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(bottom: 72),
+          child: Icon(icone),
+        ),
         border: const OutlineInputBorder(),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Integração e Observações'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _secao(
-            'Integração institucional',
-            [
-              SwitchListTile(
-                value: houveParticipacaoOutroOrgao,
-                title: const Text('Houve participação de outro órgão?'),
-                onChanged: (value) {
-                  setState(() {
-                    houveParticipacaoOutroOrgao = value;
+  Widget _linhaResumo({
+    required String titulo,
+    required String valor,
+    IconData? icone,
+  }) {
+    final theme = Theme.of(context);
 
-                    if (!value) {
-                      orgaoParticipanteId = null;
-                    }
-                  });
-                },
-              ),
-              if (houveParticipacaoOutroOrgao) ...[
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: orgaoParticipanteId,
-                  decoration: const InputDecoration(
-                    labelText: 'Qual órgão participou?',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: orgaos.entries.map((entry) {
-                    return DropdownMenuItem<String>(
-                      value: entry.key,
-                      child: Text(entry.value),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      orgaoParticipanteId = value;
-                    });
-                  },
-                ),
-              ],
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icone != null) ...[
+            Icon(
+              icone,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Text(titulo),
           ),
-          _secao(
-            'Observações operacionais',
-            [
-              _campoTextoLongo(
-                label: 'Observações positivas',
-                controller: pontosPositivosController,
-                hint: 'Registre aspectos positivos observados na ação.',
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              valor,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 16),
-              _campoTextoLongo(
-                label: 'Dificuldades encontradas',
-                controller: dificuldadesController,
-                hint: 'Registre dificuldades, limitações ou problemas.',
-              ),
-              const SizedBox(height: 16),
-              _campoTextoLongo(
-                label: 'Recomendações para próximas ações',
-                controller: recomendacoesController,
-                hint: 'Sugira melhorias para futuras ações.',
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('SALVAR E AVANÇAR'),
-              onPressed: salvar,
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _resumoExecutivo() {
+    return _cardSecao(
+      titulo: 'Resumo da Integração e Observações',
+      icone: Icons.summarize_outlined,
+      children: [
+        _linhaResumo(
+          titulo: 'Participação de outro órgão',
+          valor: houveParticipacaoOutroOrgao ? 'Sim' : 'Não',
+          icone: Icons.account_balance_outlined,
+        ),
+        _linhaResumo(
+          titulo: 'Órgão participante',
+          valor: _nomeOrgaoSelecionado,
+          icone: Icons.apartment_outlined,
+        ),
+        _linhaResumo(
+          titulo: 'Observações positivas',
+          valor: _temPontosPositivos ? 'Registradas' : 'Não registradas',
+          icone: Icons.thumb_up_alt_outlined,
+        ),
+        _linhaResumo(
+          titulo: 'Dificuldades',
+          valor: _temDificuldades ? 'Registradas' : 'Não registradas',
+          icone: Icons.warning_amber_outlined,
+        ),
+        _linhaResumo(
+          titulo: 'Recomendações',
+          valor: _temRecomendacoes ? 'Registradas' : 'Não registradas',
+          icone: Icons.lightbulb_outline,
+        ),
+      ],
+    );
+  }
+
+  Widget _barraInferior() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _voltar,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Voltar'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: FilledButton.icon(
+                onPressed: _salvarEAvancar,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Confirmar e avançar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _voltar();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Integração e Observações'),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+          children: [
+            Text(
+              'Etapa 5 do preenchimento da ação',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const LinearProgressIndicator(value: 5 / 9),
+            const SizedBox(height: 20),
+            _painelFaxita(),
+            const SizedBox(height: 16),
+            _cardSecao(
+              titulo: 'Integração institucional',
+              icone: Icons.account_balance_outlined,
+              subtitulo:
+                  'Registre a participação de outros órgãos na realização da ação.',
+              children: [
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: houveParticipacaoOutroOrgao,
+                  title: const Text(
+                    'Houve participação de outro órgão?',
+                  ),
+                  subtitle: Text(
+                    houveParticipacaoOutroOrgao
+                        ? 'Participação institucional registrada.'
+                        : 'Nenhuma participação institucional registrada.',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      houveParticipacaoOutroOrgao = value;
+
+                      if (!value) {
+                        orgaoParticipanteId = null;
+                      }
+                    });
+                  },
+                ),
+                if (houveParticipacaoOutroOrgao) ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: orgaoParticipanteId,
+                    decoration: const InputDecoration(
+                      labelText: 'Qual órgão participou?',
+                      prefixIcon: Icon(Icons.apartment_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: orgaos.entries.map((entry) {
+                      return DropdownMenuItem<String>(
+                        value: entry.key,
+                        child: Text(entry.value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        orgaoParticipanteId = value;
+                      });
+                    },
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            _cardSecao(
+              titulo: 'Observações operacionais',
+              icone: Icons.fact_check_outlined,
+              subtitulo:
+                  'Registre aprendizados, dificuldades e recomendações decorrentes da ação.',
+              children: [
+                _campoTextoLongo(
+                  label: 'Observações positivas',
+                  controller: pontosPositivosController,
+                  hint: 'Registre aspectos positivos observados na ação.',
+                  icone: Icons.thumb_up_alt_outlined,
+                ),
+                const SizedBox(height: 16),
+                _campoTextoLongo(
+                  label: 'Dificuldades encontradas',
+                  controller: dificuldadesController,
+                  hint: 'Registre dificuldades, limitações ou problemas.',
+                  icone: Icons.warning_amber_outlined,
+                ),
+                const SizedBox(height: 16),
+                _campoTextoLongo(
+                  label: 'Recomendações para próximas ações',
+                  controller: recomendacoesController,
+                  hint: 'Sugira melhorias para futuras ações.',
+                  icone: Icons.lightbulb_outline,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _resumoExecutivo(),
+          ],
+        ),
+        bottomNavigationBar: _barraInferior(),
+      ),
+    );
+  }
+}
+
+enum _StatusPreenchimento {
+  naoIniciado('Não iniciado'),
+  emAndamento('Em andamento'),
+  completo('Completo');
+
+  const _StatusPreenchimento(this.rotulo);
+
+  final String rotulo;
 }

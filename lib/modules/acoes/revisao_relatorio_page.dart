@@ -12,6 +12,7 @@ import 'widgets/revisao/review_actions.dart';
 import 'widgets/revisao/review_alerts_card.dart';
 import 'widgets/revisao/review_dashboard.dart';
 import 'widgets/revisao/review_header.dart';
+import 'widgets/revisao/review_historical_comparison_card.dart';
 import 'widgets/revisao/review_points_card.dart';
 import 'widgets/revisao/review_quality_card.dart';
 import 'widgets/revisao/review_section_card.dart';
@@ -39,7 +40,9 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
         return;
       }
 
-      context.read<AcaoController>().garantirNumeroRae();
+      final controller = context.read<AcaoController>();
+      controller.garantirNumeroRae();
+      controller.carregarHistoricoComparacao();
     });
   }
 
@@ -180,6 +183,15 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
             ReviewHeader(acao: acao),
             const SizedBox(height: 16),
             ReviewDashboard(acao: acao),
+            const SizedBox(height: 16),
+            ReviewHistoricalComparisonCard(
+              acaoAtual: acao,
+              historico: controller.historicoComparacao,
+              carregando: controller.carregandoHistoricoComparacao,
+              erro: controller.erroHistoricoComparacao,
+              onTentarNovamente:
+                  controller.carregarHistoricoComparacao,
+            ),
             const SizedBox(height: 16),
             ReviewQualityCard(
               review: review,

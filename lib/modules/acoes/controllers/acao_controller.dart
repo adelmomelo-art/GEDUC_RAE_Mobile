@@ -24,6 +24,10 @@ class AcaoController extends ChangeNotifier {
   bool sincronizandoPendentes = false;
   String? erroSincronizacao;
 
+  List<AcaoModel> historicoComparacao = [];
+  bool carregandoHistoricoComparacao = false;
+  String? erroHistoricoComparacao;
+
   bool get possuiRascunhoEmAndamento {
     final acao = acaoAtual;
 
@@ -492,6 +496,28 @@ class AcaoController extends ChangeNotifier {
 
     sincronizandoPendentes = false;
     notifyListeners();
+  }
+
+  Future<void> carregarHistoricoComparacao() async {
+    if (carregandoHistoricoComparacao) {
+      return;
+    }
+
+    carregandoHistoricoComparacao = true;
+    erroHistoricoComparacao = null;
+    notifyListeners();
+
+    try {
+      historicoComparacao =
+          await acaoRepository.listarAcoesOnlineFuture();
+    } catch (e) {
+      historicoComparacao = [];
+      erroHistoricoComparacao =
+          'Não foi possível carregar o histórico operacional: $e';
+    } finally {
+      carregandoHistoricoComparacao = false;
+      notifyListeners();
+    }
   }
 
   bool validarAntesDoEnvio() {

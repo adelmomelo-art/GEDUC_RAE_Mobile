@@ -1,0 +1,22 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   docs/00_ENGINEERING_CHARTER.md
+	deleted:    docs/00_MAPA_OFICIAL_DO_PROJETO(1).md
+	modified:   docs/00_MAPA_OFICIAL_DO_PROJETO.md
+	modified:   docs/01_PLATFORM_ARCHITECTURE.md
+	modified:   docs/06_ENGINEERING_LOG.md
+	modified:   docs/08_GUIA_DE_DESENVOLVIMENTO.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	auditoria_issue_001/
+	estrutura_docs.txt
+	estrutura_lib.txt
+	inventario_dart_atual.txt
+	inventario_pastas_atual.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

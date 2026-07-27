@@ -1,0 +1,1 @@
+﻿* main 33ec560 [origin/main] docs(SKPF): consolida a base documental da Sprint Arquitetural 1.0

@@ -1,277 +1,168 @@
-# MAPA OFICIAL DO PROJETO — PLATAFORMA FÊNIX
+# PLATAFORMA FÊNIX
 
-**Projeto:** GEDUC_RAE_Mobile  
-**Produto:** Plataforma Fênix  
-**Documento:** Referência oficial de estrutura e localização de arquivos  
-**Versão inicial:** 2026-07-24
+> **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
 
-> **Mensagem-guia:** “Como a digitalização das ações educativas permitiu transformar dados operacionais em inteligência para tomada de decisão.”
+------------------------------------------------------------------------
 
-## 1. Finalidade
+## Status do Documento
 
-Este documento estabelece a referência oficial para localização, criação, substituição e organização dos arquivos do projeto GEDUC_RAE_Mobile.
+  Item             Informação
+  ---------------- -------------------------------------------
+  Documento        00_MAPA_OFICIAL_DO_PROJETO.md
+  Categoria        Portal Oficial do Sistema de Conhecimento
+  Versão           2.0
+  Status           Oficial
+  Última Revisão   27/07/2026
+  Responsável      Arquitetura da Plataforma Fênix
 
-Antes de qualquer alteração estrutural, criação de arquivo ou substituição de código, os caminhos descritos neste documento e na árvore oficial `arvore_projeto.txt` devem ser consultados.
+------------------------------------------------------------------------
 
-## 2. Fluxo oficial de trabalho
+# Apresentação
 
-1. Analisar a arquitetura e o arquivo atual.
-2. Confirmar o caminho real na árvore do projeto.
-3. Gerar o arquivo completo.
-4. Substituir o arquivo no VS Code.
-5. Executar `flutter analyze`.
-6. Corrigir eventuais problemas.
-7. Homologar a etapa.
-8. Registrar no Git.
-9. Atualizar a documentação técnica.
+Bem-vindo à **Plataforma Fênix**.
 
-## 3. Estrutura principal
+Este documento constitui a porta de entrada oficial do **Sistema de
+Conhecimento da Plataforma Fênix (SKPF)**.
 
-```text
-GEDUC_RAE_Mobile/
-├── android/
-├── assets/
-│   └── images/
-├── docs/
-├── lib/
-│   ├── core/
-│   ├── data/
-│   ├── modules/
-│   └── repositories/
-├── test/
-├── web/
-├── windows/
-├── pubspec.yaml
-├── analysis_options.yaml
-└── arvore_projeto.txt
+Seu objetivo é orientar arquitetos, desenvolvedores, gestores e
+colaboradores sobre onde localizar cada conhecimento produzido durante a
+evolução da Plataforma.
+
+O SKPF possui a mesma importância do código-fonte.
+
+Todo conhecimento estratégico da Plataforma deverá ser ser preservado
+neste conjunto documental.
+
+------------------------------------------------------------------------
+
+# Missão da Plataforma
+
+Transformar dados operacionais em inteligência para apoiar gestores na
+tomada de decisão, promovendo eficiência, transparência e evolução
+contínua dos processos educacionais.
+
+------------------------------------------------------------------------
+
+# Visão
+
+Consolidar a Plataforma Fênix como referência em inteligência
+operacional aplicada à gestão pública, permitindo que decisões sejam
+orientadas por dados confiáveis, indicadores e conhecimento
+institucional.
+
+------------------------------------------------------------------------
+
+# Estado Atual da Plataforma
+
+  Componente                Situação
+  ------------------------- -------------------------
+  Arquitetura               🟢 Em Consolidação
+  Sprint Atual              Sprint Arquitetural 1.0
+  Sistema de Conhecimento   Implantação
+  Fênix Analytics Engine    Auditoria Estrutural
+  Faxita                    Evolução Arquitetural
+  Dashboard Executivo       Consolidação
+  Flutter Analyze           Homologado
+
+------------------------------------------------------------------------
+
+# Estrutura Oficial do Sistema de Conhecimento
+
+## Constituição
+
+-   00_ENGINEERING_CHARTER.md
+
+## Arquitetura
+
+-   01_PLATFORM_ARCHITECTURE.md
+-   ARCHITECTURE/
+
+## Engenharia
+
+-   06_ENGINEERING_LOG.md
+-   08_GUIA_DE_DESENVOLVIMENTO.md
+
+## Inteligência
+
+-   Fênix Analytics Engine (FAE)
+-   Faxita
+-   Dashboard Executivo
+-   Centro de Inteligência Operacional (CIO)
+
+## Auditorias
+
+-   ARCHITECTURE/AUDITS/
+
+## ADR
+
+-   ARCHITECTURE/ADR/
+
+## Blueprints
+
+-   ARCHITECTURE/BLUEPRINTS/
+
+------------------------------------------------------------------------
+
+# Fluxo Oficial de Desenvolvimento
+
+``` text
+Arquitetura
+      ↓
+Implementação
+      ↓
+Flutter Analyze
+      ↓
+Homologação
+      ↓
+Atualização do SKPF
+      ↓
+Git Commit
 ```
 
-Diretórios gerados automaticamente, como `.dart_tool/`, `build/`, `.gradle/` e caches de plataforma, não devem ser usados como destino para arquivos de implementação.
+------------------------------------------------------------------------
 
-## 4. Arquivos centrais
+# Princípios do SKPF
 
-```text
-lib/main.dart
-lib/app.dart
-lib/firebase_options.dart
-lib/core/routes/app_routes.dart
-lib/core/service_locator.dart
-lib/core/theme/app_theme.dart
-lib/core/constants/app_colors.dart
-```
+1.  O conhecimento pertence à Plataforma.
+2.  Nenhuma decisão estratégica existirá apenas em conversas.
+3.  Todo componente estratégico deverá possuir documentação
+    correspondente.
+4.  A arquitetura governa a implementação.
+5.  Código e conhecimento evoluem juntos.
+6.  Toda alteração estrutural deverá atualizar o SKPF.
 
-## 5. Modelos de dados
+------------------------------------------------------------------------
 
-```text
-lib/data/models/acao_model.dart
-lib/data/models/coordenador_model.dart
-lib/data/models/domain_model.dart
-lib/data/models/dominio_model.dart
-lib/data/models/tipo_acao_model.dart
-lib/data/models/usuario_model.dart
-lib/core/models/evidencia_model.dart
-```
+# Ordem Recomendada de Leitura
 
-## 6. Controllers
+1.  00_MAPA_OFICIAL_DO_PROJETO.md
+2.  00_ENGINEERING_CHARTER.md
+3.  01_PLATFORM_ARCHITECTURE.md
+4.  08_GUIA_DE_DESENVOLVIMENTO.md
+5.  ADR
+6.  Auditorias
+7.  Blueprints
 
-```text
-lib/modules/acoes/controllers/acao_controller.dart
-lib/modules/admin/controllers/tipo_acao_controller.dart
-lib/modules/admin/controllers/usuario_controller.dart
-```
+------------------------------------------------------------------------
 
-## 7. Serviços compartilhados
+# Sprint Arquitetural Atual
 
-```text
-lib/core/services/acao_rules_service.dart
-lib/core/services/admin_cadastro_service.dart
-lib/core/services/domain_service.dart
-lib/core/services/dominio_service.dart
-lib/core/services/evidencia_storage_service.dart
-lib/core/services/faxita_insights_service.dart
-lib/core/services/faxita_review_service.dart
-lib/core/services/firebase_acao_service.dart
-lib/core/services/geolocalizacao_service.dart
-lib/core/services/imagem_service.dart
-lib/core/services/kpi_service.dart
-lib/core/services/offline_service.dart
-lib/core/services/pdf_relatorio_service.dart
-lib/core/services/qrcode_service.dart
-lib/core/services/sync_service.dart
-lib/core/services/thumbnail_service.dart
-lib/core/services/tipo_acao_service.dart
-lib/core/services/usuario_service.dart
-```
+**Sprint:** Sprint Arquitetural 1.0
 
-## 8. Repositórios
+**Fase:** AE-001 -- Auditoria Estrutural
 
-```text
-lib/repositories/acao_repository.dart
-lib/repositories/assinatura_repository.dart
-lib/repositories/domain_repository.dart
-lib/repositories/dominio_repository.dart
-lib/repositories/escola_repository.dart
-lib/repositories/evento_repository.dart
-lib/repositories/participante_repository.dart
-lib/repositories/repository.dart
-lib/repositories/tipo_acao_repository.dart
-lib/repositories/usuario_repository.dart
-```
+**Objetivo:** Consolidar a arquitetura, preservar o conhecimento
+institucional e estabelecer a governança técnica permanente da
+Plataforma Fênix.
 
-## 9. Módulo de ações
+------------------------------------------------------------------------
 
-```text
-lib/modules/acoes/consulta_rae_page.dart
-lib/modules/acoes/detalhe_acao_page.dart
-lib/modules/acoes/nova_acao_page.dart
-lib/modules/acoes/resultados_page.dart
-lib/modules/acoes/revisao_relatorio_page.dart
-lib/modules/acoes/controllers/acao_controller.dart
-lib/modules/acoes/widgets/qr_rae_card.dart
-```
+# Controle de Evolução
 
-## 10. Módulo de localização — referência oficial
+  ------------------------------------------------------------------------
+  Versão                 Data              Descrição
+  ---------------------- ----------------- -------------------------------
+  2.0                    27/07/2026        Reestruturação do documento
+                                           como Portal Oficial do SKPF.
 
-A localização inteligente não está dentro de `modules/acoes`. O caminho oficial é:
-
-```text
-lib/modules/localizacao/
-```
-
-Tela principal:
-
-```text
-lib/modules/localizacao/localizacao_page.dart
-```
-
-Widgets oficiais:
-
-```text
-lib/modules/localizacao/widgets/endereco_manual_card.dart
-lib/modules/localizacao/widgets/faxita_location_card.dart
-lib/modules/localizacao/widgets/gps_status_card.dart
-lib/modules/localizacao/widgets/localizacao_action_bar.dart
-lib/modules/localizacao/widgets/localizacao_form_card.dart
-lib/modules/localizacao/widgets/mapa_localizacao_widget.dart
-```
-
-Arquivos relacionados:
-
-```text
-lib/core/services/geolocalizacao_service.dart
-lib/modules/acoes/controllers/acao_controller.dart
-lib/data/models/acao_model.dart
-```
-
-Esta seção deve ser consultada obrigatoriamente antes de qualquer alteração do CE-030B.
-
-## 11. Outros módulos
-
-```text
-lib/modules/admin/
-lib/modules/auth/
-lib/modules/avaliacao/
-lib/modules/coordenadores/
-lib/modules/dashboard/
-lib/modules/educacao/
-lib/modules/evidencias/
-lib/modules/home/
-lib/modules/integracao/
-lib/modules/localizacao/
-lib/modules/materiais/
-lib/modules/recursos/
-lib/modules/regionais/
-lib/modules/revisao/
-lib/modules/sincronizacao/
-lib/modules/tipos_acoes/
-lib/modules/usuarios/
-```
-
-## 12. Assets oficiais
-
-```text
-assets/images/faixita_login.png
-assets/images/footer_timbrado.png
-assets/images/header_timbrado.png
-assets/images/login_beira_mar.webp
-```
-
-Todo novo asset deve ser declarado no `pubspec.yaml` e validado com `flutter pub get`.
-
-## 13. Android
-
-```text
-android/settings.gradle.kts
-android/build.gradle.kts
-android/gradle.properties
-android/secrets.properties
-android/secrets.properties.example
-android/app/build.gradle.kts
-android/app/google-services.json
-android/app/src/main/AndroidManifest.xml
-android/app/src/main/kotlin/com/example/geduc_rae_mobile/MainActivity.kt
-```
-
-A chave real de API não deve ser adicionada ao Git.
-
-## 14. Arquivos que não devem ser versionados
-
-```text
-.dart_tool/
-build/
-android/.gradle/
-android/.kotlin/
-android/local.properties
-android/secrets.properties
-*.log
-```
-
-## 15. Convenções
-
-Arquivos Dart usam `snake_case` e classes usam `PascalCase`.
-
-- Tela principal: pasta do módulo.
-- Widgets exclusivos: `widgets/`.
-- Controllers exclusivos: `controllers/`.
-- Serviços compartilhados: `lib/core/services/`.
-- Modelos de domínio: `lib/data/models/`.
-- Persistência: `lib/repositories/`.
-
-## 16. Validação antes do commit
-
-```powershell
-flutter analyze
-flutter test
-git status
-git diff
-```
-
-Nenhuma etapa deve ser homologada com erro no `flutter analyze`.
-
-## 17. Atualização da árvore oficial
-
-Na raiz do projeto:
-
-```powershell
-cmd /c tree /F > arvore_projeto.txt
-```
-
-Depois, atualizar este documento quando houver novos módulos, movimentação de arquivos ou reorganização estrutural.
-
-## 18. Registro de decisões
-
-| Data | Pacote | Decisão |
-|---|---|---|
-| 2026-07-24 | Estrutura oficial | Criado o mapa oficial com base em `arvore_projeto.txt`. |
-| 2026-07-24 | CE-030B | Confirmado que a localização fica em `lib/modules/localizacao/`. |
-
-## 19. Regra final
-
-Antes de indicar qualquer caminho de arquivo, consultar:
-
-```text
-docs/00_MAPA_OFICIAL_DO_PROJETO.md
-arvore_projeto.txt
-```
-
-Em caso de divergência, a estrutura física mais recente do projeto prevalece e este documento deve ser atualizado no mesmo commit.
+  ------------------------------------------------------------------------

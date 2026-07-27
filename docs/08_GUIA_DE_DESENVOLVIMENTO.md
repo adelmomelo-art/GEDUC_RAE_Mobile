@@ -1,413 +1,170 @@
-# PLATAFORMA FÊNIX
+# GUIA DE DESENVOLVIMENTO DA PLATAFORMA FÊNIX
 
-# GUIA DE DESENVOLVIMENTO
+> Manual Oficial do Desenvolvedor\
+> Sistema de Conhecimento da Plataforma Fênix (SKPF)
 
-Versão 1.0
+------------------------------------------------------------------------
 
-Documento Oficial de Engenharia
+## Controle do Documento
 
----
+  Item        Valor
+  ----------- -------------------------------
+  Documento   08_GUIA_DE_DESENVOLVIMENTO.md
+  Versão      2.0
+  Status      Oficial
+  Sprint      Arquitetural 1.0
 
-# "Planejar com profundidade. Executar com excelência. Evoluir continuamente."
+------------------------------------------------------------------------
 
----
+# 1. Objetivo
 
-# 1. OBJETIVO
+Este guia estabelece o padrão oficial para desenvolvimento da Plataforma
+Fênix.
 
-Este documento estabelece o padrão oficial de desenvolvimento da Plataforma Fênix.
+Todo colaborador deverá seguir este documento antes de implementar novas
+funcionalidades, corrigir defeitos ou propor alterações arquiteturais.
 
-Seu objetivo é garantir que toda evolução da plataforma mantenha qualidade, coerência arquitetural, facilidade de manutenção e alinhamento com os princípios definidos no Engineering Charter.
+------------------------------------------------------------------------
 
-Toda contribuição técnica deverá seguir este guia.
+# 2. Estrutura do Projeto
 
----
-
-# 2. FILOSOFIA DE DESENVOLVIMENTO
-
-O desenvolvimento da Plataforma Fênix será orientado por cinco princípios permanentes.
-
-## Pensar antes de implementar
-
-Nenhuma funcionalidade será iniciada sem análise prévia.
-
----
-
-## Arquitetura antes do código
-
-A implementação é consequência da arquitetura.
-
-Nunca o contrário.
-
----
-
-## Simplicidade
-
-A solução mais simples que resolva corretamente o problema deverá ser priorizada.
-
----
-
-## Evolução contínua
-
-O software nunca será considerado concluído.
-
-Toda Sprint deverá melhorar a plataforma.
-
----
-
-## Qualidade permanente
-
-A qualidade será responsabilidade de toda a equipe.
-
----
-
-# 3. CICLO OFICIAL DE DESENVOLVIMENTO
-
-Toda funcionalidade seguirá obrigatoriamente este fluxo.
-
-Identificação da necessidade
-
-↓
-
-Análise
-
-↓
-
-Arquitetura
-
-↓
-
-Projeto
-
-↓
-
-Implementação
-
-↓
-
-flutter analyze
-
-↓
-
-Testes
-
-↓
-
-Homologação
-
-↓
-
-Documentação
-
-↓
-
-Git Commit
-
-↓
-
-Engineering Log
-
----
-
-# 4. PADRÃO DAS SPRINTS
-
-Cada Sprint deverá possuir:
-
-Objetivo
-
-Escopo
-
-Critérios de sucesso
-
-Commits previstos
-
-Riscos
-
-Resultado
-
-Lições aprendidas
-
----
-
-# 5. PADRÃO DOS COMMITS
-
-Cada commit deverá representar uma unidade lógica de evolução.
-
-Um commit nunca deverá misturar funcionalidades sem relação entre si.
-
-Cada commit deverá possuir:
-
-Objetivo
-
-Arquivos alterados
-
-Justificativa
-
-Resultado esperado
-
-Resultado obtido
-
-Homologação
-
----
-
-# 6. PADRÃO DE HOMOLOGAÇÃO
-
-Nenhum commit será considerado concluído sem:
-
-- implementação finalizada;
-- flutter analyze sem novos erros;
-- validação funcional;
-- revisão arquitetural;
-- registro no Engineering Log.
-
----
-
-# 7. PADRÃO DE DOCUMENTAÇÃO
-
-Toda alteração deverá responder:
-
-Por que foi realizada?
-
-O que mudou?
-
-Qual impacto esperado?
-
-Há risco para outros módulos?
-
-Há necessidade de atualização documental?
-
----
-
-# 8. PADRÃO DE ORGANIZAÇÃO
-
-A arquitetura será orientada por domínio.
-
-Cada domínio deverá conter seus próprios componentes.
-
-Exemplo:
-
+``` text
 lib/
+ ├── core/
+ ├── modules/
+ ├── models/
+ ├── services/
+ ├── repositories/
+ ├── controllers/
+ ├── widgets/
+ └── routes/
 
-core/
+assets/
+DOCS/
+ARCHITECTURE/
+```
 
-education/
+Cada componente deve possuir responsabilidade única e organização
+consistente.
 
-users/
+------------------------------------------------------------------------
 
-reports/
+# 3. Fluxo Oficial de Desenvolvimento
 
-analytics/
+``` text
+Blueprint
+      ↓
+Planejamento
+      ↓
+Implementação
+      ↓
+flutter analyze
+      ↓
+Homologação
+      ↓
+Atualização do SKPF
+      ↓
+Git Commit
+```
 
-administration/
+Nenhuma etapa deve ser ignorada.
 
-shared/
+------------------------------------------------------------------------
 
----
+# 4. Padrões de Código
 
-# 9. NOMENCLATURA
+-   Arquivos completos nas entregas.
+-   Classes com responsabilidade única.
+-   Reutilização antes de duplicação.
+-   Serviços desacoplados.
+-   Comentários apenas quando agregarem contexto.
+-   Nomes claros e consistentes.
 
-Arquivos
+------------------------------------------------------------------------
 
-snake_case
+# 5. Organização dos Módulos
 
-Classes
+Cada módulo deverá conter, quando aplicável:
 
-PascalCase
+-   pages
+-   controllers
+-   services
+-   models
+-   widgets
 
-Métodos
+Evite dependências circulares entre módulos.
 
-camelCase
+------------------------------------------------------------------------
 
-Constantes
+# 6. Checklist antes do flutter analyze
 
-UPPER_CASE quando apropriado
+-   Compilação local.
+-   Imports organizados.
+-   Código não utilizado removido.
+-   Avisos analisados.
+-   Documentação atualizada quando necessário.
 
-Variáveis
+------------------------------------------------------------------------
 
-camelCase
+# 7. Checklist de Homologação
 
----
+Antes da aprovação:
 
-# 10. RESPONSABILIDADES
+-   funcionalidades testadas;
+-   navegação validada;
+-   persistência verificada;
+-   integração confirmada;
+-   flutter analyze sem erros críticos;
+-   aprovação do responsável pelo produto.
 
-Cada classe deverá possuir responsabilidade única.
+------------------------------------------------------------------------
 
-Controllers
+# 8. Padrão de Commits
 
-Controlam fluxo.
+Utilize mensagens objetivas e rastreáveis.
 
-Repositories
+Exemplos:
 
-Persistência.
+``` text
+feat(localizacao): adiciona seleção pelo mapa
 
-Services
+fix(sync): corrige sincronização offline
 
-Integrações.
+docs(SKPF): atualiza arquitetura
+```
 
-Models
+------------------------------------------------------------------------
 
-Representação de dados.
+# 9. Atualização do SKPF
 
-Widgets
+Alterações estruturais exigem atualização dos documentos
+correspondentes:
 
-Interface.
+-   Arquitetura
+-   Engineering Log
+-   Blueprint
+-   ADR (quando aplicável)
 
----
+------------------------------------------------------------------------
 
-# 11. REVISÃO DE CÓDIGO
+# 10. Filosofia da Plataforma
 
-Toda alteração deverá ser analisada sob cinco perspectivas.
+A Plataforma Fênix evolui de forma incremental.
 
-Correção
+Qualidade, rastreabilidade e documentação possuem a mesma importância
+que o código.
 
-Legibilidade
+Toda implementação deve contribuir para uma arquitetura sustentável e de
+longo prazo.
 
-Arquitetura
+------------------------------------------------------------------------
 
-Performance
+──────────────────────────────────────────────
 
-Segurança
+**Sistema de Conhecimento da Plataforma Fênix (SKPF)**
 
----
+Documento Oficial
 
-# 12. DÍVIDA TÉCNICA
+Guia de Desenvolvimento
 
-Toda dívida técnica deverá ser registrada.
-
-Nenhuma dívida poderá permanecer invisível.
-
----
-
-# 13. DOCUMENTAÇÃO VIVA
-
-A documentação faz parte do software.
-
-Sempre que o código evoluir, a documentação correspondente deverá ser revisada.
-
----
-
-# 14. ENGENHARIA LOG
-
-Cada Sprint atualizará o Engineering Log.
-
-Cada Commit será registrado.
-
-Cada decisão arquitetural possuirá referência.
-
----
-
-# 15. PADRÃO DE QUALIDADE
-
-Preferimos:
-
-clareza;
-
-simplicidade;
-
-baixo acoplamento;
-
-alta coesão;
-
-código reutilizável;
-
-boa documentação.
-
----
-
-# 16. SEGURANÇA
-
-Toda implementação deverá considerar:
-
-proteção dos dados;
-
-autenticação;
-
-autorização;
-
-rastreabilidade;
-
-LGPD;
-
-registro de auditoria.
-
----
-
-# 17. PERFORMANCE
-
-A plataforma deverá ser eficiente tanto online quanto offline.
-
-Toda otimização deverá preservar legibilidade e manutenção.
-
----
-
-# 18. PRINCÍPIOS DE EVOLUÇÃO
-
-A Plataforma Fênix deverá evoluir sem comprometer:
-
-arquitetura;
-
-qualidade;
-
-documentação;
-
-segurança;
-
-propósito.
-
----
-
-# 19. CONSELHO DE ARQUITETURA
-
-Antes de aprovar uma alteração relevante, responder:
-
-Esta mudança fortalece a arquitetura?
-
-Gera valor ao usuário?
-
-Respeita o Manifesto?
-
-Contribui para a missão?
-
-Se qualquer resposta for negativa, a alteração deverá ser reavaliada.
-
----
-
-# 20. CULTURA DE ENGENHARIA
-
-Construiremos uma cultura baseada em:
-
-aprendizado;
-
-compartilhamento;
-
-responsabilidade;
-
-qualidade;
-
-melhoria contínua.
-
----
-
-# 21. COMPROMISSO DA EQUIPE
-
-Todo integrante da Plataforma Fênix assume o compromisso de desenvolver tecnologia com excelência técnica, responsabilidade ética e foco permanente na geração de valor para a sociedade.
-
----
-
-# NOSSO LEMA
-
-Planejar com profundidade.
-
-Executar com excelência.
-
-Evoluir continuamente.
-
----
-
-## Aprovação
-
-Documento oficial da Engenharia da Plataforma Fênix.
-
-Versão 1.0
-
-Julho de 2026.
+Versão 2.0

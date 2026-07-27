@@ -1,0 +1,30 @@
+﻿
+FullName                                                                                                      Length LastWriteTime      
+--------                                                                                                      ------ -------------      
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\analytics_engine_filters_test.dart                            16450 22/07/2026 12:32:37
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\analytics_engine_limit_test.dart                              13568 22/07/2026 12:43:46
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\analytics_engine_process_test.dart                            12527 22/07/2026 12:32:38
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\analytics_engine_sort_test.dart                               19970 22/07/2026 12:43:46
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_definition_behavior_test.dart                       10893 22/07/2026 11:40:56
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_definition_constructor_test.dart                    10467 22/07/2026 11:08:54
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_definition_mutation_test.dart                       15649 22/07/2026 11:41:08
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_definition_test.dart                                20359 20/07/2026 20:52:25
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_definition_validation_test.dart                      9512 22/07/2026 11:09:03
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_factory_test.dart                                   18013 20/07/2026 22:50:06
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\dashboard_registry_test.dart                                  26780 22/07/2026 10:45:26
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\integration\analytics_engine_full_flow_test.dart              16124 22/07/2026 17:43:18
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\integration\analytics_engine_real_scenarios_test.dart         13335 22/07/2026 17:57:11
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\integration\analytics_integration_fixture_contract_test.dart  13068 22/07/2026 15:48:37
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_engine_snapshot_regression_test.dart      2859 22/07/2026 19:17:55
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_filter_snapshot_regression_test.dart      3358 22/07/2026 19:41:59
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_golden_dataset_regression_test.dart       7156 22/07/2026 18:18:13
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_null_safety_regression_test.dart          2492 22/07/2026 20:03:24
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_ordering_snapshot_regression_test.dart    4827 22/07/2026 19:30:04
+C:\Projetos\GEDUC_RAE_Mobile\test\core\analytics\regression\analytics_stress_regression_test.dart               2973 22/07/2026 19:47:05
+C:\Projetos\GEDUC_RAE_Mobile\test\fixtures\analytics_integration_fixture.dart                                  15810 22/07/2026 15:48:37
+C:\Projetos\GEDUC_RAE_Mobile\test\fixtures\analytics_result_fixture.dart                                        2793 20/07/2026 22:27:25
+C:\Projetos\GEDUC_RAE_Mobile\test\fixtures\dashboard_definition_fixture.dart                                    4480 20/07/2026 21:19:05
+C:\Projetos\GEDUC_RAE_Mobile\test\helpers\registry_test_helper.dart                                             2377 20/07/2026 21:20:29
+C:\Projetos\GEDUC_RAE_Mobile\test\widget_test.dart                                                               510 03/07/2026 08:58:09
+
+

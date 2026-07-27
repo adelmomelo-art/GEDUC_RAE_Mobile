@@ -1,0 +1,39 @@
+﻿[ÔêÜ] Flutter (Channel stable, 3.44.4, on Microsoft Windows [vers├åo 10.0.26300.8553], locale pt-BR) [1.555ms]
+    ÔÇó Flutter version 3.44.4 on channel stable at C:\Users\Rafael\flutter\flutter
+    ÔÇó Upstream repository https://github.com/flutter/flutter.git
+    ÔÇó Framework revision ad70ec4617 (5 weeks ago), 2026-06-24 11:07:06 -0700
+    ÔÇó Engine revision a10d8ac38d
+    ÔÇó Dart version 3.12.2
+    ÔÇó DevTools version 2.57.0
+    ÔÇó Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[ÔêÜ] Windows Version (Windows 11 or higher, 25H2, 2009) [4,6s]
+
+[ÔêÜ] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [10,8s]
+    ÔÇó Android SDK at C:\Users\Rafael\AppData\Local\Android\sdk
+    ÔÇó Emulator version 36.6.11.0 (build_id 15507667) (CL:N/A)
+    ÔÇó Platform android-36.1, build-tools 36.1.0
+    ÔÇó Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    ÔÇó Java version OpenJDK Runtime Environment (build 21.0.10+-14961533-b1163.108)
+    ÔÇó All Android licenses accepted.
+
+[ÔêÜ] Chrome - develop for the web [725ms]
+    ÔÇó Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[!] Visual Studio - develop Windows apps (Ferramentas de┬áBuild do Visual Studio 2026 18.7.2) [722ms]
+    ÔÇó Visual Studio at C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
+    ÔÇó Ferramentas de┬áBuild do Visual Studio 2026 version 18.7.11919.86
+    X The current Visual Studio installation is incomplete.
+      Please use Visual Studio Installer to complete the installation or reinstall Visual Studio.
+
+[ÔêÜ] Connected device (3 available) [1.095ms]
+    ÔÇó Windows (desktop) ÔÇó windows ÔÇó windows-x64    ÔÇó Microsoft Windows [vers├åo 10.0.26300.8553]
+    ÔÇó Chrome (web)      ÔÇó chrome  ÔÇó web-javascript ÔÇó Google Chrome 150.0.7871.182
+    ÔÇó Edge (web)        ÔÇó edge    ÔÇó web-javascript ÔÇó Microsoft Edge 150.0.4078.99
+
+[ÔêÜ] Network resources [1.096ms]
+    ÔÇó All expected network resources are available.
+
+! Doctor found issues in 1 category.

@@ -1,0 +1,2 @@
+﻿origin	https://github.com/adelmomelo-art/GEDUC_RAE_Mobile.git (fetch)
+origin	https://github.com/adelmomelo-art/GEDUC_RAE_Mobile.git (push)

@@ -1,0 +1,4 @@
+﻿Flutter 3.44.4 ÔÇó channel stable ÔÇó https://github.com/flutter/flutter.git
+Framework ÔÇó revision ad70ec4617 (5 weeks ago) ÔÇó 2026-06-24 11:07:06 -0700
+Engine ÔÇó hash 700aebeca4c0e610f109a3979ee3e71b69d666bc (revision a10d8ac38d) (1 months ago) ÔÇó 2026-06-23 23:09:55.000Z
+Tools ÔÇó Dart 3.12.2 ÔÇó DevTools 2.57.0

@@ -1,0 +1,30 @@
+﻿33ec560 (HEAD -> main, origin/main, origin/HEAD) docs(SKPF): consolida a base documental da Sprint Arquitetural 1.0
+1292266 CE-010C.1: implementa├º├úo do motor de intelig├¬ncia preditiva da Faxita
+71c323a CE-010B.2: integra├º├úo da intelig├¬ncia hist├│rica da Faxita
+708341d CE-010A: modulariza├º├úo da revis├úo inteligente
+0319591 CE-010A: cria├º├úo dos widgets da revis├úo inteligente
+e708d0b PV-009B: avalia├º├úo inteligente e aprendizagem operacional
+8f350d2 PV-008: Central de Evid├¬ncias Inteligentes
+85587ba PV-007: Dashboard de Resultados e Intelig├¬ncia Operacional
+957211a PV-005: Padroniza├º├úo da tela Integra├º├úo e Observa├º├Áes
+007592a PV-004: Padroniza├º├úo da tela Recursos Operacionais
+19434f3 PV-003D: Consolida├º├úo da Caracteriza├º├úo da A├º├úo
+9b335d7 PV-003C: Homologa refinamento do m├│dulo P├║blico-Alvo
+09dfbbb PV-003B.1: Homologa refinamento operacional da Caracteriza├º├úo da A├º├úo
+8671c51 chore: impede inclus├úo de apresenta├º├Áes pesadas
+e1c0312 chore: integra hist├│rico inicial do reposit├│rio remoto
+7e9e9b5 PV-002D.1: refinamento visual da tela de localiza├º├úo e homologa├º├úo do m├│dulo
+c60a627 PV-002C: implementa sele├º├úo direta da localiza├º├úo pelo mapa
+25ea7ac PV-002B: implementa pesquisa de endere├ºo e localiza├º├úo remota
+6ab2b5a PV-002A: estabiliza persist├¬ncia da localiza├º├úo ao navegar
+e41da64 fix: corrige persistencia do estado da operacao AF-BUG-005
+aeafc2d feat(localizacao): refatora arquitetura do mapa (CE-030B.2E.1)
+463ea4d CE-030B.2D: Refatora├º├úo arquitetural do m├│dulo de localiza├º├úo
+968fbfa CE-030B.2C - Implementa mapa interativo OpenStreetMap
+47664a0 CE-030B.2B - Implementa infraestrutura e integra├º├úo do GPS
+5932e4f Initial commit
+1ace7e6 CE-030B.2A - Migra infraestrutura de mapas para OpenStreetMap
+cebcf84 (tag: v0.3.0) docs(bp): adiciona BP-001 Blueprint do Centro de Intelig├¬ncia Operacional
+5159217 AOV-HF-004 - Finaliza refinamento premium da tela de login
+5505c72 CE-030B.2 - Implementa intelig├¬ncia visual no Centro de Intelig├¬ncia
+3e90a45 AOV-HF-002.1 - Implementa login com fundo oficial e Faixita

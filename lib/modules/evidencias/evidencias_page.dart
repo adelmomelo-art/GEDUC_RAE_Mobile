@@ -16,259 +16,582 @@ class EvidenciasPage extends StatefulWidget {
 }
 
 class _EvidenciasPageState extends State<EvidenciasPage> {
-  final ImagemService imagemService = ImagemService();
-  final EvidenciaStorageService evidenciaStorageService =
+  static const int _quantidadeRecomendada = 3;
+  static const int _tamanhoMinimoDescricao = 10;
+
+  final ImagemService _imagemService = ImagemService();
+  final EvidenciaStorageService _evidenciaStorageService =
       EvidenciaStorageService();
+  final TextEditingController _descricaoController = TextEditingController();
 
-  final List<File> fotos = [];
-  final descricaoController = TextEditingController();
+  final List<File> _fotos = [];
 
-  bool salvandoEvidencias = false;
+  bool _inicializado = false;
+  bool _processando = false;
 
-  int get totalFotos => fotos.length;
+  int get _totalFotos => _fotos.length;
 
-  bool get possuiFotoMinima => totalFotos >= 1;
+  bool get _possuiFotoMinima => _totalFotos >= 1;
 
-  bool get possuiConjuntoRecomendado => totalFotos >= 3;
+  bool get _possuiConjuntoRecomendado =>
+      _totalFotos >= _quantidadeRecomendada;
 
-  bool get possuiDescricao =>
-      descricaoController.text.trim().length >= 10;
+  bool get _possuiDescricao =>
+      _descricaoController.text.trim().length >= _tamanhoMinimoDescricao;
 
-  bool get podeAvancar => possuiFotoMinima && possuiDescricao;
+  bool get _podeAvancar => _possuiFotoMinima && _possuiDescricao;
 
-  String get analiseFaxita {
-    if (!possuiFotoMinima) {
-      return 'Faxita recomenda anexar pelo menos uma foto para comprovar a execução da ação.';
+  String get _statusDocumentacao {
+    if (_podeAvancar && _possuiConjuntoRecomendado) {
+      return 'Completa';
     }
 
-    if (!possuiConjuntoRecomendado && !possuiDescricao) {
-      return 'Faxita observou poucas fotos e ausência de descrição. Inclua mais evidências e descreva o contexto da ação.';
+    if (_podeAvancar) {
+      return 'Mínimo atendido';
     }
 
-    if (!possuiConjuntoRecomendado) {
-      return 'Faxita recomenda, quando possível, anexar pelo menos 3 fotos: equipe, público e contexto da ação.';
-    }
-
-    if (!possuiDescricao) {
-      return 'Faxita recomenda descrever as evidências para facilitar a revisão e futura análise da ação.';
-    }
-
-    return 'Faxita considera que o conjunto mínimo de evidências está adequado para prosseguir.';
+    return 'Pendente';
   }
 
-  Future<void> tirarFoto() async {
-    final foto = await imagemService.capturarCamera();
+  String get _mensagemFaxita {
+    if (!_possuiFotoMinima) {
+      return 'Adicione pelo menos uma fotografia para comprovar a execução '
+          'da ação educativa.';
+    }
 
-    if (foto == null) return;
+    if (!_possuiConjuntoRecomendado && !_possuiDescricao) {
+      return 'O registro possui poucas fotografias e ainda não contém uma '
+          'descrição contextual. Inclua mais evidências e descreva o cenário '
+          'da ação.';
+    }
 
-    setState(() {
-      fotos.add(foto);
-    });
+    if (!_possuiConjuntoRecomendado) {
+      return 'O requisito mínimo foi atendido. Quando possível, registre pelo '
+          'menos três imagens: equipe, público e contexto da atividade.';
+    }
 
-    if (!mounted) return;
+    if (!_possuiDescricao) {
+      return 'O conjunto fotográfico está adequado. Acrescente uma descrição '
+          'com o contexto da ação para concluir esta etapa.';
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Foto capturada com sucesso.')),
+    return 'As evidências estão organizadas e aptas para integrar o relatório '
+        'da ação educativa.';
+  }
+
+  Color get _corStatus {
+    if (_podeAvancar && _possuiConjuntoRecomendado) {
+      return Colors.green;
+    }
+
+    if (_podeAvancar || _possuiFotoMinima) {
+      return Colors.orange;
+    }
+
+    return Colors.red;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_inicializado) {
+      return;
+    }
+
+    _inicializado = true;
+
+    final controller = context.read<AcaoController>();
+    final acao = controller.acaoAtual;
+
+    if (acao == null) {
+      controller.criarRascunhoInicial();
+      return;
+    }
+
+    _descricaoController.text = acao.descricaoEvidencias;
+
+    _fotos
+      ..clear()
+      ..addAll(
+        acao.fotosUrls
+            .map(File.new)
+            .where((arquivo) => arquivo.existsSync()),
+      );
+  }
+
+  Future<String> _garantirAcaoId() async {
+    final controller = context.read<AcaoController>();
+
+    if (controller.acaoAtual == null) {
+      controller.criarRascunhoInicial();
+    }
+
+    return controller.acaoAtual!.id;
+  }
+
+  void _mostrarMensagem(String mensagem) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(mensagem)),
+      );
+  }
+
+  void _sincronizarController() {
+    final controller = context.read<AcaoController>();
+
+    controller.preencherEvidencias(
+      fotosUrls: _fotos.map((foto) => foto.path).toList(growable: false),
+      descricaoEvidencias: _descricaoController.text.trim(),
     );
   }
 
-  Future<void> escolherFotoGaleria() async {
-    final foto = await imagemService.selecionarGaleria();
-
-    if (foto == null) return;
-
-    setState(() {
-      fotos.add(foto);
-    });
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Foto adicionada com sucesso.')),
-    );
-  }
-
-  Future<void> escolherVariasFotosGaleria() async {
-    final imagens = await imagemService.selecionarMultiplasImagens();
-
-    if (imagens.isEmpty) return;
+  Future<void> _salvarNovasFotos(
+    List<File> arquivos, {
+    required String mensagemSucesso,
+  }) async {
+    if (arquivos.isEmpty || _processando) {
+      return;
+    }
 
     setState(() {
-      fotos.addAll(imagens);
+      _processando = true;
     });
 
-    if (!mounted) return;
+    try {
+      final acaoId = await _garantirAcaoId();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${imagens.length} foto(s) adicionada(s).')),
-    );
+      final evidencias = await _evidenciaStorageService.salvarEvidencias(
+        acaoId: acaoId,
+        arquivos: arquivos,
+      );
+
+      final novasFotos = evidencias
+          .map((evidencia) => File(evidencia.caminhoArquivo))
+          .toList(growable: false);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _fotos.addAll(novasFotos);
+      });
+
+      _sincronizarController();
+      _mostrarMensagem(mensagemSucesso);
+    } catch (erro) {
+      _mostrarMensagem('Não foi possível salvar a evidência: $erro');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processando = false;
+        });
+      }
+    }
   }
 
-  void abrirOpcoesFoto() {
-    showModalBottomSheet(
+  Future<void> _tirarFoto() async {
+    try {
+      final foto = await _imagemService.capturarCamera();
+
+      if (foto == null) {
+        return;
+      }
+
+      await _salvarNovasFotos(
+        [foto],
+        mensagemSucesso: 'Foto capturada e salva com sucesso.',
+      );
+    } catch (erro) {
+      _mostrarMensagem('Não foi possível acessar a câmera: $erro');
+    }
+  }
+
+  Future<void> _escolherFotoGaleria() async {
+    try {
+      final foto = await _imagemService.selecionarGaleria();
+
+      if (foto == null) {
+        return;
+      }
+
+      await _salvarNovasFotos(
+        [foto],
+        mensagemSucesso: 'Foto adicionada com sucesso.',
+      );
+    } catch (erro) {
+      _mostrarMensagem('Não foi possível acessar a galeria: $erro');
+    }
+  }
+
+  Future<void> _escolherVariasFotosGaleria() async {
+    try {
+      final imagens = await _imagemService.selecionarMultiplasImagens();
+
+      if (imagens.isEmpty) {
+        return;
+      }
+
+      await _salvarNovasFotos(
+        imagens,
+        mensagemSucesso: '${imagens.length} foto(s) adicionada(s).',
+      );
+    } catch (erro) {
+      _mostrarMensagem('Não foi possível acessar a galeria: $erro');
+    }
+  }
+
+  void _abrirOpcoesFoto() {
+    if (_processando) {
+      return;
+    }
+
+    showModalBottomSheet<void>(
       context: context,
-      builder: (context) {
+      showDragHandle: true,
+      builder: (modalContext) {
         return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Tirar foto'),
-                onTap: () {
-                  Navigator.pop(context);
-                  tirarFoto();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo),
-                title: const Text('Escolher uma foto'),
-                onTap: () {
-                  Navigator.pop(context);
-                  escolherFotoGaleria();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Selecionar várias fotos'),
-                onTap: () {
-                  Navigator.pop(context);
-                  escolherVariasFotosGaleria();
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Wrap(
+              children: [
+                const ListTile(
+                  title: Text(
+                    'Adicionar evidência',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'Escolha como deseja registrar as imagens da ação.',
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: const Text('Tirar foto'),
+                  subtitle: const Text('Usar a câmera do dispositivo'),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _tirarFoto();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_outlined),
+                  title: const Text('Escolher uma foto'),
+                  subtitle: const Text('Selecionar uma imagem da galeria'),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _escolherFotoGaleria();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text('Selecionar várias fotos'),
+                  subtitle: const Text('Adicionar várias imagens de uma vez'),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _escolherVariasFotosGaleria();
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  void removerFoto(int index) {
-    setState(() {
-      fotos.removeAt(index);
-    });
-  }
-
-  void abrirFoto(File foto) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VisualizacaoFotoPage(foto: foto),
-      ),
-    );
-  }
-
-  Future<void> avancar() async {
-    if (!possuiFotoMinima) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos uma foto da ação.')),
-      );
+  Future<void> _removerFoto(int index) async {
+    if (_processando || index < 0 || index >= _fotos.length) {
       return;
     }
 
-    if (!possuiDescricao) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Descreva as evidências com pelo menos 10 caracteres.',
-          ),
-        ),
-      );
+    final foto = _fotos[index];
+
+    final confirmou = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Remover evidência?'),
+              content: const Text(
+                'A fotografia será removida desta ação e do armazenamento '
+                'local do aplicativo.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('CANCELAR'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('REMOVER'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmou) {
       return;
     }
 
     setState(() {
-      salvandoEvidencias = true;
+      _processando = true;
     });
 
     try {
-      final controller = context.read<AcaoController>();
+      await _evidenciaStorageService.excluirArquivo(foto.path);
 
-      if (controller.acaoAtual == null) {
-        controller.criarRascunhoInicial();
+      if (!mounted) {
+        return;
       }
 
-      final acaoId = controller.acaoAtual!.id;
+      setState(() {
+        _fotos.removeAt(index);
+      });
 
-      final evidenciasSalvas =
-          await evidenciaStorageService.salvarEvidencias(
-        arquivos: fotos,
-        acaoId: acaoId,
-      );
-
-      final caminhosFotos =
-          evidenciasSalvas.map((foto) => foto.path).toList();
-
-      controller.preencherEvidencias(
-        fotosUrls: caminhosFotos,
-        descricaoEvidencias: descricaoController.text.trim(),
-      );
-
-      if (!mounted) return;
-
-      context.go('/avaliacao');
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar evidências: $e')),
-      );
+      _sincronizarController();
+      _mostrarMensagem('Evidência removida.');
+    } catch (erro) {
+      _mostrarMensagem('Não foi possível remover a evidência: $erro');
     } finally {
       if (mounted) {
         setState(() {
-          salvandoEvidencias = false;
+          _processando = false;
         });
       }
     }
   }
 
-  @override
-  void dispose() {
-    descricaoController.dispose();
-    super.dispose();
-  }
-
-  Widget _cardResumo() {
-    return Card(
-      color: Colors.blue.shade50,
-      child: ListTile(
-        leading: const Icon(Icons.verified),
-        title: const Text('Central de Evidências Inteligentes'),
-        subtitle: Text(
-          fotos.isEmpty
-              ? 'Adicione imagens da ação educativa.'
-              : '$totalFotos foto(s) adicionada(s).',
-        ),
+  void _abrirFoto(File foto) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => VisualizacaoFotoPage(foto: foto),
       ),
     );
   }
 
-  Widget _cardChecklist() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Checklist da Faxita',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+  void _voltar() {
+    if (_processando) {
+      return;
+    }
+
+    _sincronizarController();
+    context.go('/resultados');
+  }
+
+  void _avancar() {
+    if (_processando) {
+      return;
+    }
+
+    if (!_possuiFotoMinima) {
+      _mostrarMensagem('Adicione pelo menos uma foto da ação.');
+      return;
+    }
+
+    if (!_possuiDescricao) {
+      _mostrarMensagem(
+        'Descreva as evidências com pelo menos '
+        '$_tamanhoMinimoDescricao caracteres.',
+      );
+      return;
+    }
+
+    _sincronizarController();
+    context.go('/avaliacao');
+  }
+
+  Widget _cabecalho() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.photo_camera_back_outlined,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Evidências da ação',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
+                SizedBox(height: 4),
+                Text(
+                  'Registre imagens e descreva o contexto da atividade.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          const _IndicadorEtapa(
+            etapaAtual: 8,
+            totalEtapas: 9,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cardFaxita() {
+    final corFundo = Color.alphaBlend(
+      _corStatus.withValues(alpha: 0.10),
+      Theme.of(context).colorScheme.surface,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: corFundo,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _corStatus.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: _corStatus,
+            child: const Icon(
+              Icons.psychology_outlined,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Faxita',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _mensagemFaxita,
+                  style: const TextStyle(height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dashboard() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final larguraItem = constraints.maxWidth >= 760
+            ? (constraints.maxWidth - 36) / 4
+            : (constraints.maxWidth - 12) / 2;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: larguraItem,
+              child: _IndicadorCard(
+                titulo: 'Fotos',
+                valor: '$_totalFotos',
+                icone: Icons.photo_library_outlined,
+              ),
+            ),
+            SizedBox(
+              width: larguraItem,
+              child: const _IndicadorCard(
+                titulo: 'Obrigatórias',
+                valor: '1',
+                icone: Icons.task_alt_outlined,
+              ),
+            ),
+            SizedBox(
+              width: larguraItem,
+              child: const _IndicadorCard(
+                titulo: 'Recomendadas',
+                valor: '3',
+                icone: Icons.recommend_outlined,
+              ),
+            ),
+            SizedBox(
+              width: larguraItem,
+              child: _IndicadorCard(
+                titulo: 'Status',
+                valor: _statusDocumentacao,
+                icone: Icons.verified_outlined,
+                valorCompacto: true,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _checklist() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Checklist das evidências',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 12),
             _itemChecklist(
-              concluido: possuiFotoMinima,
-              texto: 'Pelo menos 1 foto obrigatória',
+              concluido: _possuiFotoMinima,
+              texto: 'Pelo menos uma fotografia obrigatória',
             ),
             _itemChecklist(
-              concluido: possuiConjuntoRecomendado,
-              texto: 'Recomendação: mínimo de 3 fotos',
+              concluido: _possuiConjuntoRecomendado,
+              texto: 'Conjunto recomendado de três fotografias',
+              recomendacao: true,
             ),
             _itemChecklist(
-              concluido: possuiDescricao,
-              texto: 'Descrição contextual preenchida',
+              concluido: _possuiDescricao,
+              texto: 'Descrição contextual com pelo menos 10 caracteres',
             ),
           ],
         ),
@@ -279,31 +602,89 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
   Widget _itemChecklist({
     required bool concluido,
     required String texto,
+    bool recomendacao = false,
   }) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        concluido ? Icons.check_circle : Icons.radio_button_unchecked,
-        color: concluido ? Colors.green : Colors.grey,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Icon(
+            concluido
+                ? Icons.check_circle
+                : recomendacao
+                    ? Icons.info_outline
+                    : Icons.radio_button_unchecked,
+            color: concluido
+                ? Colors.green
+                : recomendacao
+                    ? Colors.orange
+                    : Colors.grey,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(texto)),
+        ],
       ),
-      title: Text(texto),
     );
   }
 
-  Widget _cardFaxita() {
+  Widget _areaRegistro() {
     return Card(
-      color: Colors.purple.shade50,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.psychology),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                analiseFaxita,
-                style: const TextStyle(fontSize: 15),
+            const Text(
+              'Registro fotográfico',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Inclua imagens da equipe, do público e do ambiente da ação.',
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _processando ? null : _abrirOpcoesFoto,
+              icon: _processando
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_a_photo_outlined),
+              label: Text(
+                _processando
+                    ? 'PROCESSANDO EVIDÊNCIA...'
+                    : 'ADICIONAR FOTO',
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _descricaoController,
+              enabled: !_processando,
+              maxLines: 4,
+              maxLength: 500,
+              onChanged: (_) {
+                setState(() {});
+              },
+              onEditingComplete: _sincronizarController,
+              decoration: const InputDecoration(
+                labelText: 'Descrição das evidências',
+                hintText:
+                    'Ex.: equipe executora, público presente, atividade '
+                    'realizada e materiais utilizados.',
+                alignLabelWithHint: true,
+                border: OutlineInputBorder(),
               ),
             ),
           ],
@@ -312,89 +693,219 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
     );
   }
 
-  Widget _botaoAdicionarFoto() {
-    return ElevatedButton.icon(
-      onPressed: salvandoEvidencias ? null : abrirOpcoesFoto,
-      icon: const Icon(Icons.add_a_photo),
-      label: const Text('ADICIONAR FOTO'),
-    );
-  }
-
-  Widget _campoDescricao() {
-    return TextField(
-      controller: descricaoController,
-      maxLines: 3,
-      enabled: !salvandoEvidencias,
-      onChanged: (_) => setState(() {}),
-      decoration: const InputDecoration(
-        labelText: 'Descrição das evidências',
-        hintText:
-            'Ex: Fotos da abordagem educativa, público presente, equipe e materiais utilizados...',
-        border: OutlineInputBorder(),
-      ),
-    );
-  }
-
   Widget _galeriaOuVazio() {
-    if (fotos.isEmpty) {
-      return const Card(
-        child: ListTile(
-          leading: Icon(Icons.image_not_supported),
-          title: Text('Nenhuma foto adicionada'),
-          subtitle: Text('Inclua pelo menos uma imagem para continuar.'),
+    if (_fotos.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 30,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Theme.of(context).dividerColor,
+          ),
+        ),
+        child: const Column(
+          children: [
+            Icon(
+              Icons.photo_library_outlined,
+              size: 46,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Nenhuma fotografia adicionada',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Adicione pelo menos uma imagem para concluir esta etapa.',
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     }
 
     return _GaleriaEvidencias(
-      fotos: fotos,
-      onAbrir: abrirFoto,
-      onRemover: salvandoEvidencias ? null : removerFoto,
+      fotos: _fotos,
+      processando: _processando,
+      onAbrir: _abrirFoto,
+      onRemover: _removerFoto,
     );
   }
 
-  Widget _botaoAvancar() {
-    return SizedBox(
-      height: 50,
-      child: ElevatedButton.icon(
-        icon: salvandoEvidencias
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.arrow_forward),
-        label: Text(
-          salvandoEvidencias ? 'SALVANDO EVIDÊNCIAS...' : 'PRÓXIMO',
+  Widget _barraInferior() {
+    return SafeArea(
+      top: false,
+      child: Material(
+        elevation: 10,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: _processando ? null : _voltar,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('VOLTAR'),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: _processando ? null : _avancar,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('PRÓXIMO'),
+              ),
+            ],
+          ),
         ),
-        onPressed: salvandoEvidencias ? null : avancar,
       ),
     );
   }
 
   @override
+  void dispose() {
+    _descricaoController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Evidências'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _voltar();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Evidências'),
+          automaticallyImplyLeading: false,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _cabecalho(),
+            const SizedBox(height: 16),
+            _cardFaxita(),
+            const SizedBox(height: 16),
+            _dashboard(),
+            const SizedBox(height: 16),
+            _checklist(),
+            const SizedBox(height: 16),
+            _areaRegistro(),
+            const SizedBox(height: 16),
+            _galeriaOuVazio(),
+            const SizedBox(height: 24),
+          ],
+        ),
+        bottomNavigationBar: _barraInferior(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    );
+  }
+}
+
+class _IndicadorEtapa extends StatelessWidget {
+  const _IndicadorEtapa({
+    required this.etapaAtual,
+    required this.totalEtapas,
+  });
+
+  final int etapaAtual;
+  final int totalEtapas;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
         children: [
-          _cardResumo(),
-          const SizedBox(height: 12),
-          _cardChecklist(),
-          const SizedBox(height: 12),
-          _cardFaxita(),
-          const SizedBox(height: 16),
-          _botaoAdicionarFoto(),
-          const SizedBox(height: 16),
-          _campoDescricao(),
-          const SizedBox(height: 20),
-          _galeriaOuVazio(),
-          const SizedBox(height: 30),
-          _botaoAvancar(),
+          Text(
+            '$etapaAtual/$totalEtapas',
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+            ),
+          ),
+          const Text(
+            'ETAPA',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _IndicadorCard extends StatelessWidget {
+  const _IndicadorCard({
+    required this.titulo,
+    required this.valor,
+    required this.icone,
+    this.valorCompacto = false,
+  });
+
+  final String titulo;
+  final String valor;
+  final IconData icone;
+  final bool valorCompacto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(
+              icone,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    valor,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: valorCompacto ? 14 : 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -403,85 +914,124 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
 class _GaleriaEvidencias extends StatelessWidget {
   const _GaleriaEvidencias({
     required this.fotos,
+    required this.processando,
     required this.onAbrir,
     required this.onRemover,
   });
 
   final List<File> fotos;
+  final bool processando;
   final void Function(File foto) onAbrir;
-  final void Function(int index)? onRemover;
+  final Future<void> Function(int index) onRemover;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: fotos.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
       ),
-      itemBuilder: (context, index) {
-        final foto = fotos[index];
-
-        return Stack(
-          fit: StackFit.expand,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkWell(
-              onTap: () => onAbrir(foto),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  foto,
-                  fit: BoxFit.cover,
-                ),
+            Text(
+              'Galeria (${fotos.length})',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            if (onRemover != null)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: InkWell(
-                  onTap: () => onRemover!(index),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                ),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: fotos.length,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 220,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1,
               ),
-            Positioned(
-              left: 4,
-              bottom: 4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+              itemBuilder: (context, index) {
+                final foto = fotos[index];
+
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Material(
+                        color: Colors.grey.shade200,
+                        child: InkWell(
+                          onTap: processando ? null : () => onAbrir(foto),
+                          child: Image.file(
+                            foto,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  size: 38,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 6,
+                        bottom: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Foto ${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            tooltip: 'Remover foto',
+                            visualDensity: VisualDensity.compact,
+                            onPressed:
+                                processando ? null : () => onRemover(index),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -498,12 +1048,33 @@ class VisualizacaoFotoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Visualizar Foto'),
+        title: const Text('Visualizar foto'),
       ),
       backgroundColor: Colors.black,
       body: Center(
         child: InteractiveViewer(
-          child: Image.file(foto),
+          minScale: 0.8,
+          maxScale: 5,
+          child: Image.file(
+            foto,
+            errorBuilder: (_, __, ___) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white,
+                    size: 54,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Não foi possível carregar esta imagem.',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

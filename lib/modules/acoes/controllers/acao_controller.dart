@@ -89,6 +89,14 @@ class AcaoController extends ChangeNotifier {
       return '/evidencias';
     }
 
+    if (acao.notaAvaliacao < 1 ||
+        acao.mudancaComportamentoId.isEmpty ||
+        acao.pontosPositivos.trim().isEmpty ||
+        acao.dificuldadesEncontradas.trim().isEmpty ||
+        acao.recomendacoes.trim().isEmpty) {
+      return '/avaliacao';
+    }
+
     return '/revisao';
   }
 
@@ -177,6 +185,7 @@ class AcaoController extends ChangeNotifier {
       coberturaMidia: false,
       houveParticipacaoOutroOrgao: false,
       orgaoParticipanteId: '',
+      notaAvaliacao: 0,
       pontosPositivos: '',
       dificuldadesEncontradas: '',
       recomendacoes: '',
@@ -426,6 +435,34 @@ class AcaoController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void preencherAvaliacao({
+    required int notaAvaliacao,
+    required String mudancaComportamentoId,
+    required List<String> fatorRiscoIds,
+    required String pontosPositivos,
+    required String dificuldadesEncontradas,
+    required String recomendacoes,
+  }) {
+    if (acaoAtual == null) criarRascunhoInicial();
+
+    final notaNormalizada = notaAvaliacao.clamp(0, 5);
+
+    acaoAtual = acaoAtual!.copyWith(
+      notaAvaliacao: notaNormalizada,
+      mudancaComportamentoId: mudancaComportamentoId.trim(),
+      fatorRiscoIds: fatorRiscoIds
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
+      pontosPositivos: pontosPositivos.trim(),
+      dificuldadesEncontradas: dificuldadesEncontradas.trim(),
+      recomendacoes: recomendacoes.trim(),
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
   Future<void> carregarPendentesSincronizacao() async {
     carregandoPendentes = true;
     erroSincronizacao = null;
@@ -508,6 +545,36 @@ class AcaoController extends ChangeNotifier {
       motivo: acao.motivoMetaNaoAtingida,
     )) {
       erro = 'Informe o motivo da meta não atingida.';
+      return false;
+    }
+
+    if (acao.notaAvaliacao < 1 || acao.notaAvaliacao > 5) {
+      erro = 'Informe a avaliação geral da ação.';
+      return false;
+    }
+
+    if (acao.mudancaComportamentoId.isEmpty) {
+      erro = 'Informe a mudança de comportamento observada.';
+      return false;
+    }
+
+    if (acao.fatorRiscoIds.isEmpty) {
+      erro = 'Informe os fatores de risco observados.';
+      return false;
+    }
+
+    if (acao.pontosPositivos.trim().isEmpty) {
+      erro = 'Informe os pontos positivos da ação.';
+      return false;
+    }
+
+    if (acao.dificuldadesEncontradas.trim().isEmpty) {
+      erro = 'Informe as dificuldades encontradas.';
+      return false;
+    }
+
+    if (acao.recomendacoes.trim().isEmpty) {
+      erro = 'Informe as recomendações para ações futuras.';
       return false;
     }
 

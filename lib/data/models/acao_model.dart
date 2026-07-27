@@ -124,6 +124,12 @@ class AcaoModel {
   final String orgaoParticipanteId;
 
   // ============================================================
+  // AVALIAÇÃO DA AÇÃO
+  // ============================================================
+
+  final int notaAvaliacao;
+
+  // ============================================================
   // OBSERVAÇÕES OPERACIONAIS
   // ============================================================
 
@@ -193,6 +199,7 @@ class AcaoModel {
     this.coberturaMidia = false,
     this.houveParticipacaoOutroOrgao = false,
     this.orgaoParticipanteId = '',
+    this.notaAvaliacao = 0,
     this.pontosPositivos = '',
     this.dificuldadesEncontradas = '',
     this.recomendacoes = '',
@@ -250,6 +257,7 @@ class AcaoModel {
     bool? coberturaMidia,
     bool? houveParticipacaoOutroOrgao,
     String? orgaoParticipanteId,
+    int? notaAvaliacao,
     String? pontosPositivos,
     String? dificuldadesEncontradas,
     String? recomendacoes,
@@ -318,6 +326,7 @@ class AcaoModel {
           houveParticipacaoOutroOrgao ?? this.houveParticipacaoOutroOrgao,
       orgaoParticipanteId:
           orgaoParticipanteId ?? this.orgaoParticipanteId,
+      notaAvaliacao: notaAvaliacao ?? this.notaAvaliacao,
       pontosPositivos: pontosPositivos ?? this.pontosPositivos,
       dificuldadesEncontradas:
           dificuldadesEncontradas ?? this.dificuldadesEncontradas,
@@ -378,6 +387,7 @@ class AcaoModel {
         'coberturaMidia': coberturaMidia,
         'houveParticipacaoOutroOrgao': houveParticipacaoOutroOrgao,
         'orgaoParticipanteId': orgaoParticipanteId,
+        'notaAvaliacao': notaAvaliacao,
         'pontosPositivos': pontosPositivos,
         'dificuldadesEncontradas': dificuldadesEncontradas,
         'recomendacoes': recomendacoes,
@@ -446,6 +456,7 @@ class AcaoModel {
       houveParticipacaoOutroOrgao:
           _booleano(map['houveParticipacaoOutroOrgao']),
       orgaoParticipanteId: _texto(map['orgaoParticipanteId']),
+      notaAvaliacao: _inteiro(map['notaAvaliacao']),
       pontosPositivos: _texto(map['pontosPositivos']),
       dificuldadesEncontradas: _texto(map['dificuldadesEncontradas']),
       recomendacoes: _texto(map['recomendacoes']),

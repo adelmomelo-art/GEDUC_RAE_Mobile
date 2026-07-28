@@ -32,14 +32,28 @@ class AppRoutes {
   static const String loginPath = '/login';
   static const String homePath = '/home';
 
+  static const String novaAcaoPath = '/nova-acao';
+  static const String localizacaoPath = '/localizacao';
+  static const String caracterizacaoPath = '/caracterizacao';
+
+  /// Rota mantida temporariamente para compatibilidade com páginas que ainda
+  /// utilizam o endereço antigo.
+  static const String caracterizacaoLegadoPath = '/caracterizacao-acao';
+
+  static const String recursosOperacionaisPath = '/recursos-operacionais';
+  static const String integracaoObservacoesPath = '/integracao-observacoes';
+  static const String resultadosPath = '/resultados';
+  static const String evidenciasPath = '/evidencias';
+  static const String avaliacaoPath = '/avaliacao';
+  static const String revisaoPath = '/revisao';
+
   static final AuthRouterRefresh _authRouterRefresh = AuthRouterRefresh();
 
   static final router = GoRouter(
     initialLocation: loginPath,
     refreshListenable: _authRouterRefresh,
     redirect: (context, state) {
-      final usuarioAutenticado =
-          FirebaseAuth.instance.currentUser != null;
+      final usuarioAutenticado = FirebaseAuth.instance.currentUser != null;
       final estaNoLogin = state.uri.path == loginPath;
 
       if (!usuarioAutenticado && !estaNoLogin) {
@@ -62,39 +76,43 @@ class AppRoutes {
         builder: (context, state) => const HomePage(),
       ),
       GoRoute(
-        path: '/nova-acao',
+        path: novaAcaoPath,
         builder: (context, state) => const NovaAcaoPage(),
       ),
       GoRoute(
-        path: '/localizacao',
+        path: localizacaoPath,
         builder: (context, state) => const LocalizacaoPage(),
       ),
       GoRoute(
-        path: '/caracterizacao',
+        path: caracterizacaoPath,
         builder: (context, state) => const CaracterizacaoAcaoPage(),
       ),
       GoRoute(
-        path: '/recursos-operacionais',
+        path: caracterizacaoLegadoPath,
+        redirect: (context, state) => caracterizacaoPath,
+      ),
+      GoRoute(
+        path: recursosOperacionaisPath,
         builder: (context, state) => const RecursosOperacionaisPage(),
       ),
       GoRoute(
-        path: '/integracao-observacoes',
+        path: integracaoObservacoesPath,
         builder: (context, state) => const IntegracaoObservacoesPage(),
       ),
       GoRoute(
-        path: '/resultados',
+        path: resultadosPath,
         builder: (context, state) => const ResultadosPage(),
       ),
       GoRoute(
-        path: '/evidencias',
+        path: evidenciasPath,
         builder: (context, state) => const EvidenciasPage(),
       ),
       GoRoute(
-        path: '/avaliacao',
+        path: avaliacaoPath,
         builder: (context, state) => const AvaliacaoPage(),
       ),
       GoRoute(
-        path: '/revisao',
+        path: revisaoPath,
         builder: (context, state) => const RevisaoRelatorioPage(),
       ),
       GoRoute(

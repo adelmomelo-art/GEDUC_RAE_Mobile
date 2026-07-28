@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/domains/domain_provider.dart';
+import 'domain_loader_mixin.dart';
 
 class DomainRadioGroup extends StatefulWidget {
   final String grupo;
@@ -29,73 +28,35 @@ class DomainRadioGroup extends StatefulWidget {
   State<DomainRadioGroup> createState() => _DomainRadioGroupState();
 }
 
-class _DomainRadioGroupState extends State<DomainRadioGroup> {
-  String? _ultimoGrupoCarregado;
+class _DomainRadioGroupState extends State<DomainRadioGroup>
+    with DomainLoaderMixin<DomainRadioGroup> {
+  @override
+  String domainGrupoOf(DomainRadioGroup widget) => widget.grupo;
 
   @override
-  void initState() {
-    super.initState();
-    _agendarCarregamento();
-  }
+  Map<String, String> domainValoresLegadosOf(DomainRadioGroup widget) {
+    final value = widget.value?.trim();
+    final nome = widget.valorLegadoNome?.trim();
 
-  @override
-  void didUpdateWidget(covariant DomainRadioGroup oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.grupo != widget.grupo) {
-      _ultimoGrupoCarregado = null;
-      _agendarCarregamento();
+    if (value == null || value.isEmpty || nome == null || nome.isEmpty) {
+      return const <String, String>{};
     }
-  }
 
-  void _agendarCarregamento() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _ultimoGrupoCarregado == widget.grupo) {
-        return;
-      }
-
-      _ultimoGrupoCarregado = widget.grupo;
-      final provider = context.read<DomainProvider>();
-      final value = widget.value;
-      final nomeLegado = widget.valorLegadoNome;
-
-      if (value != null &&
-          value.trim().isNotEmpty &&
-          nomeLegado != null &&
-          nomeLegado.trim().isNotEmpty) {
-        provider.preservarValorLegado(
-          grupo: widget.grupo,
-          id: value,
-          nome: nomeLegado,
-        );
-      }
-
-      provider.carregarGrupo(widget.grupo).catchError((Object _) {
-        // O DomainProvider mantém o erro para apresentação no widget.
-        return provider.dominiosDoGrupo(widget.grupo);
-      });
-    });
+    return <String, String>{value: nome};
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<DomainProvider>();
-    final dominios = provider.dominiosDoGrupo(widget.grupo);
-    final carregando = provider.estaCarregando(widget.grupo);
-    final possuiErro = provider.possuiErro(widget.grupo);
-
-    final opcoes = <String, String>{
-      for (final dominio in dominios) dominio.id: dominio.nome,
-    };
-
+    final provider = domainProviderWatch();
+    final carregando = domainCarregando(provider);
+    final possuiErro = domainPossuiErro(provider);
     final valorAtual = widget.value;
-    if (valorAtual != null &&
-        valorAtual.trim().isNotEmpty &&
-        !opcoes.containsKey(valorAtual)) {
-      opcoes[valorAtual] = widget.valorLegadoNome?.trim().isNotEmpty == true
-          ? widget.valorLegadoNome!.trim()
-          : 'Valor anteriormente informado';
-    }
+
+    final opcoes = domainOpcoes(
+      provider,
+      valoresAtuais:
+          valorAtual == null ? const <String>[] : <String>[valorAtual],
+    );
 
     if (carregando && opcoes.isEmpty) {
       return const Center(
@@ -108,12 +69,7 @@ class _DomainRadioGroupState extends State<DomainRadioGroup> {
 
     if (possuiErro && opcoes.isEmpty) {
       return _RadioErrorState(
-        onRetry: () {
-          context
-              .read<DomainProvider>()
-              .recarregarGrupo(widget.grupo)
-              .catchError((_) {});
-        },
+        onRetry: domainRecarregar,
       );
     }
 
@@ -138,9 +94,7 @@ class _DomainRadioGroupState extends State<DomainRadioGroup> {
 
     return RadioGroup<String>(
       groupValue: valorAtual,
-      onChanged: widget.habilitado && !carregando
-          ? widget.onChanged
-          : (_) {},
+      onChanged: widget.habilitado && !carregando ? widget.onChanged : (_) {},
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -159,15 +113,16 @@ class _DomainRadioGroupState extends State<DomainRadioGroup> {
                   )
                   .toList(),
             ),
-        if (widget.permitirLimpar && valorAtual != null)
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: widget.habilitado ? () => widget.onChanged(null) : null,
-              icon: const Icon(Icons.clear, size: 18),
-              label: const Text('Limpar seleção'),
+          if (widget.permitirLimpar && valorAtual != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed:
+                    widget.habilitado ? () => widget.onChanged(null) : null,
+                icon: const Icon(Icons.clear, size: 18),
+                label: const Text('Limpar seleção'),
+              ),
             ),
-          ),
           if (possuiErro)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -186,7 +141,7 @@ class _DomainRadioGroupState extends State<DomainRadioGroup> {
 }
 
 class _RadioErrorState extends StatelessWidget {
-  final VoidCallback onRetry;
+  final Future<void> Function() onRetry;
 
   const _RadioErrorState({required this.onRetry});
 

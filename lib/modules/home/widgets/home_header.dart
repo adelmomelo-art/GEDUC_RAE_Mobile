@@ -56,9 +56,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 8),
-
             const Text(
               'Gerência de Educação para o Trânsito',
               style: TextStyle(
@@ -66,9 +64,7 @@ class HomeHeader extends StatelessWidget {
                 color: Colors.black87,
               ),
             ),
-
             const Divider(height: 28),
-
             Text(
               '${_saudacao()}, ${usuario?.nome ?? "Usuário"}',
               style: const TextStyle(
@@ -76,9 +72,7 @@ class HomeHeader extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 6),
-
             Row(
               children: [
                 const Icon(
@@ -92,9 +86,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 4),
-
             Row(
               children: [
                 const Icon(
@@ -110,9 +102,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

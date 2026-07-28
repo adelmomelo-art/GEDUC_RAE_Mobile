@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/domains/domain_provider.dart';
+import 'domain_loader_mixin.dart';
 
 class DomainCheckboxGroup extends StatefulWidget {
   final String grupo;
@@ -27,65 +26,28 @@ class DomainCheckboxGroup extends StatefulWidget {
   State<DomainCheckboxGroup> createState() => _DomainCheckboxGroupState();
 }
 
-class _DomainCheckboxGroupState extends State<DomainCheckboxGroup> {
-  String? _ultimoGrupoCarregado;
+class _DomainCheckboxGroupState extends State<DomainCheckboxGroup>
+    with DomainLoaderMixin<DomainCheckboxGroup> {
+  @override
+  String domainGrupoOf(DomainCheckboxGroup widget) => widget.grupo;
 
   @override
-  void initState() {
-    super.initState();
-    _agendarCarregamento();
-  }
-
-  @override
-  void didUpdateWidget(covariant DomainCheckboxGroup oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.grupo != widget.grupo) {
-      _ultimoGrupoCarregado = null;
-      _agendarCarregamento();
-    }
-  }
-
-  void _agendarCarregamento() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _ultimoGrupoCarregado == widget.grupo) {
-        return;
-      }
-
-      _ultimoGrupoCarregado = widget.grupo;
-      final provider = context.read<DomainProvider>();
-
-      for (final entry in widget.valoresLegados.entries) {
-        provider.preservarValorLegado(
-          grupo: widget.grupo,
-          id: entry.key,
-          nome: entry.value,
-        );
-      }
-
-      provider.carregarGrupo(widget.grupo).catchError((Object _) {
-        // O DomainProvider mantém o erro para apresentação no widget.
-        return provider.dominiosDoGrupo(widget.grupo);
-      });
-    });
+  Map<String, String> domainValoresLegadosOf(
+    DomainCheckboxGroup widget,
+  ) {
+    return widget.valoresLegados;
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<DomainProvider>();
-    final dominios = provider.dominiosDoGrupo(widget.grupo);
-    final carregando = provider.estaCarregando(widget.grupo);
-    final possuiErro = provider.possuiErro(widget.grupo);
+    final provider = domainProviderWatch();
+    final carregando = domainCarregando(provider);
+    final possuiErro = domainPossuiErro(provider);
 
-    final opcoes = <String, String>{
-      for (final dominio in dominios) dominio.id: dominio.nome,
-    };
-
-    for (final id in widget.selected) {
-      if (!opcoes.containsKey(id)) {
-        opcoes[id] = widget.valoresLegados[id] ?? 'Valor anteriormente informado';
-      }
-    }
+    final opcoes = domainOpcoes(
+      provider,
+      valoresAtuais: widget.selected,
+    );
 
     if (carregando && opcoes.isEmpty) {
       return const Center(
@@ -98,12 +60,7 @@ class _DomainCheckboxGroupState extends State<DomainCheckboxGroup> {
 
     if (possuiErro && opcoes.isEmpty) {
       return _ErrorState(
-        onRetry: () {
-          context
-              .read<DomainProvider>()
-              .recarregarGrupo(widget.grupo)
-              .catchError((_) {});
-        },
+        onRetry: domainRecarregar,
       );
     }
 
@@ -182,12 +139,7 @@ class _DomainCheckboxGroupState extends State<DomainCheckboxGroup> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  context
-                      .read<DomainProvider>()
-                      .recarregarGrupo(widget.grupo)
-                      .catchError((_) {});
-                },
+                onPressed: domainRecarregar,
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Atualizar'),
               ),
@@ -200,7 +152,7 @@ class _DomainCheckboxGroupState extends State<DomainCheckboxGroup> {
 }
 
 class _ErrorState extends StatelessWidget {
-  final VoidCallback onRetry;
+  final Future<void> Function() onRetry;
 
   const _ErrorState({required this.onRetry});
 

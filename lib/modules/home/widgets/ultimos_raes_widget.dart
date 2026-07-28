@@ -58,8 +58,7 @@ class UltimosRaesWidget extends StatelessWidget {
                   const espacamento = 12.0;
 
                   final larguraCard =
-                      (constraints.maxWidth -
-                              (espacamento * (colunas - 1))) /
+                      (constraints.maxWidth - (espacamento * (colunas - 1))) /
                           colunas;
 
                   return Wrap(

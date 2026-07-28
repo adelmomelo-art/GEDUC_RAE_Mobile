@@ -46,46 +46,38 @@ class PainelOperacionalWidget extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             _linhaOperacional(
               icon: Icons.assignment_turned_in,
               titulo: 'RAEs registrados',
               valor: totalAcoes.toString(),
               cor: Colors.blue,
             ),
-
             _linhaOperacional(
               icon: Icons.history,
               titulo: 'Últimos RAEs exibidos',
               valor: totalUltimosRaes.toString(),
               cor: Colors.indigo,
             ),
-
             _linhaOperacional(
               icon: Icons.groups,
               titulo: 'Pessoas alcançadas',
               valor: totalPessoas.toString(),
               cor: Colors.green,
             ),
-
             _linhaOperacional(
               icon: Icons.directions_car,
               titulo: 'Veículos abordados',
               valor: totalVeiculos.toString(),
               cor: Colors.orange,
             ),
-
             _linhaOperacional(
               icon: Icons.badge,
               titulo: 'Credenciais emitidas',
               valor: totalCredenciais.toString(),
               cor: Colors.purple,
             ),
-
             const SizedBox(height: 12),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

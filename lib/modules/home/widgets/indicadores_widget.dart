@@ -171,9 +171,8 @@ class _IndicadorExecutivoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = destaque
-        ? verdeInstitucional
-        : indicador.cor.withValues(alpha: 0.08);
+    final backgroundColor =
+        destaque ? verdeInstitucional : indicador.cor.withValues(alpha: 0.08);
 
     final foregroundColor = destaque ? Colors.white : indicador.cor;
     final secondaryColor = destaque ? Colors.white70 : Colors.black54;

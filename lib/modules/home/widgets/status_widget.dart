@@ -79,8 +79,7 @@ class StatusWidget extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 const espacamento = 12.0;
-                final larguraCard =
-                    (constraints.maxWidth - espacamento) / 2;
+                final larguraCard = (constraints.maxWidth - espacamento) / 2;
 
                 return Wrap(
                   spacing: espacamento,

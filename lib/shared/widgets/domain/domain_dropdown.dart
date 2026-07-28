@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/domains/domain_provider.dart';
+import 'domain_loader_mixin.dart';
 
 class DomainDropdown extends StatefulWidget {
   final String grupo;
@@ -37,76 +36,35 @@ class DomainDropdown extends StatefulWidget {
   State<DomainDropdown> createState() => _DomainDropdownState();
 }
 
-class _DomainDropdownState extends State<DomainDropdown> {
-  String? _ultimoGrupoCarregado;
+class _DomainDropdownState extends State<DomainDropdown>
+    with DomainLoaderMixin<DomainDropdown> {
+  @override
+  String domainGrupoOf(DomainDropdown widget) => widget.grupo;
 
   @override
-  void initState() {
-    super.initState();
-    _agendarCarregamento();
-  }
+  Map<String, String> domainValoresLegadosOf(DomainDropdown widget) {
+    final value = widget.value?.trim();
+    final nome = widget.valorLegadoNome?.trim();
 
-  @override
-  void didUpdateWidget(covariant DomainDropdown oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.grupo != widget.grupo) {
-      _ultimoGrupoCarregado = null;
-      _agendarCarregamento();
+    if (value == null || value.isEmpty || nome == null || nome.isEmpty) {
+      return const <String, String>{};
     }
-  }
 
-  void _agendarCarregamento() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _ultimoGrupoCarregado == widget.grupo) {
-        return;
-      }
-
-      _ultimoGrupoCarregado = widget.grupo;
-      final provider = context.read<DomainProvider>();
-
-      final value = widget.value;
-      final nomeLegado = widget.valorLegadoNome;
-
-      if (value != null &&
-          value.trim().isNotEmpty &&
-          nomeLegado != null &&
-          nomeLegado.trim().isNotEmpty) {
-        provider.preservarValorLegado(
-          grupo: widget.grupo,
-          id: value,
-          nome: nomeLegado,
-        );
-      }
-
-      provider.carregarGrupo(widget.grupo).catchError((Object _) {
-        // O estado de erro é mantido pelo DomainProvider e exibido pelo widget.
-        return provider.dominiosDoGrupo(widget.grupo);
-      });
-    });
+    return <String, String>{value: nome};
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<DomainProvider>();
-    final dominios = provider.dominiosDoGrupo(widget.grupo);
-    final carregando = provider.estaCarregando(widget.grupo);
-    final possuiErro = provider.possuiErro(widget.grupo);
-
-    final opcoes = <String, String>{
-      for (final dominio in dominios) dominio.id: dominio.nome,
-    };
-
+    final provider = domainProviderWatch();
+    final carregando = domainCarregando(provider);
+    final possuiErro = domainPossuiErro(provider);
     final valorAtual = widget.value;
-    final valorAusente = valorAtual != null &&
-        valorAtual.trim().isNotEmpty &&
-        !opcoes.containsKey(valorAtual);
 
-    if (valorAusente) {
-      opcoes[valorAtual] = widget.valorLegadoNome?.trim().isNotEmpty == true
-          ? widget.valorLegadoNome!.trim()
-          : 'Valor anteriormente informado';
-    }
+    final opcoes = domainOpcoes(
+      provider,
+      valoresAtuais:
+          valorAtual == null ? const <String>[] : <String>[valorAtual],
+    );
 
     final label = widget.obrigatorio ? '${widget.label} *' : widget.label;
 
@@ -135,12 +93,7 @@ class _DomainDropdownState extends State<DomainDropdown> {
                 : possuiErro
                     ? IconButton(
                         tooltip: 'Tentar novamente',
-                        onPressed: () {
-                          context
-                              .read<DomainProvider>()
-                              .recarregarGrupo(widget.grupo)
-                              .catchError((_) {});
-                        },
+                        onPressed: domainRecarregar,
                         icon: const Icon(Icons.refresh),
                       )
                     : null,
@@ -164,7 +117,8 @@ class _DomainDropdownState extends State<DomainDropdown> {
         if (possuiErro) ...[
           const SizedBox(height: 6),
           Text(
-            'Não foi possível carregar as opções. Toque no ícone para tentar novamente.',
+            'Não foi possível carregar as opções. '
+            'Toque no ícone para tentar novamente.',
             style: TextStyle(
               color: Theme.of(context).colorScheme.error,
               fontSize: 12,

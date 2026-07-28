@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function usuarioAtual() {
+      return get(
+        /databases/$(database)/documents/usuarios/$(request.auth.uid)
+      );
+    }
+
+    function administrador() {
+      return autenticado()
+        && usuarioAtual().data.perfil == 'administrador';
+    }
+
+    match /domains/{domainId} {
+      allow read: if autenticado();
+
+      allow create: if administrador()
+        && request.resource.data.keys().hasAll([
+          'grupo',
+          'codigo',
+          'nome',
+          'ordem',
+          'ativo',
+          'createdAt',
+          'updatedAt'
+        ]);
+
+      allow update: if administrador()
+        && request.resource.data.createdAt
+          == resource.data.createdAt;
+
+      allow delete: if false;
+    }
+  }
+}

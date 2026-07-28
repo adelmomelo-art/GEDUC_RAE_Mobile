@@ -30,12 +30,18 @@ class DomainRepository {
     );
   }
 
-  Future<void> salvar(DomainModel domain) {
-    return domainService.salvar(domain);
+  Future<void> criar(DomainModel domain) {
+    return domainService.criar(domain);
   }
 
-  Future<void> salvarTodos(List<DomainModel> domains) {
-    return domainService.salvarTodos(domains);
+  Future<void> atualizar(DomainModel domain) {
+    return domainService.atualizar(domain);
+  }
+
+  Future<void> salvarTodosSeAusentes(
+    List<DomainModel> domains,
+  ) {
+    return domainService.salvarTodosSeAusentes(domains);
   }
 
   Future<void> ativar(String id) {

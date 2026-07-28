@@ -12,9 +12,11 @@ abstract class DomainDataSource {
     required String codigo,
   });
 
-  Future<void> salvar(DomainModel domain);
+  Future<void> criar(DomainModel domain);
 
-  Future<void> salvarTodos(List<DomainModel> domains);
+  Future<void> atualizar(DomainModel domain);
+
+  Future<void> salvarTodosSeAusentes(List<DomainModel> domains);
 
   Future<void> ativar(String id);
 

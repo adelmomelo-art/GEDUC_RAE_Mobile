@@ -3,6 +3,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/domain_model.dart';
 import 'domain_data_source.dart';
 
+class DomainAlreadyExistsException implements Exception {
+  final String id;
+
+  const DomainAlreadyExistsException(this.id);
+
+  @override
+  String toString() => 'Já existe um domínio com o identificador "$id".';
+}
+
+class DomainNotFoundException implements Exception {
+  final String id;
+
+  const DomainNotFoundException(this.id);
+
+  @override
+  String toString() => 'O domínio "$id" não foi encontrado.';
+}
+
 class FirestoreDomainDataSource implements DomainDataSource {
   static const String collectionName = 'domains';
 
@@ -74,81 +92,136 @@ class FirestoreDomainDataSource implements DomainDataSource {
   }
 
   @override
-  Future<void> salvar(DomainModel domain) async {
-    await _collection.doc(domain.id).set(
-          _toFirestore(domain),
-          SetOptions(merge: true),
-        );
-  }
+  Future<void> criar(DomainModel domain) async {
+    final reference = _collection.doc(domain.id);
 
-  @override
-  Future<void> salvarTodos(List<DomainModel> domains) async {
-    if (domains.isEmpty) {
-      return;
-    }
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(reference);
 
-    const batchLimit = 450;
-
-    for (var inicio = 0; inicio < domains.length; inicio += batchLimit) {
-      final fim = (inicio + batchLimit < domains.length)
-          ? inicio + batchLimit
-          : domains.length;
-
-      final batch = firestore.batch();
-
-      for (final domain in domains.sublist(inicio, fim)) {
-        batch.set(
-          _collection.doc(domain.id),
-          _toFirestore(domain),
-          SetOptions(merge: true),
-        );
+      if (snapshot.exists) {
+        throw DomainAlreadyExistsException(domain.id);
       }
 
-      await batch.commit();
+      transaction.set(
+        reference,
+        _toFirestore(
+          domain,
+          incluirCreatedAt: true,
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<void> atualizar(DomainModel domain) async {
+    final reference = _collection.doc(domain.id);
+
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(reference);
+
+      if (!snapshot.exists) {
+        throw DomainNotFoundException(domain.id);
+      }
+
+      transaction.update(
+        reference,
+        _toFirestore(domain),
+      );
+    });
+  }
+
+  @override
+  Future<void> salvarTodosSeAusentes(
+    List<DomainModel> domains,
+  ) async {
+    for (final domain in domains) {
+      final reference = _collection.doc(domain.id);
+
+      await firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(reference);
+
+        if (!snapshot.exists) {
+          transaction.set(
+            reference,
+            _toFirestore(
+              domain,
+              incluirCreatedAt: true,
+            ),
+          );
+        }
+      });
     }
   }
 
   @override
-  Future<void> ativar(String id) async {
-    await _collection.doc(id).set(
-      {
-        'ativo': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
+  Future<void> ativar(String id) {
+    return _alterarStatus(
+      id: id,
+      ativo: true,
     );
   }
 
   @override
-  Future<void> desativar(String id) async {
-    await _collection.doc(id).set(
-      {
-        'ativo': false,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
+  Future<void> desativar(String id) {
+    return _alterarStatus(
+      id: id,
+      ativo: false,
     );
+  }
+
+  Future<void> _alterarStatus({
+    required String id,
+    required bool ativo,
+  }) async {
+    final reference = _collection.doc(id);
+
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(reference);
+
+      if (!snapshot.exists) {
+        throw DomainNotFoundException(id);
+      }
+
+      transaction.update(
+        reference,
+        {
+          'ativo': ativo,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+      );
+    });
   }
 
   DomainModel _fromDocument(
     DocumentSnapshot<Map<String, dynamic>> document,
   ) {
-    final data = Map<String, dynamic>.from(document.data() ?? const {});
+    final data = Map<String, dynamic>.from(
+      document.data() ?? const {},
+    );
 
     data['id'] = document.id;
-    data['inicioVigencia'] = _normalizarData(data['inicioVigencia']);
-    data['fimVigencia'] = _normalizarData(data['fimVigencia']);
+    data['inicioVigencia'] =
+        _normalizarData(data['inicioVigencia']);
+    data['fimVigencia'] =
+        _normalizarData(data['fimVigencia']);
 
     return DomainModel.fromMap(data);
   }
 
-  Map<String, dynamic> _toFirestore(DomainModel domain) {
+  Map<String, dynamic> _toFirestore(
+    DomainModel domain, {
+    bool incluirCreatedAt = false,
+  }) {
     final data = Map<String, dynamic>.from(domain.toMap());
 
     data.remove('id');
     data['inicioVigencia'] = domain.inicioVigencia;
     data['fimVigencia'] = domain.fimVigencia;
     data['updatedAt'] = FieldValue.serverTimestamp();
+
+    if (incluirCreatedAt) {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
 
     return data;
   }

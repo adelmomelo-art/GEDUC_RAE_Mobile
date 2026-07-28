@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/domains/domain_groups.dart';
+import '../../core/domains/domain_provider.dart';
+import '../../shared/widgets/domain/domain_checkbox_group.dart';
+import '../../shared/widgets/domain/domain_dropdown.dart';
 import 'controllers/acao_controller.dart';
 
 class CaracterizacaoAcaoPage extends StatefulWidget {
@@ -33,38 +37,40 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
   bool _restaurandoDados = true;
 
-  final formacoes = const {
+  late final DomainProvider _domainProvider;
+
+  static const Map<String, String> _nomesLegadosFormacao = {
     'formacao_palestra': 'Palestra',
     'formacao_oficina': 'Oficina',
     'formacao_curso': 'Curso',
   };
 
-  final publicos = const {
+  static const Map<String, String> _nomesLegadosPublico = {
     'publico_interno': 'Público interno',
     'publico_externo': 'Público externo',
     'publico_misto': 'Público interno e externo',
   };
 
-  final sexos = const {
+  static const Map<String, String> _nomesLegadosSexo = {
     'sexo_feminino': 'Predominantemente feminino',
     'sexo_masculino': 'Predominantemente masculino',
     'sexo_misto': 'Público misto/equilibrado',
     'sexo_nao_identificado': 'Não foi possível identificar',
   };
 
-  final mudancas = const {
+  static const Map<String, String> _nomesLegadosMudanca = {
     'mudanca_sim': 'Sim',
     'mudanca_parcial': 'Parcialmente',
     'mudanca_nao': 'Não observada',
   };
 
-  final tiposParticipacao = const {
+  static const Map<String, String> _nomesLegadosParticipacao = {
     'participacao_presencial': 'Presencial',
     'participacao_abordagem': 'Abordagem educativa',
     'participacao_evento': 'Evento',
   };
 
-  final focosTematicos = const {
+  static const Map<String, String> _nomesLegadosFoco = {
     'tema_velocidade': 'Velocidade',
     'tema_alcool_direcao': 'Álcool e direção',
     'tema_capacete': 'Uso do capacete',
@@ -72,7 +78,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     'tema_celular': 'Uso do celular ao volante',
   };
 
-  final perfisUsuario = const {
+  static const Map<String, String> _nomesLegadosPerfil = {
     'perfil_crianca': 'Crianças',
     'perfil_adolescente': 'Adolescentes',
     'perfil_adulto': 'Adultos',
@@ -90,13 +96,95 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     'perfil_comunidade': 'Comunidade em geral',
   };
 
-  final fatoresRisco = const {
+  static const Map<String, String> _nomesLegadosRisco = {
     'risco_velocidade': 'Excesso de velocidade',
     'risco_celular': 'Uso do celular',
     'risco_capacete': 'Não utilização do capacete',
     'risco_cinto': 'Não utilização do cinto',
     'risco_alcool': 'Álcool e direção',
   };
+
+  Map<String, String> _opcoesDoGrupo(
+    String grupo, {
+    Iterable<String> valoresSelecionados = const <String>[],
+    Map<String, String> nomesLegados = const <String, String>{},
+  }) {
+    final opcoes = Map<String, String>.from(
+      _domainProvider.opcoesDoGrupo(grupo),
+    );
+
+    for (final id in valoresSelecionados) {
+      if (id.trim().isEmpty || opcoes.containsKey(id)) {
+        continue;
+      }
+
+      opcoes[id] = nomesLegados[id] ?? 'Valor anteriormente informado';
+    }
+
+    return opcoes;
+  }
+
+  Map<String, String> _valoresLegadosSelecionados(
+    Iterable<String> selecionados,
+    Map<String, String> nomesLegados,
+  ) {
+    return {
+      for (final id in selecionados)
+        if (nomesLegados.containsKey(id)) id: nomesLegados[id]!,
+    };
+  }
+
+  Map<String, String> get formacoes => _opcoesDoGrupo(
+        DomainGroups.formacao,
+        valoresSelecionados: [if (formacaoId != null) formacaoId!],
+        nomesLegados: _nomesLegadosFormacao,
+      );
+
+  Map<String, String> get publicos => _opcoesDoGrupo(
+        DomainGroups.publico,
+        valoresSelecionados: [if (publicoId != null) publicoId!],
+        nomesLegados: _nomesLegadosPublico,
+      );
+
+  Map<String, String> get sexos => _opcoesDoGrupo(
+        DomainGroups.sexoPredominante,
+        valoresSelecionados: [
+          if (sexoPredominanteId != null) sexoPredominanteId!,
+        ],
+        nomesLegados: _nomesLegadosSexo,
+      );
+
+  Map<String, String> get mudancas => _opcoesDoGrupo(
+        DomainGroups.mudancaComportamento,
+        valoresSelecionados: [
+          if (mudancaComportamentoId != null) mudancaComportamentoId!,
+        ],
+        nomesLegados: _nomesLegadosMudanca,
+      );
+
+  Map<String, String> get tiposParticipacao => _opcoesDoGrupo(
+        DomainGroups.tipoParticipacao,
+        valoresSelecionados: tipoParticipacaoIds,
+        nomesLegados: _nomesLegadosParticipacao,
+      );
+
+  Map<String, String> get focosTematicos => _opcoesDoGrupo(
+        DomainGroups.focoTematico,
+        valoresSelecionados: focoTematicoIds,
+        nomesLegados: _nomesLegadosFoco,
+      );
+
+  Map<String, String> get perfisUsuario => _opcoesDoGrupo(
+        DomainGroups.perfilUsuario,
+        valoresSelecionados: perfilUsuarioIds,
+        nomesLegados: _nomesLegadosPerfil,
+      );
+
+  Map<String, String> get fatoresRisco => _opcoesDoGrupo(
+        DomainGroups.fatorRisco,
+        valoresSelecionados: fatorRiscoIds,
+        nomesLegados: _nomesLegadosRisco,
+      );
 
   bool get _dadosInstitucionaisCompletos {
     return formacaoId != null && tipoParticipacaoIds.isNotEmpty;
@@ -149,7 +237,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
         perfilUsuarioIds.add('perfil_idoso');
         return null;
       default:
-        return publicos.containsKey(valor) ? valor : null;
+        return valor.trim().isEmpty ? null : valor;
     }
   }
 
@@ -239,6 +327,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   @override
   void initState() {
     super.initState();
+    _domainProvider = DomainProvider();
     _restaurarRascunho();
     instituicaoParceiraController.addListener(_aoAlterarInstituicao);
   }
@@ -269,6 +358,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   void dispose() {
     instituicaoParceiraController.removeListener(_aoAlterarInstituicao);
     instituicaoParceiraController.dispose();
+    _domainProvider.dispose();
     super.dispose();
   }
 
@@ -567,88 +657,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     );
   }
 
-  Widget _dropdown({
-    required String label,
-    required String? value,
-    required Map<String, String> options,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: '$label *',
-        border: const OutlineInputBorder(),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      ),
-      items: options.entries
-          .map(
-            (entry) => DropdownMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                entry.value,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
 
-  Widget _checkboxGroup({
-    required Map<String, String> options,
-    required Set<String> selected,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final duasColunas = constraints.maxWidth >= 700;
-        final largura = duasColunas
-            ? (constraints.maxWidth - 12) / 2
-            : constraints.maxWidth;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: options.entries.map((entry) {
-            final marcado = selected.contains(entry.key);
-
-            return SizedBox(
-              width: largura,
-              child: Material(
-                color: marcado
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                child: CheckboxListTile(
-                  value: marcado,
-                  dense: true,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
-                  ),
-                  title: Text(entry.value),
-                  onChanged: (value) {
-                    _atualizar(() {
-                      if (value == true) {
-                        selected.add(entry.key);
-                      } else {
-                        selected.remove(entry.key);
-                      }
-                    });
-                  },
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
 
   Widget _campoInstituicaoParceira() {
     return Column(
@@ -847,7 +856,11 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
+    return ChangeNotifierProvider<DomainProvider>.value(
+      value: _domainProvider,
+      child: Consumer<DomainProvider>(
+        builder: (context, _, child) {
+          return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
@@ -872,18 +885,31 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 icone: Icons.account_balance_outlined,
                 status: _statusDadosInstitucionais(),
                 filhos: [
-                  _dropdown(
+                  DomainDropdown(
+                    grupo: DomainGroups.formacao,
                     label: 'Formação',
                     value: formacaoId,
-                    options: formacoes,
+                    obrigatorio: true,
+                    valorLegadoNome: formacaoId == null
+                        ? null
+                        : _nomesLegadosFormacao[formacaoId],
                     onChanged: (value) =>
                         _atualizar(() => formacaoId = value),
                   ),
                   const SizedBox(height: 16),
                   _rotuloObrigatorio('Tipo de participação'),
-                  _checkboxGroup(
-                    options: tiposParticipacao,
+                  DomainCheckboxGroup(
+                    grupo: DomainGroups.tipoParticipacao,
                     selected: tipoParticipacaoIds,
+                    valoresLegados: _valoresLegadosSelecionados(
+                      tipoParticipacaoIds,
+                      _nomesLegadosParticipacao,
+                    ),
+                    onChanged: (valores) => _atualizar(() {
+                      tipoParticipacaoIds
+                        ..clear()
+                        ..addAll(valores);
+                    }),
                   ),
                   const SizedBox(height: 18),
                   _campoInstituicaoParceira(),
@@ -896,10 +922,14 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 icone: Icons.groups_outlined,
                 status: _statusPublicoAlvo(),
                 filhos: [
-                  _dropdown(
+                  DomainDropdown(
+                    grupo: DomainGroups.publico,
                     label: 'Público',
                     value: publicoId,
-                    options: publicos,
+                    obrigatorio: true,
+                    valorLegadoNome: publicoId == null
+                        ? null
+                        : _nomesLegadosPublico[publicoId],
                     onChanged: (value) =>
                         _atualizar(() => publicoId = value),
                   ),
@@ -912,15 +942,28 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                   ),
                   const SizedBox(height: 18),
                   _rotuloObrigatorio('Perfil do usuário'),
-                  _checkboxGroup(
-                    options: perfisUsuario,
+                  DomainCheckboxGroup(
+                    grupo: DomainGroups.perfilUsuario,
                     selected: perfilUsuarioIds,
+                    valoresLegados: _valoresLegadosSelecionados(
+                      perfilUsuarioIds,
+                      _nomesLegadosPerfil,
+                    ),
+                    onChanged: (valores) => _atualizar(() {
+                      perfilUsuarioIds
+                        ..clear()
+                        ..addAll(valores);
+                    }),
                   ),
                   const SizedBox(height: 18),
-                  _dropdown(
+                  DomainDropdown(
+                    grupo: DomainGroups.sexoPredominante,
                     label: 'Sexo predominante',
                     value: sexoPredominanteId,
-                    options: sexos,
+                    obrigatorio: true,
+                    valorLegadoNome: sexoPredominanteId == null
+                        ? null
+                        : _nomesLegadosSexo[sexoPredominanteId],
                     onChanged: (value) =>
                         _atualizar(() => sexoPredominanteId = value),
                   ),
@@ -956,15 +999,33 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 status: _statusTemasERiscos(),
                 filhos: [
                   _rotuloObrigatorio('Foco temático'),
-                  _checkboxGroup(
-                    options: focosTematicos,
+                  DomainCheckboxGroup(
+                    grupo: DomainGroups.focoTematico,
                     selected: focoTematicoIds,
+                    valoresLegados: _valoresLegadosSelecionados(
+                      focoTematicoIds,
+                      _nomesLegadosFoco,
+                    ),
+                    onChanged: (valores) => _atualizar(() {
+                      focoTematicoIds
+                        ..clear()
+                        ..addAll(valores);
+                    }),
                   ),
                   const SizedBox(height: 16),
                   _rotuloObrigatorio('Principais fatores de risco observados'),
-                  _checkboxGroup(
-                    options: fatoresRisco,
+                  DomainCheckboxGroup(
+                    grupo: DomainGroups.fatorRisco,
                     selected: fatorRiscoIds,
+                    valoresLegados: _valoresLegadosSelecionados(
+                      fatorRiscoIds,
+                      _nomesLegadosRisco,
+                    ),
+                    onChanged: (valores) => _atualizar(() {
+                      fatorRiscoIds
+                        ..clear()
+                        ..addAll(valores);
+                    }),
                   ),
                 ],
               ),
@@ -975,10 +1036,14 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 icone: Icons.psychology_alt_outlined,
                 status: _statusAvaliacaoComportamental(),
                 filhos: [
-                  _dropdown(
+                  DomainDropdown(
+                    grupo: DomainGroups.mudancaComportamento,
                     label: 'Houve mudança de comportamento observável?',
                     value: mudancaComportamentoId,
-                    options: mudancas,
+                    obrigatorio: true,
+                    valorLegadoNome: mudancaComportamentoId == null
+                        ? null
+                        : _nomesLegadosMudanca[mudancaComportamentoId],
                     onChanged: (value) =>
                         _atualizar(() => mudancaComportamentoId = value),
                   ),
@@ -989,6 +1054,9 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
             ],
           ),
         ),
+      ),
+          );
+        },
       ),
     );
   }

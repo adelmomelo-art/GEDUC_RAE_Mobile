@@ -45,6 +45,9 @@ class HomeController extends ChangeNotifier {
           totalCredenciais: resultado.totalCredenciais,
           ultimosRaes: resultado.ultimosRaes,
           mensagem: resultado.mensagem,
+          dadosEmCache: resultado.dadosEmCache,
+          cacheDisponivel: resultado.cacheDisponivel,
+          atualizadoEm: resultado.atualizadoEm,
         ),
       );
     } on TimeoutException {

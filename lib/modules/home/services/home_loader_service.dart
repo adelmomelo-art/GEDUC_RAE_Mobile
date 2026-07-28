@@ -6,6 +6,8 @@ import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/usuario_service.dart';
 import '../../../data/models/acao_model.dart';
 import '../../../data/models/usuario_model.dart';
+import '../models/home_cache_data.dart';
+import 'home_persistent_cache.dart';
 
 class HomeLoaderResult {
   const HomeLoaderResult({
@@ -17,6 +19,9 @@ class HomeLoaderResult {
     required this.totalCredenciais,
     required this.ultimosRaes,
     this.mensagem,
+    this.dadosEmCache = false,
+    this.cacheDisponivel = false,
+    this.atualizadoEm,
   });
 
   final bool online;
@@ -27,8 +32,11 @@ class HomeLoaderResult {
   final int totalCredenciais;
   final List<AcaoModel> ultimosRaes;
   final String? mensagem;
+  final bool dadosEmCache;
+  final bool cacheDisponivel;
+  final DateTime? atualizadoEm;
 
-  factory HomeLoaderResult.offline({
+  factory HomeLoaderResult.offlineSemCache({
     UsuarioModel? usuario,
     String? mensagem,
   }) {
@@ -41,7 +49,28 @@ class HomeLoaderResult {
       totalCredenciais: 0,
       ultimosRaes: const [],
       mensagem: mensagem ??
-          'Sem conexão com o servidor. O Centro de Operação permanece disponível em modo offline.',
+          'Sem conexão com o servidor e ainda não existem dados anteriores neste dispositivo.',
+    );
+  }
+
+  factory HomeLoaderResult.offlineComCache({
+    required HomeCacheData cache,
+    UsuarioModel? usuario,
+    String? mensagem,
+  }) {
+    return HomeLoaderResult(
+      online: false,
+      usuario: usuario,
+      totalAcoes: cache.totalAcoes,
+      totalPessoas: cache.totalPessoas,
+      totalVeiculos: cache.totalVeiculos,
+      totalCredenciais: cache.totalCredenciais,
+      ultimosRaes: cache.ultimosRaes,
+      mensagem: mensagem ??
+          'Sem conexão com o servidor. Exibindo os últimos dados disponíveis neste dispositivo.',
+      dadosEmCache: true,
+      cacheDisponivel: true,
+      atualizadoEm: cache.atualizadoEm,
     );
   }
 }
@@ -51,14 +80,17 @@ class HomeLoaderService {
     FirebaseAcaoService? acaoService,
     UsuarioService? usuarioService,
     FirebaseAuth? firebaseAuth,
+    HomePersistentCache? persistentCache,
     this.timeout = const Duration(seconds: 6),
   })  : _acaoService = acaoService ?? FirebaseAcaoService(),
         _usuarioService = usuarioService ?? UsuarioService(),
-        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+        _persistentCache = persistentCache ?? HomePersistentCache();
 
   final FirebaseAcaoService _acaoService;
   final UsuarioService _usuarioService;
   final FirebaseAuth _firebaseAuth;
+  final HomePersistentCache _persistentCache;
   final Duration timeout;
 
   Future<HomeLoaderResult> carregar() async {
@@ -81,27 +113,67 @@ class HomeLoaderService {
       ]);
 
       usuario = resultados[0] as UsuarioModel?;
-      final lista = List<AcaoModel>.from(resultados[5] as List<AcaoModel>);
 
-      lista.sort((a, b) => b.dataAcao.compareTo(a.dataAcao));
+      final lista = List<AcaoModel>.from(
+        resultados[5] as List<AcaoModel>,
+      )..sort((a, b) => b.dataAcao.compareTo(a.dataAcao));
 
-      return HomeLoaderResult(
-        online: true,
-        usuario: usuario,
+      final atualizadoEm = DateTime.now();
+      final ultimosRaes = lista.take(3).toList(growable: false);
+
+      final cacheData = HomeCacheData(
         totalAcoes: resultados[1] as int,
         totalPessoas: resultados[2] as int,
         totalVeiculos: resultados[3] as int,
         totalCredenciais: resultados[4] as int,
-        ultimosRaes: lista.take(3).toList(growable: false),
+        ultimosRaes: ultimosRaes,
+        atualizadoEm: atualizadoEm,
+      );
+
+      await _persistentCache.salvar(cacheData);
+
+      return HomeLoaderResult(
+        online: true,
+        usuario: usuario,
+        totalAcoes: cacheData.totalAcoes,
+        totalPessoas: cacheData.totalPessoas,
+        totalVeiculos: cacheData.totalVeiculos,
+        totalCredenciais: cacheData.totalCredenciais,
+        ultimosRaes: cacheData.ultimosRaes,
+        cacheDisponivel: true,
+        atualizadoEm: atualizadoEm,
       );
     } on TimeoutException {
-      return HomeLoaderResult.offline(
+      return _carregarFallback(
         usuario: usuario,
-        mensagem:
-            'O servidor não respondeu no tempo esperado. O Centro de Operação foi aberto em modo offline.',
+        mensagemSemCache:
+            'O servidor não respondeu no tempo esperado e ainda não existem dados anteriores neste dispositivo.',
+        mensagemComCache:
+            'O servidor não respondeu no tempo esperado. Exibindo os últimos dados disponíveis neste dispositivo.',
       );
     } catch (_) {
-      return HomeLoaderResult.offline(usuario: usuario);
+      return _carregarFallback(usuario: usuario);
     }
+  }
+
+  Future<HomeLoaderResult> _carregarFallback({
+    UsuarioModel? usuario,
+    String? mensagemSemCache,
+    String? mensagemComCache,
+  }) async {
+    final cache = await _persistentCache.recuperar();
+
+    if (cache == null) {
+      return HomeLoaderResult.offlineSemCache(
+        usuario: usuario,
+        mensagem: mensagemSemCache,
+      );
+    }
+
+    return HomeLoaderResult.offlineComCache(
+      cache: cache,
+      usuario: usuario,
+      mensagem: mensagemComCache,
+    );
   }
 }

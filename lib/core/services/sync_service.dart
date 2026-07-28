@@ -40,11 +40,20 @@ class SyncService extends ChangeNotifier {
   DateTime? _ultimaMudancaConectividadeEm;
   DateTime? get ultimaMudancaConectividadeEm => _ultimaMudancaConectividadeEm;
 
+  DateTime? _ultimaTentativaSincronizacaoEm;
+  DateTime? get ultimaTentativaSincronizacaoEm =>
+      _ultimaTentativaSincronizacaoEm;
+
+  DateTime? _ultimaSincronizacaoBemSucedidaEm;
+  DateTime? get ultimaSincronizacaoBemSucedidaEm =>
+      _ultimaSincronizacaoBemSucedidaEm;
+
   Future<void> iniciarMonitoramento() async {
     if (_connectivitySubscription != null) return;
 
     final resultadoInicial = await _connectivity.checkConnectivity();
     _registrarConectividade(resultadoInicial, contarReconexao: false);
+    await atualizarTotalPendentes();
 
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _registrarConectividade,
@@ -69,10 +78,26 @@ class SyncService extends ChangeNotifier {
     }
   }
 
+  Future<void> atualizarTotalPendentes() async {
+    try {
+      final pendentes = await offlineService.listarAcoesPendentes();
+      final novoTotal = pendentes.length;
+
+      if (novoTotal == totalPendentes) return;
+
+      totalPendentes = novoTotal;
+      notifyListeners();
+    } catch (_) {
+      // O monitoramento não deve falhar por uma leitura local.
+    }
+  }
+
   Future<void> sincronizarAcoesPendentes() async {
     if (sincronizando) return;
 
     erro = null;
+    _ultimaTentativaSincronizacaoEm = DateTime.now();
+    notifyListeners();
 
     final conectadoAgora = await temInternet();
 
@@ -87,6 +112,7 @@ class SyncService extends ChangeNotifier {
     if (pendentes.isEmpty) {
       totalPendentes = 0;
       totalSincronizadas = 0;
+      _ultimaSincronizacaoBemSucedidaEm = DateTime.now();
       notifyListeners();
       return;
     }
@@ -117,10 +143,13 @@ class SyncService extends ChangeNotifier {
     await _salvarPendenciasRestantes(naoSincronizadas);
 
     sincronizando = false;
+    totalPendentes = naoSincronizadas.length;
 
     if (naoSincronizadas.isNotEmpty) {
       erro =
           '${naoSincronizadas.length} ação(ões) não puderam ser sincronizadas.';
+    } else {
+      _ultimaSincronizacaoBemSucedidaEm = DateTime.now();
     }
 
     notifyListeners();

@@ -1,5 +1,6 @@
 import '../../../data/models/acao_model.dart';
 import '../../../data/models/usuario_model.dart';
+import 'home_operational_status.dart';
 
 enum HomeStatus {
   inicial,
@@ -24,6 +25,7 @@ class HomeState {
     this.atualizadoEm,
     this.sincronizandoDashboard = false,
     this.ultimaSincronizacaoAutomaticaEm,
+    this.monitoramentoOperacional = const HomeOperationalStatus(),
   });
 
   final HomeStatus status;
@@ -43,6 +45,7 @@ class HomeState {
 
   final bool sincronizandoDashboard;
   final DateTime? ultimaSincronizacaoAutomaticaEm;
+  final HomeOperationalStatus monitoramentoOperacional;
 
   bool get carregando {
     return status == HomeStatus.inicial || status == HomeStatus.carregando;
@@ -81,6 +84,7 @@ class HomeState {
     bool? sincronizandoDashboard,
     DateTime? ultimaSincronizacaoAutomaticaEm,
     bool removerUltimaSincronizacaoAutomaticaEm = false,
+    HomeOperationalStatus? monitoramentoOperacional,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -101,6 +105,8 @@ class HomeState {
           ? null
           : ultimaSincronizacaoAutomaticaEm ??
               this.ultimaSincronizacaoAutomaticaEm,
+      monitoramentoOperacional:
+          monitoramentoOperacional ?? this.monitoramentoOperacional,
     );
   }
 }

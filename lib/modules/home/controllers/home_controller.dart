@@ -6,6 +6,7 @@ import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/offline_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../acoes/controllers/acao_controller.dart';
+import '../models/home_operational_status.dart';
 import '../models/home_state.dart';
 import '../services/home_loader_service.dart';
 
@@ -21,7 +22,7 @@ class HomeController extends ChangeNotifier {
             ),
         _deveDescartarSyncService = syncService == null {
     _syncService.addListener(_observarSyncService);
-    unawaited(_syncService.iniciarMonitoramento());
+    unawaited(_iniciarMonitoramento());
   }
 
   final HomeLoaderService _loaderService;
@@ -38,6 +39,12 @@ class HomeController extends ChangeNotifier {
   DateTime? _ultimaAtualizacaoAutomaticaSolicitadaEm;
 
   bool _disposed = false;
+
+  Future<void> _iniciarMonitoramento() async {
+    await _syncService.iniciarMonitoramento();
+    if (_disposed) return;
+    _atualizarMonitoramentoOperacional();
+  }
 
   Future<void> carregarPortal({
     required AcaoController acaoController,
@@ -56,6 +63,7 @@ class HomeController extends ChangeNotifier {
           .carregarRascunhoSeExistir()
           .timeout(const Duration(seconds: 4));
 
+      await _syncService.atualizarTotalPendentes();
       final resultado = await _loaderService.carregar();
 
       _emitir(_estadoDoResultado(resultado));
@@ -97,12 +105,35 @@ class HomeController extends ChangeNotifier {
   void _observarSyncService() {
     if (_disposed) return;
 
+    _atualizarMonitoramentoOperacional();
+
     final reconexaoAtual = _syncService.reconexoesDetectadas;
 
     if (reconexaoAtual <= _ultimaReconexaoProcessada) return;
 
     _ultimaReconexaoProcessada = reconexaoAtual;
     unawaited(_sincronizarAposReconexao());
+  }
+
+  void _atualizarMonitoramentoOperacional() {
+    _emitir(
+      _state.copyWith(
+        monitoramentoOperacional: HomeOperationalStatus(
+          conectado: _syncService.conectado,
+          monitoramentoAtivo: _syncService.monitoramentoAtivo,
+          sincronizando: _syncService.sincronizando,
+          totalPendentes: _syncService.totalPendentes,
+          totalSincronizadas: _syncService.totalSincronizadas,
+          erro: _syncService.erro,
+          ultimaMudancaConectividadeEm:
+              _syncService.ultimaMudancaConectividadeEm,
+          ultimaTentativaSincronizacaoEm:
+              _syncService.ultimaTentativaSincronizacaoEm,
+          ultimaSincronizacaoBemSucedidaEm:
+              _syncService.ultimaSincronizacaoBemSucedidaEm,
+        ),
+      ),
+    );
   }
 
   Future<void> _sincronizarAposReconexao() async {
@@ -180,6 +211,7 @@ class HomeController extends ChangeNotifier {
       sincronizandoDashboard: false,
       ultimaSincronizacaoAutomaticaEm: ultimaSincronizacaoAutomaticaEm ??
           _state.ultimaSincronizacaoAutomaticaEm,
+      monitoramentoOperacional: _state.monitoramentoOperacional,
     );
   }
 

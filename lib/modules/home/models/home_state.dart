@@ -22,6 +22,8 @@ class HomeState {
     this.dadosEmCache = false,
     this.cacheDisponivel = false,
     this.atualizadoEm,
+    this.sincronizandoDashboard = false,
+    this.ultimaSincronizacaoAutomaticaEm,
   });
 
   final HomeStatus status;
@@ -38,6 +40,9 @@ class HomeState {
   final bool dadosEmCache;
   final bool cacheDisponivel;
   final DateTime? atualizadoEm;
+
+  final bool sincronizandoDashboard;
+  final DateTime? ultimaSincronizacaoAutomaticaEm;
 
   bool get carregando {
     return status == HomeStatus.inicial || status == HomeStatus.carregando;
@@ -73,6 +78,9 @@ class HomeState {
     bool? cacheDisponivel,
     DateTime? atualizadoEm,
     bool removerAtualizadoEm = false,
+    bool? sincronizandoDashboard,
+    DateTime? ultimaSincronizacaoAutomaticaEm,
+    bool removerUltimaSincronizacaoAutomaticaEm = false,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -87,6 +95,12 @@ class HomeState {
       cacheDisponivel: cacheDisponivel ?? this.cacheDisponivel,
       atualizadoEm:
           removerAtualizadoEm ? null : atualizadoEm ?? this.atualizadoEm,
+      sincronizandoDashboard:
+          sincronizandoDashboard ?? this.sincronizandoDashboard,
+      ultimaSincronizacaoAutomaticaEm: removerUltimaSincronizacaoAutomaticaEm
+          ? null
+          : ultimaSincronizacaoAutomaticaEm ??
+              this.ultimaSincronizacaoAutomaticaEm,
     );
   }
 }

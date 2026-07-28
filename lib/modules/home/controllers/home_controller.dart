@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/services/firebase_acao_service.dart';
+import '../../../core/services/offline_service.dart';
+import '../../../core/services/sync_service.dart';
 import '../../acoes/controllers/acao_controller.dart';
 import '../models/home_state.dart';
 import '../services/home_loader_service.dart';
@@ -9,18 +12,38 @@ import '../services/home_loader_service.dart';
 class HomeController extends ChangeNotifier {
   HomeController({
     HomeLoaderService? loaderService,
-  }) : _loaderService = loaderService ?? HomeLoaderService();
+    SyncService? syncService,
+  })  : _loaderService = loaderService ?? HomeLoaderService(),
+        _syncService = syncService ??
+            SyncService(
+              offlineService: OfflineService(),
+              firebaseService: FirebaseAcaoService(),
+            ),
+        _deveDescartarSyncService = syncService == null {
+    _syncService.addListener(_observarSyncService);
+    unawaited(_syncService.iniciarMonitoramento());
+  }
 
   final HomeLoaderService _loaderService;
+  final SyncService _syncService;
+  final bool _deveDescartarSyncService;
 
   HomeState _state = const HomeState();
   HomeState get state => _state;
+
+  AcaoController? _acaoControllerAtual;
+
+  bool _sincronizacaoAutomaticaEmAndamento = false;
+  int _ultimaReconexaoProcessada = 0;
+  DateTime? _ultimaAtualizacaoAutomaticaSolicitadaEm;
 
   bool _disposed = false;
 
   Future<void> carregarPortal({
     required AcaoController acaoController,
   }) async {
+    _acaoControllerAtual = acaoController;
+
     _emitir(
       _state.copyWith(
         status: HomeStatus.carregando,
@@ -35,21 +58,7 @@ class HomeController extends ChangeNotifier {
 
       final resultado = await _loaderService.carregar();
 
-      _emitir(
-        HomeState(
-          status: resultado.online ? HomeStatus.online : HomeStatus.offline,
-          usuario: resultado.usuario,
-          totalAcoes: resultado.totalAcoes,
-          totalPessoas: resultado.totalPessoas,
-          totalVeiculos: resultado.totalVeiculos,
-          totalCredenciais: resultado.totalCredenciais,
-          ultimosRaes: resultado.ultimosRaes,
-          mensagem: resultado.mensagem,
-          dadosEmCache: resultado.dadosEmCache,
-          cacheDisponivel: resultado.cacheDisponivel,
-          atualizadoEm: resultado.atualizadoEm,
-        ),
-      );
+      _emitir(_estadoDoResultado(resultado));
     } on TimeoutException {
       _emitir(
         _state.copyWith(
@@ -85,6 +94,106 @@ class HomeController extends ChangeNotifier {
     return carregarPortal(acaoController: acaoController);
   }
 
+  void _observarSyncService() {
+    if (_disposed) return;
+
+    final reconexaoAtual = _syncService.reconexoesDetectadas;
+
+    if (reconexaoAtual <= _ultimaReconexaoProcessada) return;
+
+    _ultimaReconexaoProcessada = reconexaoAtual;
+    unawaited(_sincronizarAposReconexao());
+  }
+
+  Future<void> _sincronizarAposReconexao() async {
+    final acaoController = _acaoControllerAtual;
+
+    if (acaoController == null || _sincronizacaoAutomaticaEmAndamento) {
+      return;
+    }
+
+    final agora = DateTime.now();
+    final ultimaSolicitacao = _ultimaAtualizacaoAutomaticaSolicitadaEm;
+
+    if (ultimaSolicitacao != null &&
+        agora.difference(ultimaSolicitacao) < const Duration(seconds: 20)) {
+      return;
+    }
+
+    _ultimaAtualizacaoAutomaticaSolicitadaEm = agora;
+    _sincronizacaoAutomaticaEmAndamento = true;
+
+    _emitir(
+      _state.copyWith(
+        sincronizandoDashboard: true,
+      ),
+    );
+
+    try {
+      await _syncService.sincronizarAcoesPendentes();
+
+      final resultado = await _loaderService.carregarRemoto();
+
+      _emitir(
+        _estadoDoResultado(
+          resultado,
+          ultimaSincronizacaoAutomaticaEm: DateTime.now(),
+        ),
+      );
+    } on TimeoutException {
+      _finalizarSincronizacaoComFalha(
+        'A conexão retornou, mas o servidor não respondeu no tempo esperado. Os dados anteriores foram preservados.',
+      );
+    } catch (_) {
+      _finalizarSincronizacaoComFalha(
+        'A conexão retornou, mas não foi possível atualizar o painel. Os dados anteriores foram preservados.',
+      );
+    } finally {
+      _sincronizacaoAutomaticaEmAndamento = false;
+
+      if (_state.sincronizandoDashboard) {
+        _emitir(
+          _state.copyWith(
+            sincronizandoDashboard: false,
+          ),
+        );
+      }
+    }
+  }
+
+  HomeState _estadoDoResultado(
+    HomeLoaderResult resultado, {
+    DateTime? ultimaSincronizacaoAutomaticaEm,
+  }) {
+    return HomeState(
+      status: resultado.online ? HomeStatus.online : HomeStatus.offline,
+      usuario: resultado.usuario,
+      totalAcoes: resultado.totalAcoes,
+      totalPessoas: resultado.totalPessoas,
+      totalVeiculos: resultado.totalVeiculos,
+      totalCredenciais: resultado.totalCredenciais,
+      ultimosRaes: resultado.ultimosRaes,
+      mensagem: resultado.mensagem,
+      dadosEmCache: resultado.dadosEmCache,
+      cacheDisponivel: resultado.cacheDisponivel,
+      atualizadoEm: resultado.atualizadoEm,
+      sincronizandoDashboard: false,
+      ultimaSincronizacaoAutomaticaEm: ultimaSincronizacaoAutomaticaEm ??
+          _state.ultimaSincronizacaoAutomaticaEm,
+    );
+  }
+
+  void _finalizarSincronizacaoComFalha(String mensagem) {
+    _emitir(
+      _state.copyWith(
+        status:
+            _state.possuiDadosOperacionais ? _state.status : HomeStatus.offline,
+        sincronizandoDashboard: false,
+        mensagem: _state.possuiDadosOperacionais ? _state.mensagem : mensagem,
+      ),
+    );
+  }
+
   void _emitir(HomeState novoEstado) {
     if (_disposed) return;
 
@@ -95,6 +204,12 @@ class HomeController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _syncService.removeListener(_observarSyncService);
+
+    if (_deveDescartarSyncService) {
+      _syncService.dispose();
+    }
+
     super.dispose();
   }
 }

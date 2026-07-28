@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,38 +12,71 @@ import 'offline_service.dart';
 class SyncService extends ChangeNotifier {
   static const _keyAcoesPendentes = 'acoes_pendentes';
 
-  final OfflineService offlineService;
-  final FirebaseAcaoService firebaseService;
-
   SyncService({
     required this.offlineService,
     required this.firebaseService,
-  });
+    Connectivity? connectivity,
+  }) : _connectivity = connectivity ?? Connectivity();
+
+  final OfflineService offlineService;
+  final FirebaseAcaoService firebaseService;
+  final Connectivity _connectivity;
+
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   bool sincronizando = false;
   int totalPendentes = 0;
   int totalSincronizadas = 0;
   String? erro;
 
+  bool? _conectado;
+  bool get conectado => _conectado ?? false;
+
+  bool get monitoramentoAtivo => _connectivitySubscription != null;
+
+  int _reconexoesDetectadas = 0;
+  int get reconexoesDetectadas => _reconexoesDetectadas;
+
+  DateTime? _ultimaMudancaConectividadeEm;
+  DateTime? get ultimaMudancaConectividadeEm => _ultimaMudancaConectividadeEm;
+
+  Future<void> iniciarMonitoramento() async {
+    if (_connectivitySubscription != null) return;
+
+    final resultadoInicial = await _connectivity.checkConnectivity();
+    _registrarConectividade(resultadoInicial, contarReconexao: false);
+
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+      _registrarConectividade,
+      onError: (_) {
+        _registrarConectividade(const [ConnectivityResult.none]);
+      },
+    );
+  }
+
   Future<bool> temInternet() async {
     try {
-      final resultado = await InternetAddress.lookup('google.com')
+      final resultado = await _connectivity
+          .checkConnectivity()
           .timeout(const Duration(seconds: 5));
 
-      return resultado.isNotEmpty && resultado.first.rawAddress.isNotEmpty;
-    } on SocketException {
-      return false;
+      _registrarConectividade(resultado, contarReconexao: false);
+      return _possuiRede(resultado);
     } on TimeoutException {
+      return false;
+    } catch (_) {
       return false;
     }
   }
 
   Future<void> sincronizarAcoesPendentes() async {
+    if (sincronizando) return;
+
     erro = null;
 
-    final conectado = await temInternet();
+    final conectadoAgora = await temInternet();
 
-    if (!conectado) {
+    if (!conectadoAgora) {
       erro = 'Sem conexão com a internet.';
       notifyListeners();
       return;
@@ -93,6 +126,30 @@ class SyncService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _registrarConectividade(
+    List<ConnectivityResult> resultados, {
+    bool contarReconexao = true,
+  }) {
+    final novoEstado = _possuiRede(resultados);
+    final estadoAnterior = _conectado;
+
+    if (estadoAnterior == novoEstado) return;
+
+    _conectado = novoEstado;
+    _ultimaMudancaConectividadeEm = DateTime.now();
+
+    if (contarReconexao && estadoAnterior == false && novoEstado) {
+      _reconexoesDetectadas++;
+    }
+
+    notifyListeners();
+  }
+
+  bool _possuiRede(List<ConnectivityResult> resultados) {
+    return resultados.isNotEmpty &&
+        resultados.any((resultado) => resultado != ConnectivityResult.none);
+  }
+
   Future<void> _salvarPendenciasRestantes(List<AcaoModel> acoes) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -104,5 +161,12 @@ class SyncService extends ChangeNotifier {
     final lista = acoes.map((acao) => jsonEncode(acao.toMap())).toList();
 
     await prefs.setStringList(_keyAcoesPendentes, lista);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_connectivitySubscription?.cancel());
+    _connectivitySubscription = null;
+    super.dispose();
   }
 }

@@ -33,8 +33,7 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
 
   bool get _possuiFotoMinima => _totalFotos >= 1;
 
-  bool get _possuiConjuntoRecomendado =>
-      _totalFotos >= _quantidadeRecomendada;
+  bool get _possuiConjuntoRecomendado => _totalFotos >= _quantidadeRecomendada;
 
   bool get _possuiDescricao =>
       _descricaoController.text.trim().length >= _tamanhoMinimoDescricao;
@@ -114,9 +113,7 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
     _fotos
       ..clear()
       ..addAll(
-        acao.fotosUrls
-            .map(File.new)
-            .where((arquivo) => arquivo.existsSync()),
+        acao.fotosUrls.map(File.new).where((arquivo) => arquivo.existsSync()),
       );
   }
 
@@ -489,7 +486,7 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Faxita',
+                  'Faixita',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
@@ -663,9 +660,7 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
                     )
                   : const Icon(Icons.add_a_photo_outlined),
               label: Text(
-                _processando
-                    ? 'PROCESSANDO EVIDÊNCIA...'
-                    : 'ADICIONAR FOTO',
+                _processando ? 'PROCESSANDO EVIDÊNCIA...' : 'ADICIONAR FOTO',
               ),
             ),
             const SizedBox(height: 18),
@@ -680,8 +675,7 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
               onEditingComplete: _sincronizarController,
               decoration: const InputDecoration(
                 labelText: 'Descrição das evidências',
-                hintText:
-                    'Ex.: equipe executora, público presente, atividade '
+                hintText: 'Ex.: equipe executora, público presente, atividade '
                     'realizada e materiais utilizados.',
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),

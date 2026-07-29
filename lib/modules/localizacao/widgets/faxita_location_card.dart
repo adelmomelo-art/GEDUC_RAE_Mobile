@@ -11,7 +11,7 @@ class FaxitaLocationCard extends StatelessWidget {
   const FaxitaLocationCard({
     super.key,
     required this.mensagem,
-    this.titulo = 'Faxita',
+    this.titulo = 'Faixita',
     this.tone = FaxitaLocationTone.informativo,
   });
 

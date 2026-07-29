@@ -38,7 +38,7 @@ class LocalizacaoActionBar extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               label: const Text('Voltar'),
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(alturaSecundaria),
+                minimumSize: const Size(0, alturaSecundaria),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -51,7 +51,7 @@ class LocalizacaoActionBar extends StatelessWidget {
               icon: const Icon(Icons.my_location),
               label: const Text('Atualizar localização'),
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(alturaSecundaria),
+                minimumSize: const Size(0, alturaSecundaria),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -69,7 +69,7 @@ class LocalizacaoActionBar extends StatelessWidget {
                   : const Icon(Icons.arrow_forward),
               label: Text(rotuloAcaoPrincipal),
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(alturaPrincipal),
+                minimumSize: const Size(0, alturaPrincipal),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,

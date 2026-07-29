@@ -86,5 +86,11 @@ Thumbs.db
 /android/secrets.properties
 
 # ===========================
-# Apresentações grandes
+# Apresentaï¿½ï¿½es grandes
 assets/images/*.pptx
+
+# ===========================
+# CPB - artefatos gerados
+tools/output/*
+!tools/output/.gitkeep
+# ===========================

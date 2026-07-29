@@ -91,8 +91,7 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
   bool get _notaPreenchida => nota >= 1 && nota <= 5;
   bool get _mudancaPreenchida => mudancaComportamentoId != null;
   bool get _riscosPreenchidos => _fatoresRisco.isNotEmpty;
-  bool get _positivosPreenchidos =>
-      positivosController.text.trim().isNotEmpty;
+  bool get _positivosPreenchidos => positivosController.text.trim().isNotEmpty;
   bool get _dificuldadesPreenchidas =>
       dificuldadesController.text.trim().isNotEmpty;
   bool get _recomendacoesPreenchidas =>
@@ -206,7 +205,7 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'A Faxita identificou informações obrigatórias ainda não preenchidas.',
+            'A Faixita identificou informações obrigatórias ainda não preenchidas.',
           ),
         ),
       );
@@ -350,12 +349,10 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
   }
 
   Widget _faxitaCard() {
-    final cor = _avaliacaoCompleta
-        ? const Color(0xFF2E7D32)
-        : const Color(0xFFF9A825);
-    final fundo = _avaliacaoCompleta
-        ? const Color(0xFFE8F5E9)
-        : const Color(0xFFFFF8E1);
+    final cor =
+        _avaliacaoCompleta ? const Color(0xFF2E7D32) : const Color(0xFFF9A825);
+    final fundo =
+        _avaliacaoCompleta ? const Color(0xFFE8F5E9) : const Color(0xFFFFF8E1);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -384,7 +381,7 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Faxita',
+                  'Faixita',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,

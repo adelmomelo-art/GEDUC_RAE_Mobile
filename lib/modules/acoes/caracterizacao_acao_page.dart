@@ -12,8 +12,7 @@ class CaracterizacaoAcaoPage extends StatefulWidget {
   const CaracterizacaoAcaoPage({super.key});
 
   @override
-  State<CaracterizacaoAcaoPage> createState() =>
-      _CaracterizacaoAcaoPageState();
+  State<CaracterizacaoAcaoPage> createState() => _CaracterizacaoAcaoPageState();
 }
 
 enum _StatusSecao {
@@ -245,10 +244,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     Set<String> selecionados,
     Map<String, String> opcoes,
   ) {
-    final itens = selecionados
-        .map((id) => opcoes[id])
-        .whereType<String>()
-        .toList();
+    final itens =
+        selecionados.map((id) => opcoes[id]).whereType<String>().toList();
 
     if (itens.isEmpty) {
       return 'Não informado';
@@ -397,7 +394,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'A Faxita identificou campos obrigatórios ainda não preenchidos.',
+            'A Faixita identificou campos obrigatórios ainda não preenchidos.',
           ),
         ),
       );
@@ -456,8 +453,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     return _StatusSecao.naoIniciada;
   }
 
-  ({Color fundo, Color borda, IconData icone, String texto})
-      _aparenciaStatus(_StatusSecao status) {
+  ({Color fundo, Color borda, IconData icone, String texto}) _aparenciaStatus(
+      _StatusSecao status) {
     switch (status) {
       case _StatusSecao.completa:
         return (
@@ -517,12 +514,10 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
   Widget _faxitaCard() {
     final concluido = _camposObrigatoriosPreenchidos;
-    final corFundo = concluido
-        ? const Color(0xFFE8F5E9)
-        : const Color(0xFFFFF8E1);
-    final corBorda = concluido
-        ? const Color(0xFF2E7D32)
-        : const Color(0xFFF9A825);
+    final corFundo =
+        concluido ? const Color(0xFFE8F5E9) : const Color(0xFFFFF8E1);
+    final corBorda =
+        concluido ? const Color(0xFF2E7D32) : const Color(0xFFF9A825);
     final icone =
         concluido ? Icons.check_circle_outline : Icons.auto_awesome_outlined;
 
@@ -549,7 +544,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Faxita',
+                  'Faixita',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -656,8 +651,6 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
       ),
     );
   }
-
-
 
   Widget _campoInstituicaoParceira() {
     return Column(
@@ -861,200 +854,201 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
       child: Consumer<DomainProvider>(
         builder: (context, _, child) {
           return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          _voltar();
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Caracterização da Ação'),
-        ),
-        bottomNavigationBar: _barraInferior(),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _faxitaCard(),
-              const SizedBox(height: 12),
-              _secao(
-                titulo: 'Dados institucionais da ação',
-                descricao:
-                    'Defina o formato da atividade e a forma de participação.',
-                icone: Icons.account_balance_outlined,
-                status: _statusDadosInstitucionais(),
-                filhos: [
-                  DomainDropdown(
-                    grupo: DomainGroups.formacao,
-                    label: 'Formação',
-                    value: formacaoId,
-                    obrigatorio: true,
-                    valorLegadoNome: formacaoId == null
-                        ? null
-                        : _nomesLegadosFormacao[formacaoId],
-                    onChanged: (value) =>
-                        _atualizar(() => formacaoId = value),
-                  ),
-                  const SizedBox(height: 16),
-                  _rotuloObrigatorio('Tipo de participação'),
-                  DomainCheckboxGroup(
-                    grupo: DomainGroups.tipoParticipacao,
-                    selected: tipoParticipacaoIds,
-                    valoresLegados: _valoresLegadosSelecionados(
-                      tipoParticipacaoIds,
-                      _nomesLegadosParticipacao,
-                    ),
-                    onChanged: (valores) => _atualizar(() {
-                      tipoParticipacaoIds
-                        ..clear()
-                        ..addAll(valores);
-                    }),
-                  ),
-                  const SizedBox(height: 18),
-                  _campoInstituicaoParceira(),
-                ],
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop) {
+                _voltar();
+              }
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('Caracterização da Ação'),
               ),
-              _secao(
-                titulo: 'Público-alvo',
-                descricao:
-                    'Identifique a origem institucional e os perfis atendidos.',
-                icone: Icons.groups_outlined,
-                status: _statusPublicoAlvo(),
-                filhos: [
-                  DomainDropdown(
-                    grupo: DomainGroups.publico,
-                    label: 'Público',
-                    value: publicoId,
-                    obrigatorio: true,
-                    valorLegadoNome: publicoId == null
-                        ? null
-                        : _nomesLegadosPublico[publicoId],
-                    onChanged: (value) =>
-                        _atualizar(() => publicoId = value),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Considere como público interno os servidores e equipes '
-                    'do próprio órgão. Público externo corresponde à '
-                    'comunidade e às instituições atendidas.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 18),
-                  _rotuloObrigatorio('Perfil do usuário'),
-                  DomainCheckboxGroup(
-                    grupo: DomainGroups.perfilUsuario,
-                    selected: perfilUsuarioIds,
-                    valoresLegados: _valoresLegadosSelecionados(
-                      perfilUsuarioIds,
-                      _nomesLegadosPerfil,
+              bottomNavigationBar: _barraInferior(),
+              body: SafeArea(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _faxitaCard(),
+                    const SizedBox(height: 12),
+                    _secao(
+                      titulo: 'Dados institucionais da ação',
+                      descricao:
+                          'Defina o formato da atividade e a forma de participação.',
+                      icone: Icons.account_balance_outlined,
+                      status: _statusDadosInstitucionais(),
+                      filhos: [
+                        DomainDropdown(
+                          grupo: DomainGroups.formacao,
+                          label: 'Formação',
+                          value: formacaoId,
+                          obrigatorio: true,
+                          valorLegadoNome: formacaoId == null
+                              ? null
+                              : _nomesLegadosFormacao[formacaoId],
+                          onChanged: (value) =>
+                              _atualizar(() => formacaoId = value),
+                        ),
+                        const SizedBox(height: 16),
+                        _rotuloObrigatorio('Tipo de participação'),
+                        DomainCheckboxGroup(
+                          grupo: DomainGroups.tipoParticipacao,
+                          selected: tipoParticipacaoIds,
+                          valoresLegados: _valoresLegadosSelecionados(
+                            tipoParticipacaoIds,
+                            _nomesLegadosParticipacao,
+                          ),
+                          onChanged: (valores) => _atualizar(() {
+                            tipoParticipacaoIds
+                              ..clear()
+                              ..addAll(valores);
+                          }),
+                        ),
+                        const SizedBox(height: 18),
+                        _campoInstituicaoParceira(),
+                      ],
                     ),
-                    onChanged: (valores) => _atualizar(() {
-                      perfilUsuarioIds
-                        ..clear()
-                        ..addAll(valores);
-                    }),
-                  ),
-                  const SizedBox(height: 18),
-                  DomainDropdown(
-                    grupo: DomainGroups.sexoPredominante,
-                    label: 'Sexo predominante',
-                    value: sexoPredominanteId,
-                    obrigatorio: true,
-                    valorLegadoNome: sexoPredominanteId == null
-                        ? null
-                        : _nomesLegadosSexo[sexoPredominanteId],
-                    onChanged: (value) =>
-                        _atualizar(() => sexoPredominanteId = value),
-                  ),
-                  const SizedBox(height: 14),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.summarize_outlined, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(_resumoPublicoSelecionado),
+                    _secao(
+                      titulo: 'Público-alvo',
+                      descricao:
+                          'Identifique a origem institucional e os perfis atendidos.',
+                      icone: Icons.groups_outlined,
+                      status: _statusPublicoAlvo(),
+                      filhos: [
+                        DomainDropdown(
+                          grupo: DomainGroups.publico,
+                          label: 'Público',
+                          value: publicoId,
+                          obrigatorio: true,
+                          valorLegadoNome: publicoId == null
+                              ? null
+                              : _nomesLegadosPublico[publicoId],
+                          onChanged: (value) =>
+                              _atualizar(() => publicoId = value),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Considere como público interno os servidores e equipes '
+                          'do próprio órgão. Público externo corresponde à '
+                          'comunidade e às instituições atendidas.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 18),
+                        _rotuloObrigatorio('Perfil do usuário'),
+                        DomainCheckboxGroup(
+                          grupo: DomainGroups.perfilUsuario,
+                          selected: perfilUsuarioIds,
+                          valoresLegados: _valoresLegadosSelecionados(
+                            perfilUsuarioIds,
+                            _nomesLegadosPerfil,
+                          ),
+                          onChanged: (valores) => _atualizar(() {
+                            perfilUsuarioIds
+                              ..clear()
+                              ..addAll(valores);
+                          }),
+                        ),
+                        const SizedBox(height: 18),
+                        DomainDropdown(
+                          grupo: DomainGroups.sexoPredominante,
+                          label: 'Sexo predominante',
+                          value: sexoPredominanteId,
+                          obrigatorio: true,
+                          valorLegadoNome: sexoPredominanteId == null
+                              ? null
+                              : _nomesLegadosSexo[sexoPredominanteId],
+                          onChanged: (value) =>
+                              _atualizar(() => sexoPredominanteId = value),
+                        ),
+                        const SizedBox(height: 14),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.summarize_outlined, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(_resumoPublicoSelecionado),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              _secao(
-                titulo: 'Temas e fatores de risco',
-                descricao:
-                    'Identifique os conteúdos trabalhados e os riscos observados.',
-                icone: Icons.health_and_safety_outlined,
-                status: _statusTemasERiscos(),
-                filhos: [
-                  _rotuloObrigatorio('Foco temático'),
-                  DomainCheckboxGroup(
-                    grupo: DomainGroups.focoTematico,
-                    selected: focoTematicoIds,
-                    valoresLegados: _valoresLegadosSelecionados(
-                      focoTematicoIds,
-                      _nomesLegadosFoco,
+                    _secao(
+                      titulo: 'Temas e fatores de risco',
+                      descricao:
+                          'Identifique os conteúdos trabalhados e os riscos observados.',
+                      icone: Icons.health_and_safety_outlined,
+                      status: _statusTemasERiscos(),
+                      filhos: [
+                        _rotuloObrigatorio('Foco temático'),
+                        DomainCheckboxGroup(
+                          grupo: DomainGroups.focoTematico,
+                          selected: focoTematicoIds,
+                          valoresLegados: _valoresLegadosSelecionados(
+                            focoTematicoIds,
+                            _nomesLegadosFoco,
+                          ),
+                          onChanged: (valores) => _atualizar(() {
+                            focoTematicoIds
+                              ..clear()
+                              ..addAll(valores);
+                          }),
+                        ),
+                        const SizedBox(height: 16),
+                        _rotuloObrigatorio(
+                            'Principais fatores de risco observados'),
+                        DomainCheckboxGroup(
+                          grupo: DomainGroups.fatorRisco,
+                          selected: fatorRiscoIds,
+                          valoresLegados: _valoresLegadosSelecionados(
+                            fatorRiscoIds,
+                            _nomesLegadosRisco,
+                          ),
+                          onChanged: (valores) => _atualizar(() {
+                            fatorRiscoIds
+                              ..clear()
+                              ..addAll(valores);
+                          }),
+                        ),
+                      ],
                     ),
-                    onChanged: (valores) => _atualizar(() {
-                      focoTematicoIds
-                        ..clear()
-                        ..addAll(valores);
-                    }),
-                  ),
-                  const SizedBox(height: 16),
-                  _rotuloObrigatorio('Principais fatores de risco observados'),
-                  DomainCheckboxGroup(
-                    grupo: DomainGroups.fatorRisco,
-                    selected: fatorRiscoIds,
-                    valoresLegados: _valoresLegadosSelecionados(
-                      fatorRiscoIds,
-                      _nomesLegadosRisco,
+                    _secao(
+                      titulo: 'Avaliação comportamental',
+                      descricao:
+                          'Registre se houve mudança de comportamento observável.',
+                      icone: Icons.psychology_alt_outlined,
+                      status: _statusAvaliacaoComportamental(),
+                      filhos: [
+                        DomainDropdown(
+                          grupo: DomainGroups.mudancaComportamento,
+                          label: 'Houve mudança de comportamento observável?',
+                          value: mudancaComportamentoId,
+                          obrigatorio: true,
+                          valorLegadoNome: mudancaComportamentoId == null
+                              ? null
+                              : _nomesLegadosMudanca[mudancaComportamentoId],
+                          onChanged: (value) =>
+                              _atualizar(() => mudancaComportamentoId = value),
+                        ),
+                      ],
                     ),
-                    onChanged: (valores) => _atualizar(() {
-                      fatorRiscoIds
-                        ..clear()
-                        ..addAll(valores);
-                    }),
-                  ),
-                ],
+                    _resumoExecutivo(),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-              _secao(
-                titulo: 'Avaliação comportamental',
-                descricao:
-                    'Registre se houve mudança de comportamento observável.',
-                icone: Icons.psychology_alt_outlined,
-                status: _statusAvaliacaoComportamental(),
-                filhos: [
-                  DomainDropdown(
-                    grupo: DomainGroups.mudancaComportamento,
-                    label: 'Houve mudança de comportamento observável?',
-                    value: mudancaComportamentoId,
-                    obrigatorio: true,
-                    valorLegadoNome: mudancaComportamentoId == null
-                        ? null
-                        : _nomesLegadosMudanca[mudancaComportamentoId],
-                    onChanged: (value) =>
-                        _atualizar(() => mudancaComportamentoId = value),
-                  ),
-                ],
-              ),
-              _resumoExecutivo(),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
+            ),
           );
         },
       ),

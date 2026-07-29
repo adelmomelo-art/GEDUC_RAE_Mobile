@@ -1,0 +1,2 @@
+# Exemplo de manifesto
+lib/main.dart

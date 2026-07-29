@@ -62,14 +62,10 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
 
   Future<void> carregarDados() async {
     try {
-      final tiposSnapshot = await firestore
-          .collection('tipos_acoes')
-          .orderBy('nomeAcao')
-          .get();
-      final coordenadoresSnapshot = await firestore
-          .collection('coordenadores')
-          .orderBy('nome')
-          .get();
+      final tiposSnapshot =
+          await firestore.collection('tipos_acoes').orderBy('nomeAcao').get();
+      final coordenadoresSnapshot =
+          await firestore.collection('coordenadores').orderBy('nome').get();
 
       if (!mounted) return;
 
@@ -121,8 +117,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           coordenadorId = coordenadorIdRestaurado;
           coordenadorNome = coordenadorNomeRestaurado;
 
-          _nomeAcaoController.text =
-              tipoRestaurado?.nomeAcao ?? acao.nomeAcao;
+          _nomeAcaoController.text = tipoRestaurado?.nomeAcao ?? acao.nomeAcao;
         }
 
         carregando = false;
@@ -297,7 +292,8 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                         DropdownMenuItem(value: 'Manhã', child: Text('Manhã')),
                         DropdownMenuItem(value: 'Tarde', child: Text('Tarde')),
                         DropdownMenuItem(value: 'Noite', child: Text('Noite')),
-                        DropdownMenuItem(value: 'Madrugada', child: Text('Madrugada')),
+                        DropdownMenuItem(
+                            value: 'Madrugada', child: Text('Madrugada')),
                       ],
                       onChanged: (valor) => setState(() => turno = valor),
                     ),
@@ -482,7 +478,7 @@ class _FaxitaCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Faxita',
+                    'Faixita',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: frente,
                           fontWeight: FontWeight.w800,
@@ -541,9 +537,10 @@ class _SectionCard extends StatelessWidget {
                     children: [
                       Text(
                         titulo,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
                       ),
                       Text(
                         subtitulo,
@@ -738,8 +735,7 @@ class _PesquisaTipoAcaoSheet extends StatefulWidget {
   final List<TipoAcaoModel> tiposAcoes;
 
   @override
-  State<_PesquisaTipoAcaoSheet> createState() =>
-      _PesquisaTipoAcaoSheetState();
+  State<_PesquisaTipoAcaoSheet> createState() => _PesquisaTipoAcaoSheetState();
 }
 
 class _PesquisaTipoAcaoSheetState extends State<_PesquisaTipoAcaoSheet> {

@@ -57,13 +57,11 @@ class _ResultadosPageState extends State<ResultadosPage> {
       houveParticipacaoOutroOrgao = acao.houveParticipacaoOutroOrgao;
       possuiEvidencias = acao.fotosUrls.isNotEmpty;
 
-      pessoasController.text = acao.pessoasAlcancadas > 0
-          ? acao.pessoasAlcancadas.toString()
-          : '';
+      pessoasController.text =
+          acao.pessoasAlcancadas > 0 ? acao.pessoasAlcancadas.toString() : '';
 
-      veiculosController.text = acao.veiculosAbordados > 0
-          ? acao.veiculosAbordados.toString()
-          : '';
+      veiculosController.text =
+          acao.veiculosAbordados > 0 ? acao.veiculosAbordados.toString() : '';
 
       credenciaisController.text = acao.credenciaisEmitidas.toString();
       motivoController.text = acao.motivoMetaNaoAtingida ?? '';
@@ -110,8 +108,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
 
   bool get metaDefinida => publicoMinimo > 0;
 
-  bool get metaAtingida =>
-      metaDefinida && pessoasAlcancadas >= publicoMinimo;
+  bool get metaAtingida => metaDefinida && pessoasAlcancadas >= publicoMinimo;
 
   double get percentualMetaMinima {
     return KpiService.calcularPercentual(
@@ -155,9 +152,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
   bool get _resultadosValidos {
     if (pessoasAlcancadas <= 0) return false;
 
-    if (metaDefinida &&
-        !metaAtingida &&
-        motivoController.text.trim().isEmpty) {
+    if (metaDefinida && !metaAtingida && motivoController.text.trim().isEmpty) {
       return false;
     }
 
@@ -176,9 +171,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
           veiculosAbordados: veiculosAbordados,
           credenciaisEmitidas: credenciaisEmitidas,
           motivoMetaNaoAtingida:
-              metaDefinida && !metaAtingida
-                  ? motivoController.text.trim()
-                  : '',
+              metaDefinida && !metaAtingida ? motivoController.text.trim() : '',
         );
   }
 
@@ -200,9 +193,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
       return;
     }
 
-    if (metaDefinida &&
-        !metaAtingida &&
-        motivoController.text.trim().isEmpty) {
+    if (metaDefinida && !metaAtingida && motivoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Informe o motivo da meta não atingida.'),
@@ -275,9 +266,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
       return Theme.of(context).colorScheme.secondaryContainer;
     }
 
-    return metaAtingida
-        ? Colors.green.shade50
-        : Colors.orange.shade50;
+    return metaAtingida ? Colors.green.shade50 : Colors.orange.shade50;
   }
 
   IconData get _iconeStatusMeta {
@@ -354,19 +343,17 @@ class _ResultadosPageState extends State<ResultadosPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Análise da Faxita',
+                    'Análise da Faixita',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     _mensagemFaxita,
                     style: TextStyle(
-                      color:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
                 ],
@@ -638,9 +625,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
                 ),
               ),
               Text(
-                disponivel
-                    ? KpiService.formatarPercentual(percentual)
-                    : '—',
+                disponivel ? KpiService.formatarPercentual(percentual) : '—',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -661,8 +646,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
               ? '$pessoasAlcancadas de $publicoMinimo pessoas'
               : 'Meta mínima não cadastrada',
           percentual: percentualMetaMinima,
-          classificacao:
-              KpiService.classificarMeta(percentualMetaMinima),
+          classificacao: KpiService.classificarMeta(percentualMetaMinima),
           disponivel: metaDefinida,
         ),
         const SizedBox(height: 14),
@@ -765,9 +749,7 @@ class _ResultadosPageState extends State<ResultadosPage> {
       contentPadding: EdgeInsets.zero,
       dense: true,
       leading: Icon(
-        concluido
-            ? Icons.check_circle_outline
-            : Icons.radio_button_unchecked,
+        concluido ? Icons.check_circle_outline : Icons.radio_button_unchecked,
         color: concluido
             ? Colors.green.shade700
             : Theme.of(context).colorScheme.outline,

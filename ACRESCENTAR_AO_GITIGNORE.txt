@@ -1,0 +1,3 @@
+# CPB - artefatos gerados
+tools/output/*
+!tools/output/.gitkeep

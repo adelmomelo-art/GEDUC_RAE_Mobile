@@ -75,11 +75,9 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
   bool get _temPontosPositivos =>
       pontosPositivosController.text.trim().isNotEmpty;
 
-  bool get _temDificuldades =>
-      dificuldadesController.text.trim().isNotEmpty;
+  bool get _temDificuldades => dificuldadesController.text.trim().isNotEmpty;
 
-  bool get _temRecomendacoes =>
-      recomendacoesController.text.trim().isNotEmpty;
+  bool get _temRecomendacoes => recomendacoesController.text.trim().isNotEmpty;
 
   bool get _integracaoValida =>
       !houveParticipacaoOutroOrgao || orgaoParticipanteId != null;
@@ -260,7 +258,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
                 Row(
                   children: [
                     Text(
-                      'Faxita',
+                      'Faixita',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

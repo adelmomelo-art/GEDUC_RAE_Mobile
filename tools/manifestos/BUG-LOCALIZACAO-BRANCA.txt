@@ -1,0 +1,3 @@
+﻿lib/modules/localizacao/localizacao_page.dart
+lib/modules/localizacao/widgets/localizacao_action_bar.dart
+lib/modules/localizacao/widgets/faxita_location_card.dart

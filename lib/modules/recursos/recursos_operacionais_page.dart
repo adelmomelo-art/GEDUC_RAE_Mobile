@@ -299,7 +299,7 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
                 Row(
                   children: [
                     Text(
-                      'Faxita',
+                      'Faixita',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

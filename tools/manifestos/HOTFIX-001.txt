@@ -1,0 +1,9 @@
+# HOTFIX-001 — Padronização visual do nome Faixita
+lib/modules/acoes/caracterizacao_acao_page.dart
+lib/modules/acoes/nova_acao_page.dart
+lib/modules/acoes/resultados_page.dart
+lib/modules/avaliacao/avaliacao_page.dart
+lib/modules/evidencias/evidencias_page.dart
+lib/modules/integracao/integracao_observacoes_page.dart
+lib/modules/recursos/recursos_operacionais_page.dart
+lib/modules/localizacao/widgets/faxita_location_card.dart

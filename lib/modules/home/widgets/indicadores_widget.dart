@@ -18,6 +18,10 @@ class IndicadoresWidget extends StatelessWidget {
   static const Color laranjaInstitucional = Color(0xFFF37021);
   static const Color fundoSecao = Color(0xFFF8FBFB);
 
+  static const double _breakpointTablet = 600;
+  static const double _breakpointDesktop = 1024;
+  static const double _espacamentoGrid = 10;
+
   @override
   Widget build(BuildContext context) {
     final indicadores = [
@@ -71,32 +75,31 @@ class IndicadoresWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const _IndicadoresHeader(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
-                final largura = constraints.maxWidth;
-                final colunas = largura >= 1050
-                    ? 4
-                    : largura >= 560
-                        ? 2
-                        : 1;
+                final colunas = _definirQuantidadeDeColunas(
+                  constraints.maxWidth,
+                );
 
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: indicadores.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: colunas,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: colunas == 1 ? 2.80 : 1.62,
-                  ),
-                  itemBuilder: (context, index) {
-                    return _IndicadorExecutivoCard(
-                      indicador: indicadores[index],
-                      destaque: index == 0,
-                    );
-                  },
+                final larguraCard = _calcularLarguraDoCard(
+                  larguraDisponivel: constraints.maxWidth,
+                  colunas: colunas,
+                );
+
+                return Wrap(
+                  spacing: _espacamentoGrid,
+                  runSpacing: _espacamentoGrid,
+                  children: [
+                    for (var index = 0; index < indicadores.length; index++)
+                      SizedBox(
+                        width: larguraCard,
+                        child: _IndicadorExecutivoCard(
+                          indicador: indicadores[index],
+                          destaque: index == 0,
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -104,6 +107,27 @@ class IndicadoresWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  int _definirQuantidadeDeColunas(double largura) {
+    if (largura >= _breakpointDesktop) {
+      return 4;
+    }
+
+    if (largura >= _breakpointTablet) {
+      return 2;
+    }
+
+    return 1;
+  }
+
+  double _calcularLarguraDoCard({
+    required double larguraDisponivel,
+    required int colunas,
+  }) {
+    final espacamentoTotal = _espacamentoGrid * (colunas - 1);
+
+    return (larguraDisponivel - espacamentoTotal) / colunas;
   }
 }
 
@@ -180,6 +204,9 @@ class _IndicadorExecutivoCard extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
+      constraints: const BoxConstraints(
+        minHeight: 150,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(14),
@@ -201,6 +228,7 @@ class _IndicadorExecutivoCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Align(
@@ -253,7 +281,7 @@ class _IndicadorExecutivoCard extends StatelessWidget {
             Text(
               indicador.legenda,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: secondaryColor,

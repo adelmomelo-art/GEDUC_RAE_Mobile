@@ -5,6 +5,7 @@ class HomeOperationalStatus {
     this.sincronizando = false,
     this.totalPendentes = 0,
     this.totalSincronizadas = 0,
+    this.falhasConsecutivasSincronizacao = 0,
     this.erro,
     this.ultimaMudancaConectividadeEm,
     this.ultimaTentativaSincronizacaoEm,
@@ -16,6 +17,7 @@ class HomeOperationalStatus {
   final bool sincronizando;
   final int totalPendentes;
   final int totalSincronizadas;
+  final int falhasConsecutivasSincronizacao;
   final String? erro;
   final DateTime? ultimaMudancaConectividadeEm;
   final DateTime? ultimaTentativaSincronizacaoEm;

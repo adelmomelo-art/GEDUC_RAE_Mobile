@@ -1,5 +1,6 @@
 import '../../../data/models/acao_model.dart';
 import '../../../data/models/usuario_model.dart';
+import '../domain/operational_alert.dart';
 import 'home_operational_status.dart';
 
 enum HomeStatus {
@@ -26,6 +27,7 @@ class HomeState {
     this.sincronizandoDashboard = false,
     this.ultimaSincronizacaoAutomaticaEm,
     this.monitoramentoOperacional = const HomeOperationalStatus(),
+    this.alertasOperacionais = const <OperationalAlert>[],
   });
 
   final HomeStatus status;
@@ -46,6 +48,7 @@ class HomeState {
   final bool sincronizandoDashboard;
   final DateTime? ultimaSincronizacaoAutomaticaEm;
   final HomeOperationalStatus monitoramentoOperacional;
+  final List<OperationalAlert> alertasOperacionais;
 
   bool get carregando {
     return status == HomeStatus.inicial || status == HomeStatus.carregando;
@@ -56,6 +59,8 @@ class HomeState {
   bool get estaOffline => status == HomeStatus.offline;
 
   bool get possuiErro => status == HomeStatus.erro;
+
+  bool get possuiAlertasOperacionais => alertasOperacionais.isNotEmpty;
 
   bool get possuiDadosOperacionais {
     return cacheDisponivel ||
@@ -85,6 +90,7 @@ class HomeState {
     DateTime? ultimaSincronizacaoAutomaticaEm,
     bool removerUltimaSincronizacaoAutomaticaEm = false,
     HomeOperationalStatus? monitoramentoOperacional,
+    List<OperationalAlert>? alertasOperacionais,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -107,6 +113,7 @@ class HomeState {
               this.ultimaSincronizacaoAutomaticaEm,
       monitoramentoOperacional:
           monitoramentoOperacional ?? this.monitoramentoOperacional,
+      alertasOperacionais: alertasOperacionais ?? this.alertasOperacionais,
     );
   }
 }

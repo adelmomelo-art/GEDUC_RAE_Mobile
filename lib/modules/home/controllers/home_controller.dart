@@ -6,6 +6,8 @@ import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/offline_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../acoes/controllers/acao_controller.dart';
+import '../domain/operational_rule.dart';
+import '../domain/operational_rule_engine.dart';
 import '../models/home_operational_status.dart';
 import '../models/home_state.dart';
 import '../services/home_loader_service.dart';
@@ -14,12 +16,14 @@ class HomeController extends ChangeNotifier {
   HomeController({
     HomeLoaderService? loaderService,
     SyncService? syncService,
+    OperationalRuleEngine? ruleEngine,
   })  : _loaderService = loaderService ?? HomeLoaderService(),
         _syncService = syncService ??
             SyncService(
               offlineService: OfflineService(),
               firebaseService: FirebaseAcaoService(),
             ),
+        _ruleEngine = ruleEngine ?? OperationalRuleEngine.standard(),
         _deveDescartarSyncService = syncService == null {
     _syncService.addListener(_observarSyncService);
     unawaited(_iniciarMonitoramento());
@@ -27,6 +31,7 @@ class HomeController extends ChangeNotifier {
 
   final HomeLoaderService _loaderService;
   final SyncService _syncService;
+  final OperationalRuleEngine _ruleEngine;
   final bool _deveDescartarSyncService;
 
   HomeState _state = const HomeState();
@@ -124,6 +129,8 @@ class HomeController extends ChangeNotifier {
           sincronizando: _syncService.sincronizando,
           totalPendentes: _syncService.totalPendentes,
           totalSincronizadas: _syncService.totalSincronizadas,
+          falhasConsecutivasSincronizacao:
+              _syncService.falhasConsecutivasSincronizacao,
           erro: _syncService.erro,
           ultimaMudancaConectividadeEm:
               _syncService.ultimaMudancaConectividadeEm,
@@ -212,6 +219,42 @@ class HomeController extends ChangeNotifier {
       ultimaSincronizacaoAutomaticaEm: ultimaSincronizacaoAutomaticaEm ??
           _state.ultimaSincronizacaoAutomaticaEm,
       monitoramentoOperacional: _state.monitoramentoOperacional,
+      alertasOperacionais: _state.alertasOperacionais,
+    );
+  }
+
+  OperationalRuleContext _criarContextoDeRegras(HomeState estado) {
+    final monitoramento = estado.monitoramentoOperacional;
+
+    return OperationalRuleContext(
+      now: DateTime.now(),
+      isConnected: monitoramento.conectado,
+      pendingSyncCount: monitoramento.totalPendentes,
+      consecutiveSyncFailures: monitoramento.falhasConsecutivasSincronizacao,
+      offlineSince: monitoramento.conectado
+          ? null
+          : monitoramento.ultimaMudancaConectividadeEm,
+      lastCacheUpdate: estado.atualizadoEm,
+      lastOperationalUpdate: estado.atualizadoEm,
+      lastSuccessfulSync: monitoramento.ultimaSincronizacaoBemSucedidaEm ??
+          estado.ultimaSincronizacaoAutomaticaEm,
+    );
+  }
+
+  HomeState _avaliarAlertasOperacionais(HomeState estado) {
+    if (estado.status == HomeStatus.inicial ||
+        estado.status == HomeStatus.carregando) {
+      return estado.copyWith(
+        alertasOperacionais: const [],
+      );
+    }
+
+    final alertas = _ruleEngine.evaluate(
+      _criarContextoDeRegras(estado),
+    );
+
+    return estado.copyWith(
+      alertasOperacionais: alertas,
     );
   }
 
@@ -229,7 +272,7 @@ class HomeController extends ChangeNotifier {
   void _emitir(HomeState novoEstado) {
     if (_disposed) return;
 
-    _state = novoEstado;
+    _state = _avaliarAlertasOperacionais(novoEstado);
     notifyListeners();
   }
 

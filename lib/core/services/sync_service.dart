@@ -29,6 +29,9 @@ class SyncService extends ChangeNotifier {
   int totalSincronizadas = 0;
   String? erro;
 
+  int _falhasConsecutivasSincronizacao = 0;
+  int get falhasConsecutivasSincronizacao => _falhasConsecutivasSincronizacao;
+
   bool? _conectado;
   bool get conectado => _conectado ?? false;
 
@@ -103,6 +106,7 @@ class SyncService extends ChangeNotifier {
 
     if (!conectadoAgora) {
       erro = 'Sem conexão com a internet.';
+      _registrarFalhaSincronizacao();
       notifyListeners();
       return;
     }
@@ -112,7 +116,7 @@ class SyncService extends ChangeNotifier {
     if (pendentes.isEmpty) {
       totalPendentes = 0;
       totalSincronizadas = 0;
-      _ultimaSincronizacaoBemSucedidaEm = DateTime.now();
+      _registrarSincronizacaoBemSucedida();
       notifyListeners();
       return;
     }
@@ -148,11 +152,22 @@ class SyncService extends ChangeNotifier {
     if (naoSincronizadas.isNotEmpty) {
       erro =
           '${naoSincronizadas.length} ação(ões) não puderam ser sincronizadas.';
+      _registrarFalhaSincronizacao();
     } else {
-      _ultimaSincronizacaoBemSucedidaEm = DateTime.now();
+      _registrarSincronizacaoBemSucedida();
     }
 
     notifyListeners();
+  }
+
+  void _registrarFalhaSincronizacao() {
+    _falhasConsecutivasSincronizacao++;
+  }
+
+  void _registrarSincronizacaoBemSucedida() {
+    _falhasConsecutivasSincronizacao = 0;
+    erro = null;
+    _ultimaSincronizacaoBemSucedidaEm = DateTime.now();
   }
 
   void _registrarConectividade(

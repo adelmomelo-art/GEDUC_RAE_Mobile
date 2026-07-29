@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../domain/alert_level.dart';
+import '../domain/operational_alert.dart';
 import '../models/home_state.dart';
 
 class StatusWidget extends StatelessWidget {
@@ -107,6 +109,10 @@ class StatusWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            _AlertasOperacionaisSection(
+              alertas: homeState.alertasOperacionais,
+            ),
+            const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
                 final colunas = constraints.maxWidth >= 900
@@ -147,6 +153,237 @@ class StatusWidget extends StatelessWidget {
     final minuto = data.minute.toString().padLeft(2, '0');
 
     return '$dia/$mes às $hora:$minuto';
+  }
+}
+
+class _AlertasOperacionaisSection extends StatelessWidget {
+  const _AlertasOperacionaisSection({
+    required this.alertas,
+  });
+
+  final List<OperationalAlert> alertas;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (alertas.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Colors.green.withValues(alpha: 0.25),
+          ),
+        ),
+        child: const Row(
+          children: [
+            Icon(
+              Icons.verified_rounded,
+              color: Colors.green,
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Nenhum alerta operacional identificado.',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final alertasVisiveis = alertas.take(3).toList(growable: false);
+    final quantidadeOculta = alertas.length - alertasVisiveis.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.rule_rounded,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Alertas inteligentes',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${alertas.length}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        for (var index = 0; index < alertasVisiveis.length; index++) ...[
+          _OperationalAlertCard(
+            alerta: alertasVisiveis[index],
+          ),
+          if (index < alertasVisiveis.length - 1) const SizedBox(height: 8),
+        ],
+        if (quantidadeOculta > 0) ...[
+          const SizedBox(height: 8),
+          Text(
+            '+ $quantidadeOculta alerta(s) adicional(is), ordenado(s) por prioridade.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _OperationalAlertCard extends StatelessWidget {
+  const _OperationalAlertCard({
+    required this.alerta,
+  });
+
+  final OperationalAlert alerta;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final visual = _AlertVisual.fromLevel(alerta.level);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: visual.cor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: visual.cor.withValues(alpha: 0.30),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: visual.cor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              visual.icone,
+              color: visual.cor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      alerta.title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: visual.cor.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        alerta.level.label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: visual.cor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  alerta.message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  alerta.recommendation,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertVisual {
+  const _AlertVisual({
+    required this.cor,
+    required this.icone,
+  });
+
+  final Color cor;
+  final IconData icone;
+
+  factory _AlertVisual.fromLevel(AlertLevel level) {
+    switch (level) {
+      case AlertLevel.info:
+        return const _AlertVisual(
+          cor: Colors.blue,
+          icone: Icons.info_outline_rounded,
+        );
+      case AlertLevel.warning:
+        return const _AlertVisual(
+          cor: Colors.orange,
+          icone: Icons.warning_amber_rounded,
+        );
+      case AlertLevel.critical:
+        return const _AlertVisual(
+          cor: Colors.red,
+          icone: Icons.error_outline_rounded,
+        );
+    }
   }
 }
 

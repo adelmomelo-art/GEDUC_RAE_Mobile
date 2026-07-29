@@ -24,15 +24,27 @@ class LocalizacaoActionBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          // EST-003A.1
+          // Barra mais compacta para liberar área útil do conteúdo.
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compacto = constraints.maxWidth < 620;
+
+              const alturaPrincipal = 48.0;
+              const alturaSecundaria = 44.0;
 
               final voltar = OutlinedButton.icon(
                 onPressed: processando ? null : onVoltar,
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Voltar'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(alturaSecundaria),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
               );
 
               final atualizar = OutlinedButton.icon(
@@ -40,6 +52,13 @@ class LocalizacaoActionBar extends StatelessWidget {
                     processando ? null : onAtualizarLocalizacao,
                 icon: const Icon(Icons.my_location),
                 label: const Text('Atualizar localização'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(alturaSecundaria),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
               );
 
               final avancar = FilledButton.icon(
@@ -47,18 +66,25 @@ class LocalizacaoActionBar extends StatelessWidget {
                 icon: processando
                     ? const SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Icon(Icons.arrow_forward),
                 label: Text(rotuloAcaoPrincipal),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(alturaPrincipal),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
               );
 
               if (compacto) {
                 return Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     avancar,
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(child: voltar),

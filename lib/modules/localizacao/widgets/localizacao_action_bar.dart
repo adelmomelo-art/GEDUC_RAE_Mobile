@@ -21,92 +21,100 @@ class LocalizacaoActionBar extends StatelessWidget {
     return Material(
       elevation: 8,
       color: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          // EST-003A.1
-          // Barra mais compacta para liberar área útil do conteúdo.
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compacto = constraints.maxWidth < 620;
+      child: Padding(
+        // EST-003B.1
+        // A altura externa é definida pela LocalizacaoPage:
+        // 108 px no modo compacto e 60 px no modo horizontal.
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compacto = constraints.maxWidth < 620;
 
-              const alturaPrincipal = 48.0;
-              const alturaSecundaria = 44.0;
+            const alturaPrincipal = 48.0;
+            const alturaSecundaria = 44.0;
 
-              final voltar = OutlinedButton.icon(
-                onPressed: processando ? null : onVoltar,
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Voltar'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(alturaSecundaria),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+            final voltar = OutlinedButton.icon(
+              onPressed: processando ? null : onVoltar,
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Voltar'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(alturaSecundaria),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-              );
+              ),
+            );
 
-              final atualizar = OutlinedButton.icon(
-                onPressed:
-                    processando ? null : onAtualizarLocalizacao,
-                icon: const Icon(Icons.my_location),
-                label: const Text('Atualizar localização'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(alturaSecundaria),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+            final atualizar = OutlinedButton.icon(
+              onPressed: processando ? null : onAtualizarLocalizacao,
+              icon: const Icon(Icons.my_location),
+              label: const Text('Atualizar localização'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(alturaSecundaria),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-              );
+              ),
+            );
 
-              final avancar = FilledButton.icon(
-                onPressed: processando ? null : onAcaoPrincipal,
-                icon: processando
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.arrow_forward),
-                label: Text(rotuloAcaoPrincipal),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(alturaPrincipal),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+            final avancar = FilledButton.icon(
+              onPressed: processando ? null : onAcaoPrincipal,
+              icon: processando
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.arrow_forward),
+              label: Text(rotuloAcaoPrincipal),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(alturaPrincipal),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
                 ),
-              );
+              ),
+            );
 
-              if (compacto) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    avancar,
-                    const SizedBox(height: 4),
-                    Row(
+            if (compacto) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: alturaPrincipal, child: avancar),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: alturaSecundaria,
+                    child: Row(
                       children: [
                         Expanded(child: voltar),
                         const SizedBox(width: 8),
                         Expanded(child: atualizar),
                       ],
                     ),
-                  ],
-                );
-              }
+                  ),
+                ],
+              );
+            }
 
-              return Row(
+            return SizedBox(
+              height: alturaPrincipal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   voltar,
                   const SizedBox(width: 8),
                   atualizar,
                   const Spacer(),
-                  avancar,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 220),
+                    child: avancar,
+                  ),
                 ],
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

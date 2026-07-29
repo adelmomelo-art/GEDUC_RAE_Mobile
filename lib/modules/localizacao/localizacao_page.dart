@@ -464,10 +464,19 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
               title: const Text('Localização da Ação'),
             ),
             body: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Center(
+              // EST-003B.1:
+              // A página controla os insets e também define explicitamente
+              // a altura da barra. Isso elimina medições inconsistentes
+              // do Android em modo paisagem.
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final barraCompacta = constraints.maxWidth < 620;
+                  final alturaBarra = barraCompacta ? 108.0 : 60.0;
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 980),
                         child: ListView(
@@ -547,20 +556,25 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                       ),
                     ),
                   ),
-                  LocalizacaoActionBar(
-                    onVoltar:
-                        controller.ocupado ? null : _salvarEVoltar,
-                    onAtualizarLocalizacao:
-                        controller.estaNoLocal == true &&
-                                !controller.ocupado
-                            ? _capturarLocalizacaoGps
-                            : null,
-                    onAcaoPrincipal:
-                        controller.ocupado ? null : _confirmarEAvancar,
-                    rotuloAcaoPrincipal: 'Confirmar e avançar',
-                    processando: controller.ocupado,
-                  ),
-                ],
+                      SizedBox(
+                        height: alturaBarra,
+                        child: LocalizacaoActionBar(
+                          onVoltar:
+                              controller.ocupado ? null : _salvarEVoltar,
+                          onAtualizarLocalizacao:
+                              controller.estaNoLocal == true &&
+                                      !controller.ocupado
+                                  ? _capturarLocalizacaoGps
+                                  : null,
+                          onAcaoPrincipal:
+                              controller.ocupado ? null : _confirmarEAvancar,
+                          rotuloAcaoPrincipal: 'Confirmar e avançar',
+                          processando: controller.ocupado,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

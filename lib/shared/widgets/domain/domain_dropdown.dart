@@ -66,13 +66,21 @@ class _DomainDropdownState extends State<DomainDropdown>
           valorAtual == null ? const <String>[] : <String>[valorAtual],
     );
 
+    final valorSeguro = valorAtual != null && opcoes.containsKey(valorAtual)
+        ? valorAtual
+        : null;
+
+    final assinaturaOpcoes = opcoes.keys.join('|');
     final label = widget.obrigatorio ? '${widget.label} *' : widget.label;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          initialValue: valorAtual,
+          key: ValueKey<String>(
+            '${widget.grupo}::$valorSeguro::$assinaturaOpcoes',
+          ),
+          initialValue: valorSeguro,
           isExpanded: true,
           decoration: InputDecoration(
             labelText: label,
@@ -125,10 +133,23 @@ class _DomainDropdownState extends State<DomainDropdown>
             ),
           ),
         ] else if (!carregando && opcoes.isEmpty) ...[
-          const SizedBox(height: 6),
-          Text(
-            widget.mensagemSemOpcoes,
-            style: Theme.of(context).textTheme.bodySmall,
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.mensagemSemOpcoes,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: domainRecarregar,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Atualizar'),
+              ),
+            ],
           ),
         ],
       ],

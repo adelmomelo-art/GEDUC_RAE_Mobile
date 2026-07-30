@@ -1,0 +1,15 @@
+﻿lib/core/services/usuario_service.dart
+lib/repositories/usuario_repository.dart
+lib/modules/home/controllers/home_controller.dart
+lib/modules/home/services/home_loader_service.dart
+lib/modules/home/services/home_persistent_cache.dart
+lib/modules/home/models/home_cache_data.dart
+lib/modules/home/models/home_state.dart
+lib/modules/home/models/home_operational_status.dart
+lib/modules/home/home_page.dart
+lib/modules/home/widgets/home_header.dart
+lib/modules/home/widgets/centro_operacoes_header.dart
+lib/modules/home/widgets/atalhos_widget.dart
+lib/data/models/usuario_model.dart
+lib/core/services/offline_service.dart
+lib/core/services/sync_service.dart

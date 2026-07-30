@@ -95,7 +95,10 @@ class DomainProvider extends ChangeNotifier {
     if (!forcarAtualizacao) {
       final itensEmCache = cache.obter(grupoNormalizado);
 
-      if (itensEmCache != null) {
+      // Cache vazio não pode encerrar o fluxo de carregamento. Isso ocorre,
+      // por exemplo, quando um grupo foi consultado antes de receber seus
+      // primeiros domínios. Nesse caso, a fonte oficial precisa ser acessada.
+      if (itensEmCache != null && itensEmCache.isNotEmpty) {
         final tratados = _mesclarComLegados(
           grupoNormalizado,
           itensEmCache,
@@ -162,7 +165,11 @@ class DomainProvider extends ChangeNotifier {
     if (!forcarAtualizacao) {
       final persistidos = await persistentCache.obter(grupo);
 
+      // Um cache persistente vazio é tratado como cache miss. Caso contrário,
+      // o grupo permaneceria indefinidamente sem opções, mesmo após ser
+      // alimentado na Central de Domínios.
       if (persistidos != null &&
+          persistidos.isNotEmpty &&
           _carregamentoAindaValido(
             grupo: grupo,
             geracaoDoCarregamento: geracaoDoCarregamento,
@@ -236,7 +243,10 @@ class DomainProvider extends ChangeNotifier {
       final cacheExpirado = cache.obterMesmoExpirado(grupo);
       final persistidoExpirado =
           await persistentCache.obterMesmoExpirado(grupo);
-      final contingencia = cacheExpirado ?? persistidoExpirado;
+      final contingencia = _primeiraListaNaoVazia(
+        cacheExpirado,
+        persistidoExpirado,
+      );
 
       if (contingencia != null) {
         cache.armazenar(grupo, contingencia);
@@ -447,6 +457,21 @@ class DomainProvider extends ChangeNotifier {
     }
 
     return resultado.ordenados();
+  }
+
+  List<DomainModel>? _primeiraListaNaoVazia(
+    List<DomainModel>? primaria,
+    List<DomainModel>? secundaria,
+  ) {
+    if (primaria != null && primaria.isNotEmpty) {
+      return primaria;
+    }
+
+    if (secundaria != null && secundaria.isNotEmpty) {
+      return secundaria;
+    }
+
+    return null;
   }
 
   bool _ehValorLegado(DomainModel domain) {

@@ -541,6 +541,12 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
   }
 
   Widget _secaoComportamentoERiscos() {
+    final mudancaSelecionadaSegura =
+        mudancaComportamentoId != null &&
+                mudancasComportamento.containsKey(mudancaComportamentoId)
+            ? mudancaComportamentoId
+            : null;
+
     return _sectionCard(
       titulo: 'Comportamento e riscos',
       subtitulo: 'Registre os efeitos observados e os riscos identificados.',
@@ -548,7 +554,11 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
       child: Column(
         children: [
           DropdownButtonFormField<String>(
-            initialValue: mudancaComportamentoId,
+            key: ValueKey<String>(
+              'mudanca_comportamento::${mudancaSelecionadaSegura ?? ''}::${mudancasComportamento.keys.join('|')}',
+            ),
+            initialValue: mudancaSelecionadaSegura,
+            isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Mudança de comportamento observável *',
               border: OutlineInputBorder(),

@@ -1,0 +1,13 @@
+﻿lib/modules/acoes/caracterizacao_acao_page.dart
+lib/shared/widgets/domain/domain_dropdown.dart
+lib/shared/widgets/domain/domain_loader_mixin.dart
+lib/core/domains/domain_cache.dart
+lib/core/domains/domain_provider.dart
+lib/core/domains/domain_extensions.dart
+lib/core/domains/domain_groups.dart
+lib/core/services/domain_service.dart
+lib/repositories/domain_repository.dart
+lib/data/datasources/domain_data_source.dart
+lib/data/datasources/firestore_domain_data_source.dart
+lib/data/models/domain_model.dart
+lib/data/models/acao_model.dart

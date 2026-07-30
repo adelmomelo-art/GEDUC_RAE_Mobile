@@ -1,0 +1,42 @@
+# ============================================================
+# Plataforma Fênix
+# ChatGPT Package Builder (CPB)
+# ------------------------------------------------------------
+# Pacote  : EST-005C-DOCUMENTACAO-ARQUITETURA
+# Sprint  : EST-005C
+# Versão  : 1.0
+# Status  : EM AUDITORIA DOCUMENTAL
+# Branch  : release/estabilizacao-pv006
+#
+# Objetivo:
+# Atualizar a documentação técnica e arquitetural após a
+# promoção do DomainProvider para o escopo global da aplicação,
+# registrando a causa raiz, a decisão arquitetural, a validação
+# técnica e o encerramento da EST-005B.
+#
+# Base técnica:
+# - Commit 35d41f6
+# - HAT-1 aprovada
+# - Homologação funcional aprovada
+# - HAT-2 aprovada
+# - flutter analyze com 0 issues
+# ============================================================
+
+# ---------- Código de referência ----------
+lib/app.dart
+lib/core/domains/domain_provider.dart
+lib/modules/acoes/caracterizacao_acao_page.dart
+lib/modules/avaliacao/avaliacao_page.dart
+
+# ---------- Arquitetura principal ----------
+docs/01_PLATFORM_ARCHITECTURE.md
+
+# ---------- Registro de engenharia ----------
+docs/06_ENGINEERING_LOG.md
+
+# ---------- Blueprint / SKPF relacionado ----------
+docs/SKPF/BP-ISSUE-002A.2_INTEGRACAO_DOMAIN_SERVICE.md
+
+# ---------- Governança de engenharia ----------
+docs/00_ENGINEERING_CHARTER.md
+docs/08_GUIA_DE_DESENVOLVIMENTO.md

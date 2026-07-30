@@ -1,0 +1,37 @@
+# ============================================================
+# Plataforma Fênix
+# ChatGPT Package Builder — CPB
+# ------------------------------------------------------------
+# Pacote  : EST-005D-DOCUMENTACAO-ARQUITETURAL-HOMOLOGADA
+# Sprint  : EST-005D
+# Versão  : 1.0
+# Status  : EM HOMOLOGAÇÃO
+# Branch  : release/estabilizacao-pv006
+#
+# Objetivo:
+# Consolidar a documentação arquitetural após a promoção do
+# DomainProvider para o escopo global da aplicação.
+#
+# Referências:
+# - EST-005A — auditoria da infraestrutura de providers
+# - EST-005B — globalização do DomainProvider
+# - Commit de implementação: 35d41f6
+# - HAT-1 aprovada
+# - HAT-2 aprovada
+# - flutter analyze com 0 issues
+# ============================================================
+
+# ---------- Documentação atualizada ----------
+docs/01_PLATFORM_ARCHITECTURE.md
+docs/06_ENGINEERING_LOG.md
+docs/SKPF/BP-ISSUE-002A.2_INTEGRACAO_DOMAIN_SERVICE.md
+
+# ---------- Código de referência ----------
+lib/app.dart
+lib/core/domains/domain_provider.dart
+lib/modules/acoes/caracterizacao_acao_page.dart
+lib/modules/avaliacao/avaliacao_page.dart
+
+# ---------- Governança ----------
+docs/00_ENGINEERING_CHARTER.md
+docs/08_GUIA_DE_DESENVOLVIMENTO.md

@@ -1,0 +1,10 @@
+﻿lib/main.dart
+lib/app.dart
+lib/core/routes/app_routes.dart
+lib/core/domains/domain_provider.dart
+lib/modules/avaliacao/avaliacao_page.dart
+lib/modules/acoes/caracterizacao_acao_page.dart
+lib/modules/acoes/resultados_page.dart
+lib/modules/acoes/controllers/acao_controller.dart
+lib/shared/widgets/domain/domain_dropdown.dart
+pubspec.yaml

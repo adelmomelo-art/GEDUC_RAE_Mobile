@@ -1,0 +1,46 @@
+# ============================================================
+# Plataforma Fênix
+# ChatGPT Package Builder (CPB)
+# ------------------------------------------------------------
+# Pacote  : EST-005B-GLOBAL-DOMAINPROVIDER-HOMOLOGADO
+# Sprint  : EST-005B
+# Versão  : 1.0
+# Status  : HOMOLOGADO
+# Branch  : release/estabilizacao-pv006
+#
+# Objetivo:
+# Consolidar a estabilização da integração da Central de
+# Domínios, promovendo o DomainProvider para escopo global
+# da aplicação e eliminando definitivamente o
+# ProviderNotFoundException na tela de Avaliação.
+#
+# Metodologia:
+# Plataforma Fênix - Engenharia v2.0
+#
+# HAT-1 ............ APROVADA
+# Implementação .... CONCLUÍDA
+# flutter analyze .. 0 Issues
+# Homologação ...... APROVADA
+# ============================================================
+
+# ---------- Núcleo da Aplicação ----------
+lib/main.dart
+lib/app.dart
+pubspec.yaml
+
+# ---------- Roteamento ----------
+lib/core/routes/app_routes.dart
+
+# ---------- Central de Domínios ----------
+lib/core/domains/domain_provider.dart
+
+# ---------- Módulos ----------
+lib/modules/acoes/caracterizacao_acao_page.dart
+lib/modules/avaliacao/avaliacao_page.dart
+lib/modules/acoes/resultados_page.dart
+
+# ---------- Controllers ----------
+lib/modules/acoes/controllers/acao_controller.dart
+
+# ---------- Widgets ----------
+lib/shared/widgets/domain/domain_dropdown.dart

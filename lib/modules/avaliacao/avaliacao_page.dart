@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/domains/domain_groups.dart';
+import '../../core/domains/domain_provider.dart';
+import '../../shared/widgets/domain/domain_dropdown.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class AvaliacaoPage extends StatefulWidget {
@@ -21,12 +24,6 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
   String? mudancaComportamentoId;
   bool _restaurandoDados = true;
   bool _navegando = false;
-
-  static const mudancasComportamento = <String, String>{
-    'mudanca_sim': 'Sim, foi observada',
-    'mudanca_parcial': 'Parcialmente observada',
-    'mudanca_nao': 'Não foi observada',
-  };
 
   @override
   void initState() {
@@ -397,7 +394,32 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
     );
   }
 
+  String _descricaoMudancaComportamento(DomainProvider provider) {
+    final id = mudancaComportamentoId?.trim();
+
+    if (id == null || id.isEmpty) {
+      return 'Pendente';
+    }
+
+    final descricao =
+        provider.opcoesDoGrupo(DomainGroups.mudancaComportamento)[id]?.trim();
+
+    if (descricao != null && descricao.isNotEmpty) {
+      return descricao;
+    }
+
+    return id
+        .replaceFirst(RegExp(r'^mudanca_comportamento_'), '')
+        .replaceFirst(RegExp(r'^mudanca_'), '')
+        .split('_')
+        .where((parte) => parte.isNotEmpty)
+        .map((parte) => '${parte[0].toUpperCase()}${parte.substring(1)}')
+        .join(' ');
+  }
+
   Widget _dashboard() {
+    final domainProvider = context.watch<DomainProvider>();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final largura = constraints.maxWidth;
@@ -419,9 +441,7 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
               largura: larguraCard,
               icone: Icons.psychology_alt_outlined,
               titulo: 'Comportamento',
-              valor: mudancaComportamentoId == null
-                  ? 'Pendente'
-                  : mudancasComportamento[mudancaComportamentoId]!,
+              valor: _descricaoMudancaComportamento(domainProvider),
               cor: _mudancaPreenchida ? Colors.green : Colors.orange,
             ),
             _indicadorExecutivo(
@@ -541,11 +561,8 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
   }
 
   Widget _secaoComportamentoERiscos() {
-    final mudancaSelecionadaSegura =
-        mudancaComportamentoId != null &&
-                mudancasComportamento.containsKey(mudancaComportamentoId)
-            ? mudancaComportamentoId
-            : null;
+    final domainProvider = context.watch<DomainProvider>();
+    final descricaoAtual = _descricaoMudancaComportamento(domainProvider);
 
     return _sectionCard(
       titulo: 'Comportamento e riscos',
@@ -553,25 +570,14 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
       icone: Icons.visibility_outlined,
       child: Column(
         children: [
-          DropdownButtonFormField<String>(
-            key: ValueKey<String>(
-              'mudanca_comportamento::${mudancaSelecionadaSegura ?? ''}::${mudancasComportamento.keys.join('|')}',
-            ),
-            initialValue: mudancaSelecionadaSegura,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Mudança de comportamento observável *',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.change_circle_outlined),
-            ),
-            items: mudancasComportamento.entries
-                .map(
-                  (item) => DropdownMenuItem(
-                    value: item.key,
-                    child: Text(item.value),
-                  ),
-                )
-                .toList(growable: false),
+          DomainDropdown(
+            grupo: DomainGroups.mudancaComportamento,
+            label: 'Mudança de comportamento observável',
+            value: mudancaComportamentoId,
+            valorLegadoNome:
+                descricaoAtual == 'Pendente' ? null : descricaoAtual,
+            obrigatorio: true,
+            prefixIcon: const Icon(Icons.change_circle_outlined),
             onChanged: _selecionarMudanca,
           ),
           const SizedBox(height: 16),

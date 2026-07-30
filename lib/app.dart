@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/domains/domain_provider.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/firebase_acao_service.dart';
 import 'core/services/offline_service.dart';
@@ -50,6 +51,9 @@ class GeducRaeApp extends StatelessWidget {
           create: (_) => AcaoController(
             acaoRepository: acaoRepository,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DomainProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => UsuarioController(

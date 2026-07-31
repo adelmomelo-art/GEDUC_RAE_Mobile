@@ -47,6 +47,19 @@ class AppRoutes {
   static const String avaliacaoPath = '/avaliacao';
   static const String revisaoPath = '/revisao';
 
+  static const String dashboardPath = '/dashboard';
+  static const String adminPath = '/admin';
+  static const String adminLegadoPath = '/admin-legado';
+  static const String adminDominiosPath = '/admin/dominios';
+  static const String usuariosPath = '/usuarios';
+  static const String tiposAcoesPath = '/tipos-acoes';
+  static const String coordenadoresPath = '/coordenadores';
+  static const String regionaisPath = '/regionais';
+  static const String materiaisPath = '/materiais';
+  static const String consultaRaePath = '/consulta-rae';
+  static const String biGeducPath = '/bi-geduc';
+  static const String sincronizacaoPath = '/sincronizacao';
+
   static final AuthRouterRefresh _authRouterRefresh = AuthRouterRefresh();
 
   static final router = GoRouter(
@@ -116,51 +129,51 @@ class AppRoutes {
         builder: (context, state) => const RevisaoRelatorioPage(),
       ),
       GoRoute(
-        path: '/dashboard',
+        path: dashboardPath,
         builder: (context, state) => const DashboardPage(),
       ),
       GoRoute(
-        path: '/admin',
+        path: adminPath,
         builder: (context, state) => const AdminHomePage(),
       ),
       GoRoute(
-        path: '/admin-legado',
+        path: adminLegadoPath,
         builder: (context, state) => const AdminPage(),
       ),
       GoRoute(
-        path: '/admin/dominios',
+        path: adminDominiosPath,
         builder: (context, state) => const DomainListPage(),
       ),
       GoRoute(
-        path: '/usuarios',
+        path: usuariosPath,
         builder: (context, state) => const UsuariosPage(),
       ),
       GoRoute(
-        path: '/tipos-acoes',
+        path: tiposAcoesPath,
         builder: (context, state) => const TiposAcoesPage(),
       ),
       GoRoute(
-        path: '/coordenadores',
+        path: coordenadoresPath,
         builder: (context, state) => const CoordenadoresPage(),
       ),
       GoRoute(
-        path: '/regionais',
+        path: regionaisPath,
         builder: (context, state) => const RegionaisPage(),
       ),
       GoRoute(
-        path: '/materiais',
+        path: materiaisPath,
         builder: (context, state) => const MateriaisPage(),
       ),
       GoRoute(
-        path: '/consulta-rae',
+        path: consultaRaePath,
         builder: (context, state) => const ConsultaRaePage(),
       ),
       GoRoute(
-        path: '/bi-geduc',
+        path: biGeducPath,
         builder: (context, state) => const BiGeducPage(),
       ),
       GoRoute(
-        path: '/sincronizacao',
+        path: sincronizacaoPath,
         builder: (context, state) => const SincronizacaoPage(),
       ),
     ],

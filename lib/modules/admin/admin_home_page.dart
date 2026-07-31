@@ -1,86 +1,126 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
+import '../../core/navigation/navigation_manager.dart';
+import 'domain/admin_module_catalog.dart';
+import 'widgets/admin_module_card.dart';
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const itens = [
-      _AdminItem(
-        titulo: 'Central de Domínios',
-        descricao: 'Gerencie listas, grupos e opções utilizadas no app.',
-        icone: Icons.category,
-        rota: '/admin/dominios',
-      ),
-      _AdminItem(
-        titulo: 'Usuários',
-        descricao: 'Cadastro e consulta de usuários da plataforma.',
-        icone: Icons.people,
-        rota: '/usuarios',
-      ),
-      _AdminItem(
-        titulo: 'Tipos de Ações',
-        descricao: 'Cadastro atual de tipos de ações educativas.',
-        icone: Icons.assignment,
-        rota: '/tipos-acoes',
-      ),
-      _AdminItem(
-        titulo: 'Coordenadores',
-        descricao: 'Cadastro de coordenadores e responsáveis.',
-        icone: Icons.badge,
-        rota: '/coordenadores',
-      ),
-      _AdminItem(
-        titulo: 'Regionais',
-        descricao: 'Cadastro de regionais e bairros vinculados.',
-        icone: Icons.map,
-        rota: '/regionais',
-      ),
-      _AdminItem(
-        titulo: 'Materiais',
-        descricao: 'Cadastro de materiais utilizados nas ações.',
-        icone: Icons.inventory_2,
-        rota: '/materiais',
-      ),
-    ];
+    const modulos = AdminModuleCatalog.modulos;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administração'),
+        leading: IconButton(
+          tooltip: 'Voltar',
+          onPressed: () => NavigationManager.backOrCentro(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: itens.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final item = itens[index];
-
-          return Card(
-            child: ListTile(
-              leading: Icon(item.icone),
-              title: Text(item.titulo),
-              subtitle: Text(item.descricao),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go(item.rota),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: _AdminHeader(totalModulos: modulos.length),
             ),
-          );
-        },
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            sliver: SliverLayoutBuilder(
+              builder: (context, constraints) {
+                final largura = constraints.crossAxisExtent;
+                final colunas = largura >= 1100
+                    ? 3
+                    : largura >= 700
+                        ? 2
+                        : 1;
+
+                return SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: colunas,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    mainAxisExtent: 220,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final modulo = modulos[index];
+
+                      return AdminModuleCard(
+                        modulo: modulo,
+                        onTap: modulo.permiteNavegacao
+                            ? () => NavigationManager.push<void>(
+                                  context,
+                                  modulo.rota,
+                                )
+                            : null,
+                      );
+                    },
+                    childCount: modulos.length,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _AdminItem {
-  final String titulo;
-  final String descricao;
-  final IconData icone;
-  final String rota;
+class _AdminHeader extends StatelessWidget {
+  final int totalModulos;
 
-  const _AdminItem({
-    required this.titulo,
-    required this.descricao,
-    required this.icone,
-    required this.rota,
-  });
+  const _AdminHeader({required this.totalModulos});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 26,
+              child: Icon(
+                Icons.admin_panel_settings_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fundação Administrativa',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Acesso centralizado aos módulos de parametrização e governança da Plataforma Fênix.',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '$totalModulos módulos catalogados',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

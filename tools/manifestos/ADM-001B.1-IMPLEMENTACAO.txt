@@ -1,0 +1,9 @@
+lib/core/navigation/navigation_manager.dart
+lib/core/routes/app_routes.dart
+lib/modules/admin/admin_home_page.dart
+lib/modules/admin/domain/admin_module.dart
+lib/modules/admin/domain/admin_module_catalog.dart
+lib/modules/admin/domain/admin_module_status.dart
+lib/modules/admin/domain/admin_permission.dart
+lib/modules/admin/widgets/admin_module_card.dart
+README_ADM-001B.1.md

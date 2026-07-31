@@ -1,0 +1,30 @@
+$arquivos = @(
+    "lib/app.dart",
+    "lib/core/navigation/navigation_manager.dart",
+    "lib/core/routes/app_routes.dart",
+
+    "lib/modules/admin/admin_home_page.dart",
+    "lib/modules/admin/admin_page.dart",
+
+    "lib/modules/usuarios/usuarios_page.dart",
+    "lib/modules/tipos_acoes/tipos_acoes_page.dart",
+    "lib/modules/coordenadores/coordenadores_page.dart",
+    "lib/modules/regionais/regionais_page.dart",
+    "lib/modules/materiais/materiais_page.dart",
+
+    "lib/modules/admin/controllers/usuario_controller.dart",
+    "lib/modules/admin/controllers/tipo_acao_controller.dart",
+
+    "lib/core/services/admin_cadastro_service.dart",
+    "lib/core/services/usuario_service.dart",
+    "lib/core/services/tipo_acao_service.dart",
+
+    "lib/data/models/usuario_model.dart",
+    "lib/data/models/coordenador_model.dart",
+    "lib/data/models/tipo_acao_model.dart",
+
+    "lib/repositories/usuario_repository.dart",
+    "lib/repositories/tipo_acao_repository.dart",
+
+    "firestore.rules"
+)

@@ -1,0 +1,6 @@
+﻿lib/modules/avaliacao/avaliacao_page.dart
+lib/shared/widgets/domain/domain_dropdown.dart
+lib/core/domains/domain_provider.dart
+lib/core/domains/domain_groups.dart
+lib/modules/acoes/controllers/acao_controller.dart
+lib/data/models/acao_model.dart

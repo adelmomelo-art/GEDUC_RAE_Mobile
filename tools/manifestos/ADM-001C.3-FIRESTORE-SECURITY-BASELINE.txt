@@ -1,0 +1,10 @@
+firestore.rules
+firebase.json
+.gitignore
+package.json
+package-lock.json
+test/firestore.rules.test.js
+docs/ADM-001C.3_INVENTARIO_FIRESTORE.md
+README_ADM-001C.3.md
+tools/manifestos/ADM-001C.3-AUDITORIA-FIRESTORE.txt
+tools/manifestos/ADM-001C.3-FIRESTORE-SECURITY-BASELINE.txt

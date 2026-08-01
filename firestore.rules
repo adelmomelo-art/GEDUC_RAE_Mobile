@@ -6,36 +6,104 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function caminhoUsuarioAtual() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function usuarioExiste() {
+      return autenticado() && exists(caminhoUsuarioAtual());
+    }
+
     function usuarioAtual() {
-      return get(
-        /databases/$(database)/documents/usuarios/$(request.auth.uid)
-      );
+      return get(caminhoUsuarioAtual());
+    }
+
+    function perfilAtual() {
+      return usuarioAtual().data.perfilAcesso;
+    }
+
+    function perfilReconhecido() {
+      return usuarioExiste()
+        && usuarioAtual().data.perfilAcesso is string
+        && perfilAtual() in [
+          'administrador',
+          'gestor',
+          'coordenador',
+          'agente'
+        ];
+    }
+
+    function usuarioAtivo() {
+      return perfilReconhecido()
+        && usuarioAtual().data.ativo == true;
+    }
+
+    function possuiPerfil(perfis) {
+      return usuarioAtivo() && perfilAtual() in perfis;
     }
 
     function administrador() {
-      return autenticado()
-        && usuarioAtual().data.perfil == 'administrador';
+      return possuiPerfil(['administrador']);
+    }
+
+    function administradorOuGestor() {
+      return possuiPerfil(['administrador', 'gestor']);
+    }
+
+    match /usuarios/{usuarioId} {
+      // A leitura do próprio documento precisa funcionar mesmo para conta
+      // inativa, permitindo que o cliente determine o estado da identidade.
+      allow get: if autenticado() && request.auth.uid == usuarioId;
+      allow list: if administradorOuGestor();
+
+      // Não há fluxo cliente homologado para administrar identidade.
+      // Perfil, situação ativa e UID permanecem imutáveis pelo aplicativo.
+      allow create, update, delete: if false;
     }
 
     match /domains/{domainId} {
-      allow read: if autenticado();
-
-      allow create: if administrador()
-        && request.resource.data.keys().hasAll([
-          'grupo',
-          'codigo',
-          'nome',
-          'ordem',
-          'ativo',
-          'createdAt',
-          'updatedAt'
-        ]);
-
-      allow update: if administrador()
-        && request.resource.data.createdAt
-          == resource.data.createdAt;
-
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administradorOuGestor();
       allow delete: if false;
+    }
+
+    match /tipos_acoes/{tipoAcaoId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administradorOuGestor();
+      allow delete: if false;
+    }
+
+    match /coordenadores/{coordenadorId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administrador();
+      allow delete: if false;
+    }
+
+    match /regionais/{regionalId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administrador();
+      allow delete: if false;
+    }
+
+    match /materiais/{materialId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administrador();
+      allow delete: if false;
+    }
+
+    match /acoes/{acaoId} {
+      allow get, list, create, update: if usuarioAtivo();
+      allow delete: if administrador();
+    }
+
+    match /contadores/{contadorId} {
+      allow get, create, update: if usuarioAtivo();
+      allow list, delete: if false;
+    }
+
+    // Toda coleção não inventariada permanece explicitamente bloqueada.
+    match /{documento=**} {
+      allow read, write: if false;
     }
   }
 }

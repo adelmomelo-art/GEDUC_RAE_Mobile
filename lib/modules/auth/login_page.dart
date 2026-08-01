@@ -1,7 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../core/navigation/navigation_manager.dart';
-import '../../core/services/usuario_service.dart';
 import 'widgets/faixita_card.dart';
 
 class LoginPage extends StatefulWidget {
@@ -31,19 +29,9 @@ class _LoginPageState extends State<LoginPage> {
         carregando = true;
       });
 
-      final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
-      );
-
-      final uid = credencial.user!.uid;
-      await UsuarioService().buscarUsuario(uid);
-
-      if (!mounted) return;
-
-      NavigationManager.replace(
-        context,
-        NavigationManager.homeRoute,
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;

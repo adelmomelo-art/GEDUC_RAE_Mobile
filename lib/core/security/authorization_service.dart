@@ -7,6 +7,7 @@ import '../../data/models/usuario_model.dart';
 import '../services/usuario_service.dart';
 import 'authorization_policy.dart';
 import 'authorization_result.dart';
+import 'identity_status.dart';
 import 'permission.dart';
 
 class AuthorizationService extends ChangeNotifier {
@@ -15,6 +16,9 @@ class AuthorizationService extends ChangeNotifier {
     UsuarioService? usuarioService,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _usuarioService = usuarioService ?? UsuarioService() {
+    _status = _firebaseAuth.currentUser == null
+        ? IdentityStatus.naoAutenticado
+        : IdentityStatus.carregando;
     _authSubscription = _firebaseAuth.authStateChanges().listen(
           _onAuthStateChanged,
         );
@@ -28,13 +32,18 @@ class AuthorizationService extends ChangeNotifier {
   StreamSubscription<User?>? _authSubscription;
   UsuarioModel? _usuarioAtual;
   String? _uidCarregado;
-  bool _carregando = false;
+  late IdentityStatus _status;
   Object? _ultimoErro;
   Future<void>? _carregamentoEmAndamento;
+  String? _uidEmCarregamento;
+  int _geracaoSessao = 0;
 
   UsuarioModel? get usuarioAtual => _usuarioAtual;
-  bool get carregando => _carregando;
+  IdentityStatus get status => _status;
+  bool get carregando => _status == IdentityStatus.carregando;
+  bool get identidadeValida => _status.identidadeValida;
   Object? get ultimoErro => _ultimoErro;
+
   String get perfilAtual => AuthorizationPolicy.normalizarPerfil(
         _usuarioAtual?.perfilAcesso,
       );
@@ -45,21 +54,35 @@ class AuthorizationService extends ChangeNotifier {
     final uid = _firebaseAuth.currentUser?.uid;
 
     if (uid == null) {
-      _limparUsuarioAtual();
+      _definirNaoAutenticado();
       return Future<void>.value();
     }
 
-    if (_uidCarregado == uid && _usuarioAtual != null) {
+    if (_uidCarregado == uid && _status != IdentityStatus.carregando) {
       return Future<void>.value();
     }
 
-    return _carregamentoEmAndamento ??= _carregarUsuario(uid).whenComplete(() {
-      _carregamentoEmAndamento = null;
+    if (_uidEmCarregamento == uid && _carregamentoEmAndamento != null) {
+      return _carregamentoEmAndamento!;
+    }
+
+    final geracao = _geracaoSessao;
+    _uidEmCarregamento = uid;
+    _carregamentoEmAndamento = _carregarUsuario(
+      uid: uid,
+      geracao: geracao,
+    ).whenComplete(() {
+      if (_geracaoSessao == geracao && _uidEmCarregamento == uid) {
+        _uidEmCarregamento = null;
+        _carregamentoEmAndamento = null;
+      }
     });
+
+    return _carregamentoEmAndamento!;
   }
 
   AuthorizationResult avaliar(Permission permissao) {
-    if (!autenticado) {
+    if (!autenticado || _status == IdentityStatus.naoAutenticado) {
       return AuthorizationResult.negado(
         permissao: permissao,
         perfilAcesso: perfilAtual,
@@ -67,11 +90,11 @@ class AuthorizationService extends ChangeNotifier {
       );
     }
 
-    if (_usuarioAtual == null) {
+    if (!identidadeValida || _usuarioAtual == null) {
       return AuthorizationResult.negado(
         permissao: permissao,
         perfilAcesso: perfilAtual,
-        motivo: 'O perfil de acesso do usuário não pôde ser identificado.',
+        motivo: _motivoBloqueio,
       );
     }
 
@@ -100,52 +123,121 @@ class AuthorizationService extends ChangeNotifier {
   }
 
   Future<void> recarregar() async {
-    _uidCarregado = null;
-    _usuarioAtual = null;
-    await garantirUsuarioAtual();
-  }
+    final user = _firebaseAuth.currentUser;
+    _geracaoSessao++;
+    _invalidarCarregamento();
 
-  Future<void> _onAuthStateChanged(User? user) async {
     if (user == null) {
-      _limparUsuarioAtual();
+      _definirNaoAutenticado();
       return;
     }
 
-    if (_uidCarregado != user.uid || _usuarioAtual == null) {
-      await garantirUsuarioAtual();
-    }
-  }
-
-  Future<void> _carregarUsuario(String uid) async {
-    _carregando = true;
+    _usuarioAtual = null;
+    _uidCarregado = null;
+    _status = IdentityStatus.carregando;
     _ultimoErro = null;
     notifyListeners();
-
-    try {
-      _usuarioAtual = await _usuarioService.buscarUsuario(uid);
-      _uidCarregado = uid;
-    } catch (erro) {
-      _usuarioAtual = null;
-      _uidCarregado = uid;
-      _ultimoErro = erro;
-    } finally {
-      _carregando = false;
-      notifyListeners();
-    }
+    await garantirUsuarioAtual();
   }
 
-  void _limparUsuarioAtual() {
-    final precisaNotificar =
-        _usuarioAtual != null || _uidCarregado != null || _ultimoErro != null;
+  Future<void> encerrarSessao() async {
+    _geracaoSessao++;
+    _invalidarCarregamento();
+    _definirNaoAutenticado();
+    await _firebaseAuth.signOut();
+  }
+
+  Future<void> _onAuthStateChanged(User? user) async {
+    _geracaoSessao++;
+    _invalidarCarregamento();
+
+    if (user == null) {
+      _definirNaoAutenticado();
+      return;
+    }
 
     _usuarioAtual = null;
     _uidCarregado = null;
+    _status = IdentityStatus.carregando;
     _ultimoErro = null;
-    _carregando = false;
+    notifyListeners();
+    await garantirUsuarioAtual();
+  }
 
-    if (precisaNotificar) {
-      notifyListeners();
+  Future<void> _carregarUsuario({
+    required String uid,
+    required int geracao,
+  }) async {
+    _status = IdentityStatus.carregando;
+    _ultimoErro = null;
+
+    try {
+      final usuario = await _usuarioService.buscarUsuario(uid);
+      if (!_resultadoAindaPertenceASessao(uid, geracao)) return;
+
+      _uidCarregado = uid;
+      _usuarioAtual = usuario;
+
+      if (usuario == null) {
+        _status = IdentityStatus.semCadastro;
+      } else if (!usuario.ativo) {
+        _status = IdentityStatus.inativo;
+      } else if (!AuthorizationPolicy.perfilReconhecido(
+        usuario.perfilAcesso,
+      )) {
+        _status = IdentityStatus.perfilInvalido;
+      } else {
+        _status = IdentityStatus.ativo;
+      }
+    } catch (erro) {
+      if (!_resultadoAindaPertenceASessao(uid, geracao)) return;
+      _uidCarregado = uid;
+      _usuarioAtual = null;
+      _status = IdentityStatus.erro;
+      _ultimoErro = erro;
+    } finally {
+      if (_resultadoAindaPertenceASessao(uid, geracao)) {
+        notifyListeners();
+      }
     }
+  }
+
+  bool _resultadoAindaPertenceASessao(String uid, int geracao) {
+    return geracao == _geracaoSessao &&
+        _firebaseAuth.currentUser?.uid == uid;
+  }
+
+  void _invalidarCarregamento() {
+    _carregamentoEmAndamento = null;
+    _uidEmCarregamento = null;
+  }
+
+  void _definirNaoAutenticado() {
+    final precisaNotificar = _status != IdentityStatus.naoAutenticado ||
+        _usuarioAtual != null ||
+        _uidCarregado != null ||
+        _ultimoErro != null;
+
+    _usuarioAtual = null;
+    _uidCarregado = null;
+    _status = IdentityStatus.naoAutenticado;
+    _ultimoErro = null;
+
+    if (precisaNotificar) notifyListeners();
+  }
+
+  String get _motivoBloqueio {
+    return switch (_status) {
+      IdentityStatus.carregando => 'A identidade ainda está sendo validada.',
+      IdentityStatus.semCadastro =>
+        'Não existe cadastro operacional vinculado a esta conta.',
+      IdentityStatus.inativo => 'Esta conta está inativa na Plataforma Fênix.',
+      IdentityStatus.perfilInvalido =>
+        'O perfil de acesso da conta não é reconhecido.',
+      IdentityStatus.erro =>
+        'Não foi possível validar a identidade desta conta.',
+      _ => 'A identidade atual não está autorizada.',
+    };
   }
 
   @override

@@ -28,6 +28,11 @@ class AuthorizationPolicy {
     return perfil.isEmpty ? 'nao-identificado' : perfil;
   }
 
+  static bool perfilReconhecido(String? perfilAcesso) {
+    final perfil = normalizarPerfil(perfilAcesso);
+    return _permissoesPorPerfil.containsKey(perfil);
+  }
+
   static bool possuiPermissao({
     required String? perfilAcesso,
     required Permission permissao,

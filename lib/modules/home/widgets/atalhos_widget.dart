@@ -91,7 +91,8 @@ class AtalhosWidget extends StatelessWidget {
         titulo: 'Offline',
         onTap: () => context.push('/sincronizacao'),
       ),
-      if (usuario?.perfilAcesso == 'administrador')
+      if (usuario?.perfilAcesso == 'administrador' ||
+          usuario?.perfilAcesso == 'gestor')
         _AtalhoItem(
           icon: Icons.admin_panel_settings_rounded,
           titulo: 'Administração',

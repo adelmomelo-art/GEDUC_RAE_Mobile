@@ -1,0 +1,17 @@
+lib/app.dart
+lib/core/security/permission.dart
+lib/core/security/authorization_result.dart
+lib/core/security/authorization_policy.dart
+lib/core/security/authorization_service.dart
+lib/core/routes/route_guard.dart
+lib/core/routes/app_routes.dart
+lib/modules/admin/access_denied_page.dart
+lib/modules/admin/admin_home_page.dart
+lib/modules/admin/domain/admin_module.dart
+lib/modules/admin/domain/admin_module_catalog.dart
+lib/modules/admin/domain/admin_permission.dart
+lib/modules/home/widgets/atalhos_widget.dart
+BLUEPRINT_ADM-001B.2.md
+README_ADM-001B.2.md
+tools/manifestos/ADM-001B.2-IMPLEMENTACAO.txt
+tools/manifestos/ADM-001B.2-HOMOLOGADO.txt

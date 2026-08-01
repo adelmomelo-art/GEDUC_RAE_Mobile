@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +7,7 @@ import '../../modules/acoes/consulta_rae_page.dart';
 import '../../modules/acoes/nova_acao_page.dart';
 import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
+import '../../modules/admin/access_denied_page.dart';
 import '../../modules/admin/admin_home_page.dart';
 import '../../modules/admin/admin_page.dart';
 import '../../modules/admin/domain_list_page.dart';
@@ -25,6 +27,9 @@ import '../../modules/sincronizacao/sincronizacao_page.dart';
 import '../../modules/tipos_acoes/tipos_acoes_page.dart';
 import '../../modules/usuarios/usuarios_page.dart';
 import '../auth/auth_router_refresh.dart';
+import '../security/authorization_service.dart';
+import '../security/permission.dart';
+import 'route_guard.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -47,11 +52,30 @@ class AppRoutes {
   static const String avaliacaoPath = '/avaliacao';
   static const String revisaoPath = '/revisao';
 
+  static const String dashboardPath = '/dashboard';
+  static const String adminPath = '/admin';
+  static const String adminLegadoPath = '/admin-legado';
+  static const String adminDominiosPath = '/admin/dominios';
+  static const String acessoNegadoPath = '/acesso-negado';
+  static const String usuariosPath = '/usuarios';
+  static const String tiposAcoesPath = '/tipos-acoes';
+  static const String coordenadoresPath = '/coordenadores';
+  static const String regionaisPath = '/regionais';
+  static const String materiaisPath = '/materiais';
+  static const String consultaRaePath = '/consulta-rae';
+  static const String biGeducPath = '/bi-geduc';
+  static const String sincronizacaoPath = '/sincronizacao';
+
   static final AuthRouterRefresh _authRouterRefresh = AuthRouterRefresh();
+  static final AuthorizationService _authorizationService =
+      AuthorizationService.instance;
 
   static final router = GoRouter(
     initialLocation: loginPath,
-    refreshListenable: _authRouterRefresh,
+    refreshListenable: Listenable.merge([
+      _authRouterRefresh,
+      _authorizationService,
+    ]),
     redirect: (context, state) {
       final usuarioAutenticado = FirebaseAuth.instance.currentUser != null;
       final estaNoLogin = state.uri.path == loginPath;
@@ -74,6 +98,10 @@ class AppRoutes {
       GoRoute(
         path: homePath,
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: acessoNegadoPath,
+        builder: (context, state) => const AccessDeniedPage(),
       ),
       GoRoute(
         path: novaAcaoPath,
@@ -116,51 +144,91 @@ class AppRoutes {
         builder: (context, state) => const RevisaoRelatorioPage(),
       ),
       GoRoute(
-        path: '/dashboard',
+        path: dashboardPath,
         builder: (context, state) => const DashboardPage(),
       ),
       GoRoute(
-        path: '/admin',
+        path: adminPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.acessarAdministracao,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const AdminHomePage(),
       ),
       GoRoute(
-        path: '/admin-legado',
+        path: adminLegadoPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.acessarAdministracao,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const AdminPage(),
       ),
       GoRoute(
-        path: '/admin/dominios',
+        path: adminDominiosPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarDominios,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const DomainListPage(),
       ),
       GoRoute(
-        path: '/usuarios',
+        path: usuariosPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarUsuarios,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const UsuariosPage(),
       ),
       GoRoute(
-        path: '/tipos-acoes',
+        path: tiposAcoesPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarTiposAcoes,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const TiposAcoesPage(),
       ),
       GoRoute(
-        path: '/coordenadores',
+        path: coordenadoresPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarCoordenadores,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const CoordenadoresPage(),
       ),
       GoRoute(
-        path: '/regionais',
+        path: regionaisPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarRegionais,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const RegionaisPage(),
       ),
       GoRoute(
-        path: '/materiais',
+        path: materiaisPath,
+        redirect: (context, state) => RouteGuard.proteger(
+          permissao: Permission.gerenciarMateriais,
+          loginPath: loginPath,
+          acessoNegadoPath: acessoNegadoPath,
+        ),
         builder: (context, state) => const MateriaisPage(),
       ),
       GoRoute(
-        path: '/consulta-rae',
+        path: consultaRaePath,
         builder: (context, state) => const ConsultaRaePage(),
       ),
       GoRoute(
-        path: '/bi-geduc',
+        path: biGeducPath,
         builder: (context, state) => const BiGeducPage(),
       ),
       GoRoute(
-        path: '/sincronizacao',
+        path: sincronizacaoPath,
         builder: (context, state) => const SincronizacaoPage(),
       ),
     ],

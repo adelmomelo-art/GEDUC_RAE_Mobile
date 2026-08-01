@@ -1,25 +1,41 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../data/models/usuario_model.dart';
 import '../../../repositories/usuario_repository.dart';
 
 class UsuarioController extends ChangeNotifier {
-  final UsuarioRepository usuarioRepository;
-
   UsuarioController({
-    required this.usuarioRepository,
-  });
+    required UsuarioRepository usuarioRepository,
+  }) : _usuarioRepository = usuarioRepository;
 
-  List<UsuarioModel> usuarios = [];
-  bool carregando = false;
+  final UsuarioRepository _usuarioRepository;
 
-  Future<void> carregarUsuarios() async {
-    carregando = true;
+  List<UsuarioModel> _usuarios = const [];
+  bool _carregando = false;
+  Object? _erro;
+
+  List<UsuarioModel> get usuarios => List.unmodifiable(_usuarios);
+  bool get carregando => _carregando;
+  Object? get erro => _erro;
+  bool get possuiErro => _erro != null;
+
+  Future<void> carregarUsuarios({bool forcar = false}) async {
+    if (_carregando) return;
+    if (!forcar && _usuarios.isNotEmpty && _erro == null) return;
+
+    _carregando = true;
+    _erro = null;
     notifyListeners();
 
-    usuarios = await usuarioRepository.listarUsuarios();
-
-    carregando = false;
-    notifyListeners();
+    try {
+      _usuarios = await _usuarioRepository.listarUsuarios();
+    } catch (erro) {
+      _erro = erro;
+    } finally {
+      _carregando = false;
+      notifyListeners();
+    }
   }
+
+  Future<void> recarregar() => carregarUsuarios(forcar: true);
 }

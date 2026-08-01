@@ -188,9 +188,7 @@ class _HomePageState extends State<HomePage> {
                     totalCredenciais: state.totalCredenciais,
                   ),
                   const SizedBox(height: 16),
-                  AtalhosWidget(
-                    usuario: authorizationService.usuarioAtual,
-                  ),
+                  const AtalhosWidget(),
                   const SizedBox(height: 16),
                   LayoutBuilder(
                     builder: (context, constraints) {

@@ -8,7 +8,6 @@ import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
 import '../../modules/admin/access_denied_page.dart';
 import '../../modules/admin/admin_home_page.dart';
-import '../../modules/admin/admin_page.dart';
 import '../../modules/admin/domain_list_page.dart';
 import '../../modules/auth/login_page.dart';
 import '../../modules/auth/account_access_page.dart';
@@ -174,12 +173,7 @@ class AppRoutes {
       ),
       GoRoute(
         path: adminLegadoPath,
-        redirect: (context, state) => RouteGuard.proteger(
-          permissao: Permission.acessarAdministracao,
-          loginPath: loginPath,
-          acessoNegadoPath: acessoNegadoPath,
-        ),
-        builder: (context, state) => const AdminPage(),
+        redirect: (context, state) => adminPath,
       ),
       GoRoute(
         path: adminDominiosPath,

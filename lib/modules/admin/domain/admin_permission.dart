@@ -1,32 +1,20 @@
-enum AdminPermission {
-  acessarAdministracao,
-  gerenciarDominios,
-  gerenciarUsuarios,
-  gerenciarTiposAcoes,
-  gerenciarCoordenadores,
-  gerenciarRegionais,
-  gerenciarMateriais;
-}
+import '../../../core/security/authorization_policy.dart';
+import '../../../core/security/permission.dart';
 
+@Deprecated('Use Permission em lib/core/security/permission.dart.')
+typedef AdminPermission = Permission;
+
+@Deprecated('Use AuthorizationService e AuthorizationPolicy.')
 class AdminPermissionPolicy {
   AdminPermissionPolicy._();
 
   static bool possuiPermissao({
     required String perfilAcesso,
-    required AdminPermission permissao,
+    required Permission permissao,
   }) {
-    final perfil = perfilAcesso.trim().toLowerCase();
-
-    // Fundação inicial. A fonte oficial do perfil e a proteção de rota serão
-    // consolidadas em pacote próprio de autorização administrativa.
-    if (perfil == 'administrador') {
-      return true;
-    }
-
-    if (perfil == 'gestor') {
-      return permissao == AdminPermission.acessarAdministracao;
-    }
-
-    return false;
+    return AuthorizationPolicy.possuiPermissao(
+      perfilAcesso: perfilAcesso,
+      permissao: permissao,
+    );
   }
 }

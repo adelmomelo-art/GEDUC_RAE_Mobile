@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'admin_module_status.dart';
-import 'admin_permission.dart';
+import '../../../core/security/permission.dart';
 
 class AdminModule {
   final String id;
@@ -10,7 +10,7 @@ class AdminModule {
   final IconData icone;
   final String rota;
   final AdminModuleStatus status;
-  final AdminPermission permissao;
+  final Permission permissao;
 
   const AdminModule({
     required this.id,

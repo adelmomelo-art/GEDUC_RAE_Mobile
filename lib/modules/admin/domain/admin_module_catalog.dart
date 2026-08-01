@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import 'admin_module.dart';
 import 'admin_module_status.dart';
-import 'admin_permission.dart';
+import '../../../core/security/permission.dart';
 
 class AdminModuleCatalog {
   AdminModuleCatalog._();
@@ -16,7 +16,7 @@ class AdminModuleCatalog {
       icone: Icons.category_outlined,
       rota: AppRoutes.adminDominiosPath,
       status: AdminModuleStatus.disponivel,
-      permissao: AdminPermission.gerenciarDominios,
+      permissao: Permission.gerenciarDominios,
     ),
     AdminModule(
       id: 'usuarios',
@@ -25,7 +25,7 @@ class AdminModuleCatalog {
       icone: Icons.people_outline,
       rota: AppRoutes.usuariosPath,
       status: AdminModuleStatus.emEvolucao,
-      permissao: AdminPermission.gerenciarUsuarios,
+      permissao: Permission.gerenciarUsuarios,
     ),
     AdminModule(
       id: 'tipos-acoes',
@@ -34,7 +34,7 @@ class AdminModuleCatalog {
       icone: Icons.assignment_outlined,
       rota: AppRoutes.tiposAcoesPath,
       status: AdminModuleStatus.emEvolucao,
-      permissao: AdminPermission.gerenciarTiposAcoes,
+      permissao: Permission.gerenciarTiposAcoes,
     ),
     AdminModule(
       id: 'coordenadores',
@@ -43,7 +43,7 @@ class AdminModuleCatalog {
       icone: Icons.badge_outlined,
       rota: AppRoutes.coordenadoresPath,
       status: AdminModuleStatus.emEvolucao,
-      permissao: AdminPermission.gerenciarCoordenadores,
+      permissao: Permission.gerenciarCoordenadores,
     ),
     AdminModule(
       id: 'regionais',
@@ -52,7 +52,7 @@ class AdminModuleCatalog {
       icone: Icons.map_outlined,
       rota: AppRoutes.regionaisPath,
       status: AdminModuleStatus.emEvolucao,
-      permissao: AdminPermission.gerenciarRegionais,
+      permissao: Permission.gerenciarRegionais,
     ),
     AdminModule(
       id: 'materiais',
@@ -61,7 +61,7 @@ class AdminModuleCatalog {
       icone: Icons.inventory_2_outlined,
       rota: AppRoutes.materiaisPath,
       status: AdminModuleStatus.emEvolucao,
-      permissao: AdminPermission.gerenciarMateriais,
+      permissao: Permission.gerenciarMateriais,
     ),
   ];
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/navigation/navigation_manager.dart';
+import '../../core/security/authorization_service.dart';
+import 'domain/admin_module.dart';
 import 'domain/admin_module_catalog.dart';
 import 'widgets/admin_module_card.dart';
 
@@ -9,25 +11,74 @@ class AdminHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const modulos = AdminModuleCatalog.modulos;
+    final authorizationService = AuthorizationService.instance;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administração'),
-        leading: IconButton(
-          tooltip: 'Voltar',
-          onPressed: () => NavigationManager.backOrCentro(context),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            sliver: SliverToBoxAdapter(
-              child: _AdminHeader(totalModulos: modulos.length),
+    return ListenableBuilder(
+      listenable: authorizationService,
+      builder: (context, child) {
+        const modulos = AdminModuleCatalog.modulos;
+        final modulosAutorizados = modulos
+            .where(
+              (modulo) => authorizationService.possuiPermissao(
+                modulo.permissao,
+              ),
+            )
+            .toList(growable: false);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Administração'),
+            leading: IconButton(
+              tooltip: 'Voltar',
+              onPressed: () => NavigationManager.backOrCentro(context),
+              icon: const Icon(Icons.arrow_back),
             ),
           ),
+          body: _AdminBody(
+            carregando: authorizationService.carregando,
+            modulos: modulosAutorizados,
+            perfilAcesso: authorizationService.perfilAtual,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AdminBody extends StatelessWidget {
+  final bool carregando;
+  final List<AdminModule> modulos;
+  final String perfilAcesso;
+
+  const _AdminBody({
+    required this.carregando,
+    required this.modulos,
+    required this.perfilAcesso,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (carregando) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: _AdminHeader(
+              totalModulos: modulos.length,
+              perfilAcesso: perfilAcesso,
+            ),
+          ),
+        ),
+        if (modulos.isEmpty)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: _SemModulosAutorizados(),
+          )
+        else
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             sliver: SliverLayoutBuilder(
@@ -66,16 +117,19 @@ class AdminHomePage extends StatelessWidget {
               },
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
 
 class _AdminHeader extends StatelessWidget {
   final int totalModulos;
+  final String perfilAcesso;
 
-  const _AdminHeader({required this.totalModulos});
+  const _AdminHeader({
+    required this.totalModulos,
+    required this.perfilAcesso,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -107,18 +161,35 @@ class _AdminHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Acesso centralizado aos módulos de parametrização e governança da Plataforma Fênix.',
+                    'Acesso centralizado aos módulos autorizados para o perfil $perfilAcesso.',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '$totalModulos módulos catalogados',
+                    '$totalModulos módulos autorizados',
                     style: theme.textTheme.labelLarge,
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SemModulosAutorizados extends StatelessWidget {
+  const _SemModulosAutorizados();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Nenhum módulo administrativo está autorizado para o perfil atual.',
+          textAlign: TextAlign.center,
         ),
       ),
     );

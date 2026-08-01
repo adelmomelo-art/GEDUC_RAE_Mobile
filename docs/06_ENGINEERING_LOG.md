@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.1
+  Versão      2.2
   Status      Oficial
-  Sprint      EST-005D — Consolidação Arquitetural
+  Sprint      ENC-ADM-001B.2 — Consolidação Administrativa e de Segurança
 
 ------------------------------------------------------------------------
 
@@ -134,9 +134,9 @@ Sempre que uma decisão estrutural ocorrer, deverão ser atualizados:
 
 ## 7.2 EST-005A — Auditoria da Infraestrutura de Providers
 
-**Data:** 30/07/2026  
-**Branch:** `release/estabilizacao-pv006`  
-**Tipo:** Auditoria arquitetural e diagnóstico de causa raiz  
+**Data:** 30/07/2026
+**Branch:** `release/estabilizacao-pv006`
+**Tipo:** Auditoria arquitetural e diagnóstico de causa raiz
 **Pacotes:** `EST-005A-INFRA-PROVIDERS` e
 `EST-005A-INFRA-PROVIDERS-R1`
 
@@ -185,10 +185,10 @@ Caracterização.
 
 ## 7.3 EST-005B — Globalização do DomainProvider
 
-**Data:** 30/07/2026  
-**Branch:** `release/estabilizacao-pv006`  
-**Pacote:** `EST-005B-GLOBAL-DOMAINPROVIDER-HOMOLOGADO`  
-**Commit:** `35d41f6`  
+**Data:** 30/07/2026
+**Branch:** `release/estabilizacao-pv006`
+**Pacote:** `EST-005B-GLOBAL-DOMAINPROVIDER-HOMOLOGADO`
+**Commit:** `35d41f6`
 **Tipo:** Correção arquitetural e estabilização funcional
 
 ### Objetivo
@@ -280,8 +280,8 @@ homologada.
 
 ## 7.4 EST-005D — Consolidação Arquitetural e Documental
 
-**Data:** 30/07/2026  
-**Branch:** `release/estabilizacao-pv006`  
+**Data:** 30/07/2026
+**Branch:** `release/estabilizacao-pv006`
 **Tipo:** Documentação técnica
 
 ### Objetivo
@@ -317,6 +317,223 @@ neste documento.
 
 ------------------------------------------------------------------------
 
+
+------------------------------------------------------------------------
+
+## 7.5 ADM-001B.1 — Fundação Administrativa
+
+**Data:** 31/07/2026
+**Branch:** `feature/adm-001b1-fundacao-administrativa`
+**Commit:** `6049e7d`
+**Tipo:** Fundação arquitetural administrativa
+
+### Objetivo
+
+Substituir menus administrativos concorrentes por uma fundação modular,
+centralizada e preparada para evolução.
+
+### Implementação
+
+- catálogo central de módulos;
+- modelo `AdminModule`;
+- estados de disponibilidade;
+- permissão preliminar;
+- cartão administrativo reutilizável;
+- rotas administrativas centralizadas;
+- página administrativa responsiva.
+
+### Validação
+
+- `flutter analyze`: **No issues found!**
+- homologação funcional: **13/13 cenários aprovados**;
+- Central de Domínios: aprovada;
+- seis módulos: aprovados;
+- responsividade: aprovada;
+- navegação e botão Voltar: aprovados.
+
+### Resultado
+
+A Administração deixou de depender de listas literais mantidas
+diretamente na página e passou a possuir catálogo próprio.
+
+------------------------------------------------------------------------
+
+## 7.6 ADM-001B.2 — Camada de Autorização Administrativa
+
+**Data:** 31/07/2026
+**Branch:** `feature/adm-001b2-autorizacao-administrativa`
+**Commit:** `ff32e74`
+**Tipo:** Segurança, autorização e proteção de rotas
+
+### Objetivo
+
+Centralizar decisões de autorização por perfil e proteger as rotas
+administrativas independentemente da visibilidade dos botões.
+
+### Implementação
+
+- `Permission`;
+- `AuthorizationPolicy`;
+- `AuthorizationResult`;
+- `AuthorizationService`;
+- `RouteGuard`;
+- `AccessDeniedPage`;
+- filtragem dos módulos administrativos;
+- integração com o roteador;
+- correção da visibilidade da Administração para o perfil gestor.
+
+### Matriz homologada
+
+| Perfil | Resultado |
+|---|---|
+| Administrador | Acesso total |
+| Gestor | Domínios, Usuários e Tipos de Ações |
+| Coordenador | Administração oculta e rota bloqueada |
+| Agente | Administração oculta e rota bloqueada |
+
+### Validação técnica
+
+- `flutter analyze`: **No issues found!**
+- CPB homologado: 17 arquivos;
+- arquivos ausentes: 0;
+- `git diff --cached --check`: sem erros.
+
+### Homologação funcional
+
+- Android/tablet: aprovada para os quatro perfis;
+- Central de Domínios: sem regressão;
+- navegação: aprovada;
+- tela vermelha: não identificada;
+- travamentos: não identificados.
+
+### Homologação Web
+
+O perfil `agente` tentou acessar diretamente uma rota administrativa no
+Flutter Web e foi redirecionado para `Acesso não autorizado`.
+
+A tela apresentou corretamente:
+
+- perfil identificado;
+- mensagem de bloqueio;
+- retorno ao Centro de Operações;
+- ausência de exceções no Console.
+
+### Resultado
+
+A interface deixou de ser a única barreira de acesso. A Plataforma
+Fênix passou a possuir proteção também na camada de navegação.
+
+------------------------------------------------------------------------
+
+## 7.7 Pull Request nº 1 — Primeira Code Review Arquitetural
+
+**Data:** 31/07/2026
+**Base:** `main`
+**Head:** `feature/adm-001b2-autorizacao-administrativa`
+**Merge:** `08f969d`
+
+### Conteúdo
+
+O Pull Request integrou:
+
+- ADM-001B.1 — Fundação Administrativa;
+- ADM-001B.2 — Camada de Autorização Administrativa.
+
+### Revisão
+
+Foram avaliados:
+
+- arquitetura;
+- segurança;
+- navegação;
+- regressões;
+- qualidade;
+- documentação;
+- homologações;
+- rastreabilidade Git.
+
+### Parecer
+
+``` text
+Arquitetura: aprovada
+Segurança: aprovada
+Navegação: aprovada
+Qualidade: aprovada
+Homologação: aprovada
+Resultado: aprovado para merge
+```
+
+### Pós-merge
+
+- `main` sincronizada com `origin/main`;
+- `flutter analyze`: **No issues found!**;
+- `working tree clean`;
+- nova baseline: `08f969d`.
+
+------------------------------------------------------------------------
+
+## 7.8 PF-ENG 003/2026 — Política Oficial de Engenharia
+
+**Data de adoção:** 31/07/2026
+**Status:** Oficial
+
+### Decisão
+
+Alterações estruturais passam a exigir:
+
+1. inspeção;
+2. Blueprint;
+3. plano;
+4. feature branch;
+5. implementação;
+6. `flutter analyze` com 0 issues;
+7. homologação;
+8. CPB;
+9. commit;
+10. push;
+11. Pull Request;
+12. Code Review Arquitetural;
+13. merge;
+14. validação pós-merge;
+15. atualização documental.
+
+### Finalidade
+
+- impedir alterações estruturais diretamente na `main`;
+- preservar rastreabilidade;
+- reduzir regressões;
+- formalizar revisão antes da integração;
+- manter código e documentação sincronizados.
+
+### Documento relacionado
+
+`docs/PF-ENG-003-2026_POLITICA_DE_ENGENHARIA.md`
+
+------------------------------------------------------------------------
+
+## 7.9 ENC-ADM-001B.2 — Encerramento documental
+
+**Data:** 31/07/2026
+**Branch:** `docs/enc-adm-001b2-governanca`
+**Tipo:** Consolidação documental
+
+### Objetivo
+
+Sincronizar a arquitetura oficial e o Engineering Log com a baseline
+`08f969d`.
+
+### Riscos registrados
+
+- divergência entre `perfil` e `perfilAcesso`;
+- verificação direta residual no atalho Administração;
+- política de permissões ainda estática.
+
+### Próxima ação
+
+Executar auditoria específica da identidade, perfis e regras do
+Firestore antes de ampliar permissões ou implementar novos módulos
+administrativos.
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -325,4 +542,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.1
+Versão 2.2

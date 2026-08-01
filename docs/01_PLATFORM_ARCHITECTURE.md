@@ -10,9 +10,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   01_PLATFORM_ARCHITECTURE.md
-  Versão      2.1
+  Versão      2.2
   Status      Oficial
-  Sprint      EST-005D — Consolidação Arquitetural
+  Sprint      ENC-ADM-001B.2 — Consolidação Administrativa e de Segurança
 
 ------------------------------------------------------------------------
 
@@ -347,6 +347,240 @@ A EST-005B consolidou as seguintes decisões:
 
 ------------------------------------------------------------------------
 
+
+------------------------------------------------------------------------
+
+# 14. Fundação Administrativa — ADM-001B.1
+
+A sprint ADM-001B.1 consolidou a Fundação Administrativa da Plataforma
+Fênix.
+
+## 14.1 Objetivo
+
+Estabelecer uma base administrativa modular, rastreável e preparada para
+crescimento incremental, sem alterar os CRUDs existentes nem ampliar
+permissões do Firestore.
+
+## 14.2 Componentes
+
+``` text
+AdminHomePage
+   ↓
+AdminModuleCatalog
+   ↓
+AdminModule
+   ├── identificação
+   ├── título
+   ├── descrição
+   ├── rota
+   ├── ícone
+   ├── status
+   └── permissão
+```
+
+Foram consolidados:
+
+- catálogo central de módulos administrativos;
+- modelo imutável de módulo;
+- estados de disponibilidade;
+- cartão administrativo reutilizável;
+- navegação administrativa centralizada;
+- preparação inicial para controle de acesso.
+
+## 14.3 Módulos administrativos
+
+A fundação contempla:
+
+- Central de Domínios;
+- Usuários;
+- Tipos de Ações;
+- Coordenadores;
+- Regionais;
+- Materiais.
+
+## 14.4 Decisão arquitetural
+
+A página administrativa não deve manter uma lista própria e paralela de
+módulos. O catálogo oficial é a fonte única para apresentação,
+navegação, status e autorização.
+
+------------------------------------------------------------------------
+
+# 15. Camada de Autorização Administrativa — ADM-001B.2
+
+A sprint ADM-001B.2 introduziu a primeira camada centralizada de
+autorização da Plataforma Fênix.
+
+## 15.1 Princípio
+
+``` text
+A interface não decide.
+A rota não contém a política.
+O AuthorizationService centraliza a decisão.
+```
+
+## 15.2 Fluxo
+
+``` text
+Firebase Authentication
+          ↓
+AuthorizationService
+          ↓
+UsuarioService
+          ↓
+usuarios/{uid}.perfilAcesso
+          ↓
+AuthorizationPolicy
+          ↓
+RouteGuard / Administração
+```
+
+## 15.3 Componentes
+
+- `Permission`: catálogo tipado de permissões;
+- `AuthorizationPolicy`: matriz entre perfis e permissões;
+- `AuthorizationResult`: resultado imutável da avaliação;
+- `AuthorizationService`: ponto central de decisão;
+- `RouteGuard`: proteção das rotas administrativas;
+- `AccessDeniedPage`: resposta explícita para acesso negado.
+
+## 15.4 Matriz inicial
+
+| Perfil | Escopo administrativo |
+|---|---|
+| `administrador` | Todos os módulos |
+| `gestor` | Administração, Domínios, Usuários e Tipos de Ações |
+| `coordenador` | Sem acesso administrativo nesta matriz |
+| `agente` | Sem acesso administrativo nesta matriz |
+
+Perfis desconhecidos ou documentos de usuário ausentes são negados por
+padrão.
+
+## 15.5 Proteção em profundidade
+
+Ocultar um botão não constitui autorização. O controle ocorre em dois
+níveis:
+
+1. apresentação: módulos e atalhos compatíveis com o perfil;
+2. navegação: `RouteGuard` bloqueia acesso direto por rota.
+
+A segurança persistente dos dados permanece responsabilidade das regras
+do Firestore.
+
+## 15.6 Homologação
+
+Foram homologados:
+
+- administrador em Android;
+- gestor em Android;
+- coordenador em Android;
+- agente em Android;
+- acesso direto protegido no Flutter Web;
+- tela de acesso não autorizado;
+- retorno ao Centro de Operações;
+- ausência de regressões na Central de Domínios.
+
+`flutter analyze`: **No issues found!**
+
+------------------------------------------------------------------------
+
+# 16. Governança de Engenharia — PF-ENG 003/2026
+
+Mudanças estruturais e de segurança passam a seguir obrigatoriamente:
+
+``` text
+Inspeção
+   ↓
+Blueprint
+   ↓
+Plano de implementação
+   ↓
+Feature branch
+   ↓
+Implementação
+   ↓
+flutter analyze: 0 issues
+   ↓
+Homologação
+   ↓
+CPB
+   ↓
+Commit e push
+   ↓
+Pull Request
+   ↓
+Code Review Arquitetural
+   ↓
+Merge na main
+   ↓
+Validação pós-merge
+   ↓
+Atualização documental
+```
+
+Pull Request e Code Review são obrigatórios para alterações de:
+
+- arquitetura;
+- segurança;
+- autenticação e autorização;
+- roteamento;
+- modelos de dados;
+- providers globais;
+- infraestrutura compartilhada.
+
+------------------------------------------------------------------------
+
+# 17. Baseline oficial pós-ADM-001B.2
+
+``` text
+Pull Request: #1
+ADM-001B.1: 6049e7d
+ADM-001B.2: ff32e74
+Merge na main: 08f969d
+Branch principal: main
+flutter analyze: 0 issues
+working tree: clean
+```
+
+A baseline oficial da Plataforma Fênix passa a ser o commit
+`08f969d`.
+
+------------------------------------------------------------------------
+
+# 18. Riscos e débitos técnicos registrados
+
+## 18.1 Divergência de campos de perfil
+
+O modelo Flutter e a camada de autorização utilizam:
+
+``` text
+perfilAcesso
+```
+
+A regra do Firestore inspecionada anteriormente utiliza:
+
+``` text
+perfil
+```
+
+Essa divergência deve ser corrigida somente após auditoria específica de
+coleções, contratos e regras, evitando ampliação genérica de permissões.
+
+## 18.2 Regra residual no atalho Administração
+
+O atalho da Home ainda utiliza uma verificação direta de perfil para
+decidir sua visibilidade.
+
+A proteção real permanece no `RouteGuard`, portanto não há exposição de
+rota. Ainda assim, a interface deverá futuramente consultar o
+`AuthorizationService`, eliminando a duplicação da política.
+
+## 18.3 Política estática
+
+A matriz atual está codificada na aplicação. Permissões dinâmicas,
+unidades organizacionais, auditoria de acesso e regras por contexto
+permanecem fora do escopo desta baseline.
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -355,4 +589,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.1
+Versão 2.2

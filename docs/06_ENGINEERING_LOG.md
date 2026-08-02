@@ -590,7 +590,8 @@ Home, Administração, logout, retomada de sessão e ausência de tela branca.
 ## 7.12 ADM-001C.3 — Firestore Security Baseline
 
 **Data:** 01/08/2026  
-**Commit:** `42e3560`  
+**Commit base:** `42e3560`  
+**Correção R1:** `2129355`  
 **Branch:** `feature/adm-001c-identidade-seguranca`
 
 ### Auditoria
@@ -628,12 +629,16 @@ imutabilidade de `createdAt`.
 A R1 restaurou essas proteções, acrescentou validação de tipos essenciais e
 incluiu testes negativos para documento incompleto e alteração de `createdAt`.
 
+O pacote corretivo foi aprovado com 11/11 arquivos, 15/15 testes no emulador,
+`flutter analyze` sem issues e working tree limpa. O commit `2129355` foi
+publicado na branch do PR nº 3.
+
 ------------------------------------------------------------------------
 
 ## 7.13 ADM-001C.4 — Homologação integrada e encerramento
 
 **Data:** 01/08/2026  
-**Status:** Homologação integrada aprovada — 10/10
+**Status:** Homologação integrada e Code Review aprovadas — merge pendente
 
 ### Objetivo
 
@@ -647,7 +652,9 @@ preparar Pull Request para a `main`.
 ADM-001C.1: 072c5a5
 ADM-001C.2: fc575a0
 ADM-001C.3: 42e3560
+ADM-001C.3-R1: 2129355
 Branch sincronizada com origin
+Pull Request: nº 3 contra main
 ```
 
 ### Homologação funcional
@@ -668,6 +675,16 @@ O checklist integrado no tablet foi concluído com 10/10 itens aprovados:
 O status somente mudará para concluído após homologação integrada, CPB final,
 commit documental, push, Pull Request, Code Review, merge e validação
 pós-merge. A publicação remota das regras permanece uma decisão separada.
+
+### Situação após Code Review
+
+- CPB final: 7/7 arquivos;
+- CPB corretivo: 11/11 arquivos;
+- Pull Request nº 3: aberto e automaticamente mesclável;
+- Code Review Arquitetural: aprovada após a correção R1;
+- status checks e workflows no GitHub: não configurados;
+- merge e validação pós-merge: pendentes;
+- regras remotas: não publicadas.
 
 ──────────────────────────────────────────────
 

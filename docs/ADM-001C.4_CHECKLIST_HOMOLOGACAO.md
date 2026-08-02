@@ -4,15 +4,17 @@
 
 - Data: 01/08/2026
 - Branch: `feature/adm-001c-identidade-seguranca`
-- Baseline de código: `42e3560`
-- Status: homologação integrada aprovada — 10/10
+- Baseline revisada: `2129355`
+- Status: Code Review Arquitetural aprovada — merge pendente
 
 ## A. Evidências técnicas obrigatórias
 
 - [x] ADM-001C.1 registrada no commit `072c5a5`.
 - [x] ADM-001C.2 registrada no commit `fc575a0`.
 - [x] ADM-001C.3 registrada no commit `42e3560`.
+- [x] Correção R1 da Code Review registrada no commit `2129355`.
 - [x] Branch sincronizada com `origin` após ADM-001C.3.
+- [x] Branch sincronizada com `origin` após a correção R1.
 - [x] Firestore: 15/15 testes aprovados no emulador após Code Review.
 - [x] Estrutura mínima e `createdAt` de `domains` protegidos por testes negativos.
 - [x] Testes negativos produziram `PERMISSION_DENIED` esperado.
@@ -63,10 +65,10 @@
 
 ## E. Critérios posteriores
 
-- [ ] CPB final 100% íntegro.
-- [ ] Commit documental e push.
-- [ ] Pull Request aberto contra `main`.
-- [ ] Code Review Arquitetural aprovada.
+- [x] CPB final 7/7 e CPB corretivo 11/11 íntegros.
+- [x] Commits documentais, corretivo e respectivos pushes concluídos.
+- [x] Pull Request nº 3 aberto contra `main`.
+- [x] Code Review Arquitetural aprovada após a correção R1.
 - [ ] Merge concluído.
 - [ ] `flutter analyze` pós-merge com zero issues.
 - [ ] Working tree limpa na `main`.

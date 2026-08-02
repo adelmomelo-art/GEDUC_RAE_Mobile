@@ -11,8 +11,8 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 |---|---|---|---|
 | ADM-001C.1 | `072c5a5` | Identidade Confiável | tablet aprovado; analyze 0 |
 | ADM-001C.2 | `fc575a0` | Política Única de Autorização | tablet 10/10; analyze 0 |
-| ADM-001C.3 | `42e3560` + R1 | Firestore Security Baseline | emulador 15/15; analyze 0 |
-| ADM-001C.4 | pendente | Homologação e encerramento | tablet 10/10; documentação atualizada |
+| ADM-001C.3 + R1 | `42e3560`, `2129355` | Firestore Security Baseline | emulador 15/15; analyze 0 |
+| ADM-001C.4 | `0d3d831` | Homologação e encerramento | tablet 10/10; CPB final 7/7 |
 
 ## Arquitetura resultante
 
@@ -35,7 +35,10 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 - validação estrutural e imutabilidade de `createdAt` restauradas em `domains`;
 - zero vulnerabilidades npm altas ou críticas na cadeia de teste;
 - `flutter analyze` com zero issues em todos os pacotes;
-- commits e pushes incrementais concluídos.
+- CPB corretivo da Code Review com 11/11 arquivos;
+- commits e pushes incrementais concluídos;
+- Pull Request nº 3 aberto, atualizado e automaticamente mesclável;
+- Code Review Arquitetural aprovada após a correção R1;
 - homologação integrada final no tablet: 10/10 itens aprovados.
 
 ## Estado das regras remotas
@@ -54,10 +57,10 @@ de `firebase deploy`.
 
 ## Próximos passos
 
-1. gerar CPB final;
-2. registrar o commit documental;
-3. fazer push da branch;
-4. abrir Pull Request para `main`;
-5. realizar Code Review Arquitetural;
-6. fazer merge e validação pós-merge;
-7. deliberar separadamente sobre publicação das regras.
+1. concluído — gerar CPB final;
+2. concluído — registrar o commit documental e o corretivo R1;
+3. concluído — fazer push da branch;
+4. concluído — abrir Pull Request para `main`;
+5. concluído — realizar Code Review Arquitetural;
+6. pendente — atualizar a descrição do PR, fazer merge e validação pós-merge;
+7. pendente — deliberar separadamente sobre publicação das regras.

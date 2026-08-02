@@ -1,0 +1,17 @@
+README_SEC-001A.md
+BLUEPRINT_SEC-001A.md
+PLANO_IMPLEMENTACAO_SEC-001A.md
+
+firebase.json
+firestore.rules
+package.json
+package-lock.json
+test/firestore.rules.test.js
+
+README_ADM-001C.3.md
+docs/ADM-001C.3_INVENTARIO_FIRESTORE.md
+docs/SEC-001A_BASELINE_REMOTA_FIRESTORE.rules
+docs/01_PLATFORM_ARCHITECTURE.md
+docs/06_ENGINEERING_LOG.md
+
+tools/manifestos/SEC-001A-PREPARACAO-PUBLICACAO-FIRESTORE.txt

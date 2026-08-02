@@ -94,3 +94,8 @@ assets/images/*.pptx
 tools/output/*
 !tools/output/.gitkeep
 # ===========================
+
+# Testes locais das regras Firestore
+node_modules/
+firebase-debug.log
+

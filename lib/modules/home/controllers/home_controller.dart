@@ -205,7 +205,6 @@ class HomeController extends ChangeNotifier {
   }) {
     return HomeState(
       status: resultado.online ? HomeStatus.online : HomeStatus.offline,
-      usuario: resultado.usuario,
       totalAcoes: resultado.totalAcoes,
       totalPessoas: resultado.totalPessoas,
       totalVeiculos: resultado.totalVeiculos,

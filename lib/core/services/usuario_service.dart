@@ -11,7 +11,12 @@ class UsuarioService {
         .get();
 
     return snapshot.docs
-        .map((doc) => UsuarioModel.fromMap(doc.data()))
+        .map(
+          (doc) => UsuarioModel.fromMap(
+            doc.data(),
+            documentId: doc.id,
+          ),
+        )
         .toList();
   }
 
@@ -25,6 +30,9 @@ class UsuarioService {
       return null;
     }
 
-    return UsuarioModel.fromMap(doc.data()!);
+    return UsuarioModel.fromMap(
+      doc.data()!,
+      documentId: doc.id,
+    );
   }
 }

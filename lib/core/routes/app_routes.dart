@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../modules/acoes/caracterizacao_acao_page.dart';
@@ -9,9 +8,9 @@ import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
 import '../../modules/admin/access_denied_page.dart';
 import '../../modules/admin/admin_home_page.dart';
-import '../../modules/admin/admin_page.dart';
 import '../../modules/admin/domain_list_page.dart';
 import '../../modules/auth/login_page.dart';
+import '../../modules/auth/account_access_page.dart';
 import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
 import '../../modules/dashboard/bi_geduc_page.dart';
@@ -29,6 +28,7 @@ import '../../modules/usuarios/usuarios_page.dart';
 import '../auth/auth_router_refresh.dart';
 import '../security/authorization_service.dart';
 import '../security/permission.dart';
+import '../security/identity_status.dart';
 import 'route_guard.dart';
 
 class AppRoutes {
@@ -36,6 +36,7 @@ class AppRoutes {
 
   static const String loginPath = '/login';
   static const String homePath = '/home';
+  static const String accountAccessPath = '/acesso-conta';
 
   static const String novaAcaoPath = '/nova-acao';
   static const String localizacaoPath = '/localizacao';
@@ -76,16 +77,26 @@ class AppRoutes {
       _authRouterRefresh,
       _authorizationService,
     ]),
-    redirect: (context, state) {
-      final usuarioAutenticado = FirebaseAuth.instance.currentUser != null;
+    redirect: (context, state) async {
+      final usuarioAutenticado = _authorizationService.autenticado;
       final estaNoLogin = state.uri.path == loginPath;
+      final estaNoAcessoConta = state.uri.path == accountAccessPath;
 
       if (!usuarioAutenticado && !estaNoLogin) {
         return loginPath;
       }
 
-      if (usuarioAutenticado && estaNoLogin) {
-        return homePath;
+      if (!usuarioAutenticado) return null;
+
+      await _authorizationService.garantirUsuarioAtual();
+
+      if (_authorizationService.status == IdentityStatus.ativo) {
+        if (estaNoLogin || estaNoAcessoConta) return homePath;
+        return null;
+      }
+
+      if (!estaNoAcessoConta) {
+        return accountAccessPath;
       }
 
       return null;
@@ -94,6 +105,10 @@ class AppRoutes {
       GoRoute(
         path: loginPath,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: accountAccessPath,
+        builder: (context, state) => const AccountAccessPage(),
       ),
       GoRoute(
         path: homePath,
@@ -158,12 +173,7 @@ class AppRoutes {
       ),
       GoRoute(
         path: adminLegadoPath,
-        redirect: (context, state) => RouteGuard.proteger(
-          permissao: Permission.acessarAdministracao,
-          loginPath: loginPath,
-          acessoNegadoPath: acessoNegadoPath,
-        ),
-        builder: (context, state) => const AdminPage(),
+        redirect: (context, state) => adminPath,
       ),
       GoRoute(
         path: adminDominiosPath,

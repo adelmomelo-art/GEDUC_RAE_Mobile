@@ -1,0 +1,11 @@
+lib/core/routes/app_routes.dart
+
+lib/modules/home/home_page.dart
+lib/modules/home/widgets/atalhos_widget.dart
+
+lib/modules/admin/controllers/usuario_controller.dart
+lib/modules/usuarios/usuarios_page.dart
+
+BLUEPRINT_ADM-001C.md
+PLANO_IMPLEMENTACAO_ADM-001C.md
+README_ADM-001C.2.md

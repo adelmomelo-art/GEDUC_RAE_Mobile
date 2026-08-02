@@ -1,18 +1,13 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
-
 import '../../../core/services/firebase_acao_service.dart';
-import '../../../core/services/usuario_service.dart';
 import '../../../data/models/acao_model.dart';
-import '../../../data/models/usuario_model.dart';
 import '../models/home_cache_data.dart';
 import 'home_persistent_cache.dart';
 
 class HomeLoaderResult {
   const HomeLoaderResult({
     required this.online,
-    required this.usuario,
     required this.totalAcoes,
     required this.totalPessoas,
     required this.totalVeiculos,
@@ -25,7 +20,6 @@ class HomeLoaderResult {
   });
 
   final bool online;
-  final UsuarioModel? usuario;
   final int totalAcoes;
   final int totalPessoas;
   final int totalVeiculos;
@@ -37,12 +31,10 @@ class HomeLoaderResult {
   final DateTime? atualizadoEm;
 
   factory HomeLoaderResult.offlineSemCache({
-    UsuarioModel? usuario,
     String? mensagem,
   }) {
     return HomeLoaderResult(
       online: false,
-      usuario: usuario,
       totalAcoes: 0,
       totalPessoas: 0,
       totalVeiculos: 0,
@@ -55,12 +47,10 @@ class HomeLoaderResult {
 
   factory HomeLoaderResult.offlineComCache({
     required HomeCacheData cache,
-    UsuarioModel? usuario,
     String? mensagem,
   }) {
     return HomeLoaderResult(
       online: false,
-      usuario: usuario,
       totalAcoes: cache.totalAcoes,
       totalPessoas: cache.totalPessoas,
       totalVeiculos: cache.totalVeiculos,
@@ -78,18 +68,12 @@ class HomeLoaderResult {
 class HomeLoaderService {
   HomeLoaderService({
     FirebaseAcaoService? acaoService,
-    UsuarioService? usuarioService,
-    FirebaseAuth? firebaseAuth,
     HomePersistentCache? persistentCache,
     this.timeout = const Duration(seconds: 6),
   })  : _acaoService = acaoService ?? FirebaseAcaoService(),
-        _usuarioService = usuarioService ?? UsuarioService(),
-        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _persistentCache = persistentCache ?? HomePersistentCache();
 
   final FirebaseAcaoService _acaoService;
-  final UsuarioService _usuarioService;
-  final FirebaseAuth _firebaseAuth;
   final HomePersistentCache _persistentCache;
   final Duration timeout;
 
@@ -109,14 +93,7 @@ class HomeLoaderService {
   }
 
   Future<HomeLoaderResult> carregarRemoto() async {
-    final uid = _firebaseAuth.currentUser?.uid;
-
-    final usuarioFuture = uid == null
-        ? Future<UsuarioModel?>.value(null)
-        : _usuarioService.buscarUsuario(uid).timeout(timeout);
-
     final resultados = await Future.wait<dynamic>([
-      usuarioFuture,
       _acaoService.totalAcoes().timeout(timeout),
       _acaoService.totalPessoasAlcancadas().timeout(timeout),
       _acaoService.totalVeiculosAbordados().timeout(timeout),
@@ -124,20 +101,18 @@ class HomeLoaderService {
       _acaoService.listarAcoesFuture().timeout(timeout),
     ]);
 
-    final usuario = resultados[0] as UsuarioModel?;
-
     final lista = List<AcaoModel>.from(
-      resultados[5] as List<AcaoModel>,
+      resultados[4] as List<AcaoModel>,
     )..sort((a, b) => b.dataAcao.compareTo(a.dataAcao));
 
     final atualizadoEm = DateTime.now();
     final ultimosRaes = lista.take(3).toList(growable: false);
 
     final cacheData = HomeCacheData(
-      totalAcoes: resultados[1] as int,
-      totalPessoas: resultados[2] as int,
-      totalVeiculos: resultados[3] as int,
-      totalCredenciais: resultados[4] as int,
+      totalAcoes: resultados[0] as int,
+      totalPessoas: resultados[1] as int,
+      totalVeiculos: resultados[2] as int,
+      totalCredenciais: resultados[3] as int,
       ultimosRaes: ultimosRaes,
       atualizadoEm: atualizadoEm,
     );
@@ -146,7 +121,6 @@ class HomeLoaderService {
 
     return HomeLoaderResult(
       online: true,
-      usuario: usuario,
       totalAcoes: cacheData.totalAcoes,
       totalPessoas: cacheData.totalPessoas,
       totalVeiculos: cacheData.totalVeiculos,
@@ -162,30 +136,16 @@ class HomeLoaderService {
     String? mensagemComCache,
   }) async {
     final cache = await _persistentCache.recuperar();
-    final usuario = await _buscarUsuarioComSeguranca();
-
     if (cache == null) {
       return HomeLoaderResult.offlineSemCache(
-        usuario: usuario,
         mensagem: mensagemSemCache,
       );
     }
 
     return HomeLoaderResult.offlineComCache(
       cache: cache,
-      usuario: usuario,
       mensagem: mensagemComCache,
     );
   }
 
-  Future<UsuarioModel?> _buscarUsuarioComSeguranca() async {
-    try {
-      final uid = _firebaseAuth.currentUser?.uid;
-      if (uid == null) return null;
-
-      return await _usuarioService.buscarUsuario(uid).timeout(timeout);
-    } catch (_) {
-      return null;
-    }
-  }
 }

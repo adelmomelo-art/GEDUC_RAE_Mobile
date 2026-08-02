@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/models/usuario_model.dart';
+import '../../../core/security/authorization_service.dart';
+import '../../../core/security/permission.dart';
 import '../../acoes/controllers/acao_controller.dart';
 
 class AtalhosWidget extends StatelessWidget {
-  final UsuarioModel? usuario;
-
-  const AtalhosWidget({
-    super.key,
-    required this.usuario,
-  });
+  const AtalhosWidget({super.key});
 
   Future<void> _abrirNovaAcao(BuildContext context) async {
     final acaoController = context.read<AcaoController>();
@@ -63,6 +59,11 @@ class AtalhosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authorizationService = context.watch<AuthorizationService>();
+    final podeAcessarAdministracao = authorizationService.possuiPermissao(
+      Permission.acessarAdministracao,
+    );
+
     final atalhos = <_AtalhoItem>[
       _AtalhoItem(
         icon: Icons.add_rounded,
@@ -91,8 +92,7 @@ class AtalhosWidget extends StatelessWidget {
         titulo: 'Offline',
         onTap: () => context.push('/sincronizacao'),
       ),
-      if (usuario?.perfilAcesso == 'administrador' ||
-          usuario?.perfilAcesso == 'gestor')
+      if (podeAcessarAdministracao)
         _AtalhoItem(
           icon: Icons.admin_panel_settings_rounded,
           titulo: 'Administração',

@@ -1,0 +1,29 @@
+# ADM-001C.1 â€” Identidade ConfiÃ¡vel
+# Manifesto-base para inspeÃ§Ã£o final e posterior implementaÃ§Ã£o
+
+lib/main.dart
+lib/firebase_options.dart
+lib/app.dart
+lib/core/auth/auth_router_refresh.dart
+lib/core/navigation/navigation_manager.dart
+lib/core/routes/app_routes.dart
+lib/core/routes/route_guard.dart
+lib/core/security/permission.dart
+lib/core/security/authorization_policy.dart
+lib/core/security/authorization_result.dart
+lib/core/security/authorization_service.dart
+lib/data/models/usuario_model.dart
+lib/core/services/usuario_service.dart
+lib/repositories/usuario_repository.dart
+lib/modules/auth/login_page.dart
+lib/modules/home/home_page.dart
+lib/modules/home/controllers/home_controller.dart
+lib/modules/home/models/home_state.dart
+lib/modules/home/models/home_cache_data.dart
+lib/modules/home/services/home_loader_service.dart
+lib/modules/home/services/home_persistent_cache.dart
+lib/modules/home/widgets/centro_operacoes_header.dart
+lib/modules/home/widgets/atalhos_widget.dart
+pubspec.yaml
+BLUEPRINT_ADM-001C.md
+PLANO_IMPLEMENTACAO_ADM-001C.md

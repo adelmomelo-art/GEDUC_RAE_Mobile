@@ -1,0 +1,8 @@
+lib/core/security/authorization_service.dart
+lib/core/routes/app_routes.dart
+
+README_ADM-001C.1.md
+README_ADM-001C.1-R1.md
+
+BLUEPRINT_ADM-001C.md
+PLANO_IMPLEMENTACAO_ADM-001C.md

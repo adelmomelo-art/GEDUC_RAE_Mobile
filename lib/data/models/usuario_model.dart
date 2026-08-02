@@ -25,16 +25,19 @@ class UsuarioModel {
     this.ultimoAcesso,
   });
 
-  factory UsuarioModel.fromMap(Map<String, dynamic> map) {
+  factory UsuarioModel.fromMap(
+    Map<String, dynamic> map, {
+    String? documentId,
+  }) {
     return UsuarioModel(
-      id: map['id'] ?? '',
+      id: documentId ?? map['id']?.toString() ?? '',
       nome: map['nome'] ?? '',
       email: map['email'] ?? '',
       telefone: map['telefone'] ?? '',
       cargo: map['cargo'] ?? '',
       setor: map['setor'] ?? '',
-      perfilAcesso: map['perfilAcesso'] ?? 'agente',
-      ativo: map['ativo'] ?? true,
+      perfilAcesso: map['perfilAcesso']?.toString() ?? '',
+      ativo: map['ativo'] == true,
       dataCriacao: _converterData(map['dataCriacao']),
       ultimoAcesso: map['ultimoAcesso'] != null
           ? _converterData(map['ultimoAcesso'])

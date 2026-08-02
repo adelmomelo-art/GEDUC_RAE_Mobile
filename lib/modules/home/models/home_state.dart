@@ -1,5 +1,4 @@
 import '../../../data/models/acao_model.dart';
-import '../../../data/models/usuario_model.dart';
 import '../domain/operational_alert.dart';
 import 'home_operational_status.dart';
 
@@ -14,7 +13,6 @@ enum HomeStatus {
 class HomeState {
   const HomeState({
     this.status = HomeStatus.inicial,
-    this.usuario,
     this.totalAcoes = 0,
     this.totalPessoas = 0,
     this.totalVeiculos = 0,
@@ -31,8 +29,6 @@ class HomeState {
   });
 
   final HomeStatus status;
-  final UsuarioModel? usuario;
-
   final int totalAcoes;
   final int totalPessoas;
   final int totalVeiculos;
@@ -73,8 +69,6 @@ class HomeState {
 
   HomeState copyWith({
     HomeStatus? status,
-    UsuarioModel? usuario,
-    bool removerUsuario = false,
     int? totalAcoes,
     int? totalPessoas,
     int? totalVeiculos,
@@ -94,7 +88,6 @@ class HomeState {
   }) {
     return HomeState(
       status: status ?? this.status,
-      usuario: removerUsuario ? null : usuario ?? this.usuario,
       totalAcoes: totalAcoes ?? this.totalAcoes,
       totalPessoas: totalPessoas ?? this.totalPessoas,
       totalVeiculos: totalVeiculos ?? this.totalVeiculos,

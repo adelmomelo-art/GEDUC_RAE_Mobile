@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.2
+  Versão      2.3
   Status      Oficial
-  Sprint      ENC-ADM-001B.2 — Consolidação Administrativa e de Segurança
+  Sprint      ADM-001C — Identidade e Segurança
 
 ------------------------------------------------------------------------
 
@@ -534,6 +534,158 @@ Executar auditoria específica da identidade, perfis e regras do
 Firestore antes de ampliar permissões ou implementar novos módulos
 administrativos.
 
+------------------------------------------------------------------------
+
+## 7.10 ADM-001C.1 — Identidade Confiável
+
+**Data:** 01/08/2026  
+**Commit:** `072c5a5`  
+**Branch:** `feature/adm-001c-identidade-seguranca`
+
+### Resultado
+
+- identidade operacional centralizada no `AuthorizationService`;
+- validação de documento, conta ativa e perfil reconhecido;
+- estados explícitos para cadastro ausente, conta inativa e falha;
+- remoção das consultas duplicadas no Login e na Home;
+- limpeza da identidade no logout e proteção contra resposta de sessão anterior.
+
+### Correção R1
+
+Foi removida uma notificação prematura que provocava reentrada do GoRouter e
+`Stack Overflow`. Após a correção, os testes no tablet confirmaram login,
+Home, Administração, logout, retomada de sessão e ausência de tela branca.
+
+### Validação
+
+- `flutter analyze`: **No issues found!**;
+- homologação funcional no tablet: aprovada;
+- commit e push: concluídos.
+
+------------------------------------------------------------------------
+
+## 7.11 ADM-001C.2 — Política Única de Autorização
+
+**Data:** 01/08/2026  
+**Commit:** `fc575a0`  
+**Branch:** `feature/adm-001c-identidade-seguranca`
+
+### Resultado
+
+- atalho Administração passou a consumir `Permission`;
+- comparações textuais de perfil foram removidas da decisão da interface;
+- `/admin-legado` passou a redirecionar ao painel oficial;
+- listagem de usuários passou à cadeia Provider → Controller → Repository → Service;
+- carregamento, atualização e falha passaram a possuir estados explícitos.
+
+### Validação
+
+- `flutter analyze`: **No issues found!**;
+- CPB: 8/8 arquivos;
+- homologação funcional no tablet: 10/10 itens;
+- commit e push: concluídos.
+
+------------------------------------------------------------------------
+
+## 7.12 ADM-001C.3 — Firestore Security Baseline
+
+**Data:** 01/08/2026  
+**Commit base:** `42e3560`  
+**Correção R1:** `2129355`  
+**Branch:** `feature/adm-001c-identidade-seguranca`
+
+### Auditoria
+
+Foram inventariadas oito coleções: `usuarios`, `domains`, `tipos_acoes`,
+`coordenadores`, `regionais`, `materiais`, `acoes` e `contadores`.
+
+A regra anterior cobria somente `domains` e consultava o campo incorreto
+`perfil`. A baseline passou a utilizar exclusivamente `perfilAcesso`, exigir
+usuário ativo e perfil reconhecido e negar por padrão coleções não
+inventariadas.
+
+### Validação
+
+- Firebase Emulator Suite com Java 21;
+- 15/15 testes positivos e negativos aprovados após Code Review;
+- `firebase-tools` 15.25.1;
+- zero vulnerabilidades npm altas ou críticas;
+- `flutter analyze`: **No issues found!**;
+- commit e push: concluídos.
+
+### Controle de publicação
+
+As regras estão versionadas e testadas, porém não foram publicadas no
+Firebase remoto. `firebase deploy` permanece condicionado a autorização
+expressa e procedimento próprio.
+
+### Correção pós-Code Review
+
+A revisão do PR nº 3 identificou que a primeira baseline havia ampliado a
+autorização de `domains` para gestor, conforme a matriz, mas removido
+inadvertidamente duas invariantes anteriores: campos mínimos na criação e
+imutabilidade de `createdAt`.
+
+A R1 restaurou essas proteções, acrescentou validação de tipos essenciais e
+incluiu testes negativos para documento incompleto e alteração de `createdAt`.
+
+O pacote corretivo foi aprovado com 11/11 arquivos, 15/15 testes no emulador,
+`flutter analyze` sem issues e working tree limpa. O commit `2129355` foi
+publicado na branch do PR nº 3.
+
+------------------------------------------------------------------------
+
+## 7.13 ADM-001C.4 — Homologação integrada e encerramento
+
+**Data:** 01/08/2026  
+**Status:** Homologação integrada e Code Review aprovadas — merge pendente
+
+### Objetivo
+
+Consolidar as evidências dos três pacotes, executar o checklist final,
+sincronizar Arquitetura, Engineering Log e documentação de segurança e
+preparar Pull Request para a `main`.
+
+### Baseline de entrada
+
+``` text
+ADM-001C.1: 072c5a5
+ADM-001C.2: fc575a0
+ADM-001C.3: 42e3560
+ADM-001C.3-R1: 2129355
+Branch sincronizada com origin
+Pull Request: nº 3 contra main
+```
+
+### Homologação funcional
+
+O checklist integrado no tablet foi concluído com 10/10 itens aprovados:
+
+- login e identificação;
+- Home e indicadores;
+- Administração e seis módulos;
+- listagem e atualização de usuários;
+- navegação de retorno;
+- logout e novo login;
+- retomada de sessão após reinício;
+- ausência de tela branca, exceção ou travamento.
+
+### Critério de encerramento
+
+O status somente mudará para concluído após homologação integrada, CPB final,
+commit documental, push, Pull Request, Code Review, merge e validação
+pós-merge. A publicação remota das regras permanece uma decisão separada.
+
+### Situação após Code Review
+
+- CPB final: 7/7 arquivos;
+- CPB corretivo: 11/11 arquivos;
+- Pull Request nº 3: aberto e automaticamente mesclável;
+- Code Review Arquitetural: aprovada após a correção R1;
+- status checks e workflows no GitHub: não configurados;
+- merge e validação pós-merge: pendentes;
+- regras remotas: não publicadas.
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -542,4 +694,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.2
+Versão 2.3

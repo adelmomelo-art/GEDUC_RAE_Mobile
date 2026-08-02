@@ -1,9 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../acoes/controllers/acao_controller.dart';
+import '../../core/security/authorization_service.dart';
 import 'controllers/home_controller.dart';
 import 'models/home_state.dart';
 import 'widgets/atalhos_widget.dart';
@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> sair() async {
-    await FirebaseAuth.instance.signOut();
+    await AuthorizationService.instance.encerrarSessao();
   }
 
   Future<void> atualizarPortal() {
@@ -97,6 +97,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final acaoController = context.watch<AcaoController>();
+    final authorizationService = context.watch<AuthorizationService>();
 
     return AnimatedBuilder(
       animation: homeController,
@@ -121,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   CentroOperacoesHeader(
-                    usuario: state.usuario,
+                    usuario: authorizationService.usuarioAtual,
                     onAtualizar: atualizarPortal,
                     onSair: sair,
                   ),
@@ -187,9 +188,7 @@ class _HomePageState extends State<HomePage> {
                     totalCredenciais: state.totalCredenciais,
                   ),
                   const SizedBox(height: 16),
-                  AtalhosWidget(
-                    usuario: state.usuario,
-                  ),
+                  const AtalhosWidget(),
                   const SizedBox(height: 16),
                   LayoutBuilder(
                     builder: (context, constraints) {

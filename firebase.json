@@ -1,1 +1,35 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"geduc-rae-mobile","appId":"1:906308539006:android:8d2c96fe7cc8c6ee97be2f","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"geduc-rae-mobile","configurations":{"android":"1:906308539006:android:8d2c96fe7cc8c6ee97be2f","web":"1:906308539006:web:c332bfc83131398b97be2f"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "geduc-rae-mobile",
+          "appId": "1:906308539006:android:8d2c96fe7cc8c6ee97be2f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "geduc-rae-mobile",
+          "configurations": {
+            "android": "1:906308539006:android:8d2c96fe7cc8c6ee97be2f",
+            "web": "1:906308539006:web:c332bfc83131398b97be2f"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8080
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  }
+}

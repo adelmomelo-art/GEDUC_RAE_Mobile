@@ -1,10 +1,11 @@
 # BLUEPRINT ADM-001C — IDENTIDADE E SEGURANÇA
 
 **Plataforma Fênix — GEDUC RAE Mobile**  
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Data:** 01/08/2026  
-**Status:** Proposto para homologação arquitetural  
+**Status:** Implementado e homologado — encerramento documental em curso  
 **Base técnica:** commit `383872db334299fda26bf80eb17afada3189cf59`  
+**Baseline implementada:** commit `42e3560a26bf57e09f9ff3be4bb2f848cd2cf8a0`  
 **Origem:** HAT-1 ADM-001C — Auditoria de Identidade e Segurança
 
 ---
@@ -359,5 +360,37 @@ As regras deverão ser validadas no Firebase Emulator Suite ou por testes equiva
 
 A Plataforma Fênix adotará identidade operacional validada como pré-condição para qualquer acesso funcional. O Firebase Auth continuará responsável pela autenticação, enquanto o documento `usuarios/{uid}` determinará habilitação, perfil e permissões. O `AuthorizationService` será a fonte única de identidade no cliente, e o Firestore será a autoridade final de acesso aos dados.
 
-Com a homologação deste Blueprint, fica autorizada apenas a elaboração do Plano de Implementação ADM-001C. A alteração de código será iniciada depois da aprovação desse plano e da definição dos pacotes incrementais.
+## 16. Registro de implementação
 
+### 16.1 ADM-001C.1 — Identidade Confiável
+
+- commit `072c5a5`;
+- identidade centralizada no `AuthorizationService`;
+- estados de identidade explícitos;
+- correção R1 do ciclo de notificação/roteamento;
+- homologação funcional no tablet aprovada.
+
+### 16.2 ADM-001C.2 — Política Única de Autorização
+
+- commit `fc575a0`;
+- atalhos e rotas alinhados à matriz de `Permission`;
+- rota administrativa legada consolidada;
+- cadeia global de usuários aplicada;
+- homologação funcional no tablet: 10/10.
+
+### 16.3 ADM-001C.3 — Firestore Security Baseline
+
+- commit `42e3560`;
+- oito coleções inventariadas;
+- campo oficial `perfilAcesso` aplicado;
+- identidade ativa exigida nas operações protegidas;
+- negação por padrão;
+- 14/14 testes aprovados no Firebase Emulator Suite;
+- regras ainda não publicadas no Firebase remoto.
+
+### 16.4 ADM-001C.4 — Encerramento
+
+O pacote foi homologado integralmente no tablet, com 10/10 itens aprovados.
+A conclusão documental não autoriza automaticamente a publicação das regras.
+Integração à `main` exige Pull Request, Code Review Arquitetural, merge e
+validação pós-merge conforme PF-ENG 003/2026.

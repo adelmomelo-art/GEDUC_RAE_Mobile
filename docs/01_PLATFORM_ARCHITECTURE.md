@@ -10,9 +10,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   01_PLATFORM_ARCHITECTURE.md
-  Versão      2.2
+  Versão      2.3
   Status      Oficial
-  Sprint      ENC-ADM-001B.2 — Consolidação Administrativa e de Segurança
+  Sprint      ADM-001C — Identidade e Segurança
 
 ------------------------------------------------------------------------
 
@@ -547,39 +547,81 @@ A baseline oficial da Plataforma Fênix passa a ser o commit
 
 ------------------------------------------------------------------------
 
-# 18. Riscos e débitos técnicos registrados
+# 18. Arquitetura de identidade e segurança
 
-## 18.1 Divergência de campos de perfil
+## 18.1 Identidade operacional
 
-O modelo Flutter e a camada de autorização utilizam:
+O Firebase Auth estabelece a sessão autenticada. O documento
+`usuarios/{uid}` estabelece a identidade operacional e somente é válido
+quando existe, contém `ativo == true` e possui um `perfilAcesso`
+reconhecido.
+
+O `AuthorizationService` é a fonte única do usuário corrente no cliente.
+Login, Home, atalhos e rotas não devem manter cópias independentes dessa
+identidade.
+
+Estados de cadastro ausente, conta inativa, perfil inválido e falha de
+validação são explícitos e impedem acesso funcional.
+
+## 18.2 Autorização no cliente
+
+A matriz oficial permanece em `AuthorizationPolicy`, baseada em valores
+de `Permission`. Widgets não decidem acesso comparando nomes de perfil.
+
+As rotas administrativas aplicam `RouteGuard`. A rota legada
+`/admin-legado` conduz ao painel oficial `/admin`, sem criar caminho
+paralelo de autorização.
+
+## 18.3 Autoridade de dados
+
+O campo oficial de perfil é:
 
 ``` text
 perfilAcesso
 ```
 
-A regra do Firestore inspecionada anteriormente utiliza:
+As regras versionadas do Firestore exigem identidade ativa e perfil
+reconhecido, possuem decisão explícita para as oito coleções inventariadas
+e terminam com negação por padrão.
+
+As regras foram aprovadas em 14 testes positivos e negativos no Firebase
+Emulator Suite. Elas ainda não foram publicadas no Firebase remoto. A
+publicação exige autorização expressa, registro da versão anterior e teste
+de fumaça posterior.
+
+## 18.4 Cadeia administrativa de usuários
+
+A listagem de usuários segue:
 
 ``` text
-perfil
+Provider → UsuarioController → UsuarioRepository → UsuarioService → Firestore
 ```
 
-Essa divergência deve ser corrigida somente após auditoria específica de
-coleções, contratos e regras, evitando ampliação genérica de permissões.
+Falhas de atualização preservam os dados já carregados e oferecem nova
+tentativa.
 
-## 18.2 Regra residual no atalho Administração
+------------------------------------------------------------------------
 
-O atalho da Home ainda utiliza uma verificação direta de perfil para
-decidir sua visibilidade.
+# 19. Baseline da ADM-001C
 
-A proteção real permanece no `RouteGuard`, portanto não há exposição de
-rota. Ainda assim, a interface deverá futuramente consultar o
-`AuthorizationService`, eliminando a duplicação da política.
+``` text
+ADM-001C.1: 072c5a5 — Identidade Confiável
+ADM-001C.2: fc575a0 — Política Única de Autorização
+ADM-001C.3: 42e3560 — Firestore Security Baseline
+Branch: feature/adm-001c-identidade-seguranca
+Regras locais: 14/14 testes aprovados
+Flutter analyze: 0 issues
+Firestore remoto: não publicado
+```
 
-## 18.3 Política estática
+## 19.1 Débitos controlados
 
-A matriz atual está codificada na aplicação. Permissões dinâmicas,
-unidades organizacionais, auditoria de acesso e regras por contexto
-permanecem fora do escopo desta baseline.
+- a matriz de permissões permanece estática no cliente;
+- `acoes` ainda não possui autoria imutável por UID, impedindo política de
+  propriedade individual sem evolução do modelo;
+- publicação e teste de fumaça das regras remotas permanecem em procedimento
+  separado;
+- integração ao `main` depende de Pull Request e Code Review Arquitetural.
 
 ──────────────────────────────────────────────
 
@@ -589,4 +631,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.2
+Versão 2.3

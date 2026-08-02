@@ -7,7 +7,7 @@ O código cliente utiliza oito coleções. A ausência de regra específica impl
 | Coleção | Operações encontradas | Leitura | Criação/atualização | Exclusão |
 |---|---|---|---|---|
 | `usuarios` | `get`, `list` | próprio documento: autenticado; lista: administrador/gestor ativos | negada | negada |
-| `domains` | `get`, `list`, `create`, `update` | todos os perfis ativos | administrador/gestor | negada |
+| `domains` | `get`, `list`, `create`, `update` | todos os perfis ativos | administrador/gestor, com estrutura válida e `createdAt` imutável | negada |
 | `tipos_acoes` | `get`, `list`, `create`, `update` | todos os perfis ativos | administrador/gestor | negada |
 | `coordenadores` | `get`, `list`, `create`, `update` | todos os perfis ativos | administrador | negada |
 | `regionais` | `get`, `list`, `create`, `update` | todos os perfis ativos | administrador | negada |
@@ -34,6 +34,7 @@ O campo oficial é `perfilAcesso`. A identidade só é operacional quando o docu
 6. Exclusão de ação é restrita ao administrador. Cadastros administrativos são inativados, não excluídos.
 7. `contadores` não permite consulta da coleção nem exclusão.
 8. Coleções não inventariadas são bloqueadas por regra final de negação.
+9. `domains` exige campos mínimos e tipos essenciais; `createdAt` não pode ser alterado após a criação.
 
 ## Limitação conhecida
 

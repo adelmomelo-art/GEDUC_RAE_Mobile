@@ -13,7 +13,8 @@
 - [x] ADM-001C.2 registrada no commit `fc575a0`.
 - [x] ADM-001C.3 registrada no commit `42e3560`.
 - [x] Branch sincronizada com `origin` após ADM-001C.3.
-- [x] Firestore: 14/14 testes aprovados no emulador.
+- [x] Firestore: 15/15 testes aprovados no emulador após Code Review.
+- [x] Estrutura mínima e `createdAt` de `domains` protegidos por testes negativos.
 - [x] Testes negativos produziram `PERMISSION_DENIED` esperado.
 - [x] `firebase-tools` 15.25.1.
 - [x] Vulnerabilidades npm altas: zero.

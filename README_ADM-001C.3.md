@@ -4,6 +4,9 @@
 
 A política de dados passa a negar por padrão, exigir identidade ativa e reconhecida e usar exclusivamente o campo oficial `perfilAcesso`.
 
+A correção R1 da Code Review preserva a estrutura mínima de `domains`, valida
+tipos essenciais e impede alteração de `createdAt`.
+
 ## Arquivos do pacote
 
 - `firestore.rules`

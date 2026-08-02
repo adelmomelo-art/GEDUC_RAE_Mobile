@@ -50,6 +50,28 @@ service cloud.firestore {
       return possuiPerfil(['administrador', 'gestor']);
     }
 
+    function domainValido() {
+      return request.resource.data.keys().hasAll([
+          'grupo',
+          'codigo',
+          'nome',
+          'ordem',
+          'ativo',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.grupo is string
+        && request.resource.data.grupo.size() > 0
+        && request.resource.data.codigo is string
+        && request.resource.data.codigo.size() > 0
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.ordem is int
+        && request.resource.data.ativo is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+    }
+
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
@@ -63,7 +85,11 @@ service cloud.firestore {
 
     match /domains/{domainId} {
       allow get, list: if usuarioAtivo();
-      allow create, update: if administradorOuGestor();
+      allow create: if administradorOuGestor()
+        && domainValido();
+      allow update: if administradorOuGestor()
+        && domainValido()
+        && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
 

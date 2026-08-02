@@ -584,8 +584,9 @@ As regras versionadas do Firestore exigem identidade ativa e perfil
 reconhecido, possuem decisão explícita para as oito coleções inventariadas
 e terminam com negação por padrão.
 
-As regras foram aprovadas em 14 testes positivos e negativos no Firebase
-Emulator Suite. Elas ainda não foram publicadas no Firebase remoto. A
+As regras foram aprovadas em 15 testes positivos e negativos no Firebase
+Emulator Suite. A Code Review preservou campos mínimos, tipos essenciais e a
+imutabilidade de `createdAt` em `domains`. Elas ainda não foram publicadas no Firebase remoto. A
 publicação exige autorização expressa, registro da versão anterior e teste
 de fumaça posterior.
 
@@ -609,7 +610,7 @@ ADM-001C.1: 072c5a5 — Identidade Confiável
 ADM-001C.2: fc575a0 — Política Única de Autorização
 ADM-001C.3: 42e3560 — Firestore Security Baseline
 Branch: feature/adm-001c-identidade-seguranca
-Regras locais: 14/14 testes aprovados
+Regras locais: 15/15 testes aprovados
 Flutter analyze: 0 issues
 Firestore remoto: não publicado
 ```

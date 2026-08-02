@@ -11,7 +11,7 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 |---|---|---|---|
 | ADM-001C.1 | `072c5a5` | Identidade Confiável | tablet aprovado; analyze 0 |
 | ADM-001C.2 | `fc575a0` | Política Única de Autorização | tablet 10/10; analyze 0 |
-| ADM-001C.3 | `42e3560` | Firestore Security Baseline | emulador 14/14; analyze 0 |
+| ADM-001C.3 | `42e3560` + R1 | Firestore Security Baseline | emulador 15/15; analyze 0 |
 | ADM-001C.4 | pendente | Homologação e encerramento | tablet 10/10; documentação atualizada |
 
 ## Arquitetura resultante
@@ -31,7 +31,8 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 - login, retomada, Home, Administração, voltar, logout e novo login aprovados;
 - painel administrativo com seis módulos aprovado;
 - listagem e atualização de usuários aprovadas;
-- 14 testes positivos e negativos das regras aprovados;
+- 15 testes positivos e negativos das regras aprovados após Code Review;
+- validação estrutural e imutabilidade de `createdAt` restauradas em `domains`;
 - zero vulnerabilidades npm altas ou críticas na cadeia de teste;
 - `flutter analyze` com zero issues em todos os pacotes;
 - commits e pushes incrementais concluídos.

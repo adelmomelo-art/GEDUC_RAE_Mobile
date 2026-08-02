@@ -19,6 +19,18 @@ const perfis = {
   desconhecido: { perfilAcesso: 'superusuario', ativo: true },
 };
 
+function dominioValido(sufixo = 'teste') {
+  return {
+    grupo: 'foco',
+    codigo: `codigo-${sufixo}`,
+    nome: `Domínio ${sufixo}`,
+    ordem: 1,
+    ativo: true,
+    createdAt: new Date('2026-08-01T12:00:00.000Z'),
+    updatedAt: new Date('2026-08-01T12:00:00.000Z'),
+  };
+}
+
 function banco(uid) {
   return uid
     ? ambiente.authenticatedContext(uid).firestore()
@@ -37,9 +49,9 @@ async function semear() {
       });
     }
 
-    await db.collection('domains').doc('foco_teste').set({
-      grupo: 'foco', codigo: 'teste', nome: 'Teste', ativo: true,
-    });
+    await db.collection('domains').doc('foco_teste').set(
+      dominioValido('semente'),
+    );
     await db.collection('tipos_acoes').doc('tipo-1').set({ nomeAcao: 'Teste' });
     await db.collection('coordenadores').doc('coord-1').set({ nome: 'Teste' });
     await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste' });
@@ -119,11 +131,31 @@ test('todos os perfis ativos leem catálogos operacionais', async () => {
 
 test('administrador e gestor gerenciam domínios e tipos de ações', async () => {
   for (const uid of ['admin', 'gestor']) {
-    await assertSucceeds(banco(uid).collection('domains').doc(`novo-${uid}`).set({ ativo: true }));
+    await assertSucceeds(
+      banco(uid)
+        .collection('domains')
+        .doc(`novo-${uid}`)
+        .set(dominioValido(uid)),
+    );
     await assertSucceeds(banco(uid).collection('tipos_acoes').doc(`novo-${uid}`).set({ ativo: true }));
   }
   await assertFails(banco('coordenador').collection('domains').doc('novo').set({ ativo: true }));
   await assertFails(banco('agente').collection('tipos_acoes').doc('novo').set({ ativo: true }));
+});
+
+test('domínios exigem estrutura válida e preservam createdAt', async () => {
+  const incompleto = banco('gestor').collection('domains').doc('incompleto');
+  await assertFails(incompleto.set({ grupo: 'foco', ativo: true }));
+
+  const existente = banco('admin').collection('domains').doc('foco_teste');
+  await assertSucceeds(existente.update({
+    nome: 'Domínio atualizado',
+    updatedAt: new Date('2026-08-01T13:00:00.000Z'),
+  }));
+  await assertFails(existente.update({
+    createdAt: new Date('2026-08-01T14:00:00.000Z'),
+    updatedAt: new Date('2026-08-01T14:00:00.000Z'),
+  }));
 });
 
 test('somente administrador gerencia coordenadores, regionais e materiais', async () => {

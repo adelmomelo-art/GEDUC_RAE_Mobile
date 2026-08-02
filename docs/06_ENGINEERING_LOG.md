@@ -606,7 +606,7 @@ inventariadas.
 ### Validação
 
 - Firebase Emulator Suite com Java 21;
-- 14/14 testes positivos e negativos aprovados;
+- 15/15 testes positivos e negativos aprovados após Code Review;
 - `firebase-tools` 15.25.1;
 - zero vulnerabilidades npm altas ou críticas;
 - `flutter analyze`: **No issues found!**;
@@ -617,6 +617,16 @@ inventariadas.
 As regras estão versionadas e testadas, porém não foram publicadas no
 Firebase remoto. `firebase deploy` permanece condicionado a autorização
 expressa e procedimento próprio.
+
+### Correção pós-Code Review
+
+A revisão do PR nº 3 identificou que a primeira baseline havia ampliado a
+autorização de `domains` para gestor, conforme a matriz, mas removido
+inadvertidamente duas invariantes anteriores: campos mínimos na criação e
+imutabilidade de `createdAt`.
+
+A R1 restaurou essas proteções, acrescentou validação de tipos essenciais e
+incluiu testes negativos para documento incompleto e alteração de `createdAt`.
 
 ------------------------------------------------------------------------
 

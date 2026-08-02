@@ -385,7 +385,8 @@ A Plataforma Fênix adotará identidade operacional validada como pré-condiçã
 - campo oficial `perfilAcesso` aplicado;
 - identidade ativa exigida nas operações protegidas;
 - negação por padrão;
-- 14/14 testes aprovados no Firebase Emulator Suite;
+- 15/15 testes aprovados no Firebase Emulator Suite após Code Review;
+- invariantes estruturais de `domains` preservadas;
 - regras ainda não publicadas no Firebase remoto.
 
 ### 16.4 ADM-001C.4 — Encerramento

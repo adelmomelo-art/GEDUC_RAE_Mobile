@@ -638,7 +638,7 @@ publicado na branch do PR nº 3.
 ## 7.13 ADM-001C.4 — Homologação integrada e encerramento
 
 **Data:** 01/08/2026  
-**Status:** Homologação integrada e Code Review aprovadas — merge pendente
+**Status:** Concluída e validada após o merge
 
 ### Objetivo
 
@@ -680,11 +680,43 @@ pós-merge. A publicação remota das regras permanece uma decisão separada.
 
 - CPB final: 7/7 arquivos;
 - CPB corretivo: 11/11 arquivos;
-- Pull Request nº 3: aberto e automaticamente mesclável;
+- Pull Request nº 3: integrado à `main`;
 - Code Review Arquitetural: aprovada após a correção R1;
 - status checks e workflows no GitHub: não configurados;
-- merge e validação pós-merge: pendentes;
+- merge commit: `21f8ea2`;
+- `flutter analyze` pós-merge: sem issues;
+- Firestore pós-merge: 15/15 testes aprovados;
+- `main` sincronizada e working tree limpa;
 - regras remotas: não publicadas.
+
+------------------------------------------------------------------------
+
+## 7.14 ADM-001C — Integração e validação pós-merge
+
+- **Data:** 01/08/2026
+- **Pull Request:** nº 3
+- **Merge commit:** `21f8ea2`
+- **Branch integrada:** `feature/adm-001c-identidade-seguranca`
+
+### Resultado
+
+O Pull Request nº 3 foi integrado à `main` por merge commit, preservando os
+seis commits da ADM-001C. A cópia local avançou por fast-forward e permaneceu
+sincronizada com `origin/main`.
+
+### Validação pós-merge
+
+- `flutter analyze`: **No issues found!**;
+- Firebase Emulator Suite: **15/15 testes aprovados**;
+- falhas esperadas de autorização: `PERMISSION_DENIED` confirmado;
+- working tree: limpa;
+- publicação das regras: não realizada.
+
+### Encerramento
+
+A ADM-001C está formalmente concluída. A publicação remota das regras do
+Firestore permanece fora deste encerramento e exige autorização expressa,
+backup da versão remota e teste de fumaça posterior.
 
 ──────────────────────────────────────────────
 

@@ -5,6 +5,9 @@
 A ADM-001C estabelece identidade operacional validada, política única de
 autorização no cliente e baseline versionada/testável das regras do Firestore.
 
+**Status final:** concluída e integrada à `main` pelo merge commit `21f8ea2`,
+com validação pós-merge aprovada.
+
 ## Pacotes
 
 | Pacote | Commit | Resultado | Validação |
@@ -12,7 +15,7 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 | ADM-001C.1 | `072c5a5` | Identidade Confiável | tablet aprovado; analyze 0 |
 | ADM-001C.2 | `fc575a0` | Política Única de Autorização | tablet 10/10; analyze 0 |
 | ADM-001C.3 + R1 | `42e3560`, `2129355` | Firestore Security Baseline | emulador 15/15; analyze 0 |
-| ADM-001C.4 | `0d3d831` | Homologação e encerramento | tablet 10/10; CPB final 7/7 |
+| ADM-001C.4 | `0d3d831`, merge `21f8ea2` | Homologação e encerramento | tablet 10/10; pós-merge aprovado |
 
 ## Arquitetura resultante
 
@@ -39,6 +42,8 @@ autorização no cliente e baseline versionada/testável das regras do Firestore
 - commits e pushes incrementais concluídos;
 - Pull Request nº 3 aberto, atualizado e automaticamente mesclável;
 - Code Review Arquitetural aprovada após a correção R1;
+- Pull Request nº 3 integrado à `main` no merge commit `21f8ea2`;
+- validação pós-merge: analyze 0, Firestore 15/15 e working tree limpa;
 - homologação integrada final no tablet: 10/10 itens aprovados.
 
 ## Estado das regras remotas
@@ -52,15 +57,12 @@ de `firebase deploy`.
 - `acoes` ainda não possui autoria imutável por UID;
 - matriz de permissões ainda é estática;
 - publicação remota e teste de fumaça dependem de procedimento separado;
-- a sprint somente alcança status final após PR, Code Review, merge e validação
-  pós-merge.
+- o repositório ainda não possui status checks ou workflows automatizados.
 
 ## Próximos passos
 
-1. concluído — gerar CPB final;
-2. concluído — registrar o commit documental e o corretivo R1;
-3. concluído — fazer push da branch;
-4. concluído — abrir Pull Request para `main`;
-5. concluído — realizar Code Review Arquitetural;
-6. pendente — atualizar a descrição do PR, fazer merge e validação pós-merge;
-7. pendente — deliberar separadamente sobre publicação das regras.
+1. concluído — CPBs, commits e pushes incrementais;
+2. concluído — Pull Request e Code Review Arquitetural;
+3. concluído — merge e validação pós-merge;
+4. pendente e separado da ADM-001C — deliberar sobre publicação das regras;
+5. débito futuro — instituir status checks e workflows automatizados.

@@ -2,8 +2,8 @@
 
 ## Estado
 
-Validação técnica concluída. HAT-2 aprovada com ressalva editorial incorporada
-nesta versão antes do commit.
+Validação técnica e HAT-2 documental concluídas. A integração é controlada por
+Pull Request e Code Review documental.
 
 ## Baseline de entrada
 
@@ -47,7 +47,7 @@ Aprovada para correção exclusivamente documental.
 - `git diff --check`: sem erros; apenas avisos informativos de normalização
   LF para CRLF no Windows;
 - `flutter analyze`: `No issues found!` na execução local;
-- CPB em modo `-Full`: `No issues found!` em 114,4 segundos;
+- CPB final em modo `-Full`: `No issues found!`;
 - CPB: 4/4 arquivos incluídos, ausentes 0 e comandos com falha 0;
 - branch confirmada: `docs/adm-001c4-r3-sincronizacao-arquitetural`;
 - baseline confirmada: `b0738ef`;
@@ -55,9 +55,9 @@ Aprovada para correção exclusivamente documental.
 
 ## HAT-2
 
-Resultado inicial: **APROVADO COM RESSALVA EDITORIAL**.
+Resultado final: **APROVADO SEM RESSALVAS**.
 
-A ressalva consistia em atualizar o estado deste README e do Engineering Log,
-que ainda informavam “preparado para validação”. Esta versão incorpora a
-correção. O CPB deve ser regenerado e submetido à confirmação final de
-integridade antes do commit.
+O primeiro CPB recebeu ressalva porque este README e o Engineering Log ainda
+informavam “preparado para validação”. A redação foi corrigida, o CPB foi
+regenerado e a integridade final dos quatro arquivos foi confirmada antes do
+versionamento.

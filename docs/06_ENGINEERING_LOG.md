@@ -725,7 +725,7 @@ backup da versão remota e teste de fumaça posterior.
 **Data:** 02/08/2026
 **Branch:** `docs/adm-001c4-r3-sincronizacao-arquitetural`
 **Tipo:** Correção de consistência documental
-**Status:** HAT-2 aprovada com ressalva editorial — correção incorporada
+**Status:** HAT-2 documental concluída — Code Review no Pull Request nº 5
 
 ### Causa-raiz
 
@@ -755,28 +755,28 @@ dependências, rotas, providers, modelos, regras do Firestore ou dados remotos.
 - `git diff --check`: sem erros; avisos LF para CRLF classificados como
   informativos no ambiente Windows;
 - `flutter analyze`: `No issues found!` na execução local;
-- CPB em modo `-Full`: `No issues found!` em 114,4 segundos;
+- CPB final em modo `-Full`: `No issues found!`;
 - CPB: quatro arquivos solicitados, quatro incluídos, zero ausentes e zero
   comandos com falha;
 - branch confirmada: `docs/adm-001c4-r3-sincronizacao-arquitetural`;
 - baseline confirmada: `b0738ef`;
 - integridade dos quatro arquivos: confirmada por comparação binária;
-- HAT-2: aprovada com ressalva editorial relativa ao estado documental.
+- HAT-2 final: aprovada sem ressalvas após correção editorial e regeneração do
+  CPB.
 
-### Ressalva editorial
+### Tratamento da ressalva editorial
 
 O README e este Engineering Log ainda registravam o pacote como “preparado
 para validação”, embora as validações já estivessem concluídas. A redação foi
-atualizada antes do commit. O CPB deverá ser regenerado para confirmação final
-de integridade.
+atualizada, o CPB foi regenerado e os quatro arquivos foram novamente
+comparados antes do versionamento.
 
-### Etapas restantes
+### Controle de integração
 
-- regenerar e auditar o CPB após a correção editorial;
-- concluir a HAT-2 sem ressalvas;
-- commit e push da branch documental;
-- Pull Request e revisão documental;
-- merge na `main` e validação pós-merge.
+A correção foi versionada na branch
+`docs/adm-001c4-r3-sincronizacao-arquitetural` e submetida ao Pull Request nº 5.
+O merge na `main` permanece condicionado à Code Review documental e à validação
+pós-merge. Este registro não autoriza `firebase deploy`.
 
 ──────────────────────────────────────────────
 

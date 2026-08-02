@@ -5,7 +5,8 @@
 - Data: 01/08/2026
 - Branch: `feature/adm-001c-identidade-seguranca`
 - Baseline revisada: `2129355`
-- Status: Code Review Arquitetural aprovada — merge pendente
+- Merge commit: `21f8ea2`
+- Status: encerramento pós-merge aprovado
 
 ## A. Evidências técnicas obrigatórias
 
@@ -69,9 +70,10 @@
 - [x] Commits documentais, corretivo e respectivos pushes concluídos.
 - [x] Pull Request nº 3 aberto contra `main`.
 - [x] Code Review Arquitetural aprovada após a correção R1.
-- [ ] Merge concluído.
-- [ ] `flutter analyze` pós-merge com zero issues.
-- [ ] Working tree limpa na `main`.
+- [x] Merge do PR nº 3 concluído em `21f8ea2`.
+- [x] `flutter analyze` pós-merge com zero issues.
+- [x] Firestore pós-merge: 15/15 testes aprovados.
+- [x] Working tree limpa e `main` sincronizada com `origin/main`.
 
 ## Controle de publicação
 

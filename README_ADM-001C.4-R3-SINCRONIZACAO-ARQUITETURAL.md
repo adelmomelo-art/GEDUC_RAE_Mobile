@@ -1,0 +1,63 @@
+# ADM-001C.4-R3 — Sincronização Arquitetural Pós-Merge
+
+## Estado
+
+Validação técnica e HAT-2 documental concluídas. A integração é controlada por
+Pull Request e Code Review documental.
+
+## Baseline de entrada
+
+- branch principal: `main`;
+- commit da baseline: `b0738ef`;
+- Pull Request nº 3: integrado em `21f8ea2`;
+- Pull Request nº 4: integrado em `b0738ef`;
+- working tree de entrada: limpa.
+
+## Causa-raiz
+
+O encerramento R2 atualizou o Engineering Log, mas a seção 19 de
+`docs/01_PLATFORM_ARCHITECTURE.md` permaneceu anterior ao merge. Ela ainda
+indicava a feature branch como baseline e registrava a integração à `main`
+como pendente.
+
+## HAT-1
+
+Aprovada para correção exclusivamente documental.
+
+## Entregas
+
+- `docs/01_PLATFORM_ARCHITECTURE.md` completo, atualizado para a versão 2.4;
+- `docs/06_ENGINEERING_LOG.md` completo, atualizado para a versão 2.4;
+- README deste pacote;
+- manifesto CPB versionado.
+
+## Fora do escopo
+
+- código Flutter;
+- árvore de providers;
+- rotas;
+- dependências;
+- modelos de dados;
+- `firestore.rules`;
+- publicação no Firebase remoto;
+- `firebase deploy`.
+
+## Validação registrada
+
+- `git diff --check`: sem erros; apenas avisos informativos de normalização
+  LF para CRLF no Windows;
+- `flutter analyze`: `No issues found!` na execução local;
+- CPB final em modo `-Full`: `No issues found!`;
+- CPB: 4/4 arquivos incluídos, ausentes 0 e comandos com falha 0;
+- branch confirmada: `docs/adm-001c4-r3-sincronizacao-arquitetural`;
+- baseline confirmada: `b0738ef`;
+- comparação de integridade: quatro arquivos idênticos ao pacote entregue.
+
+## HAT-2
+
+Resultado final: **APROVADO SEM RESSALVAS**.
+
+O primeiro CPB recebeu ressalva porque este README e o Engineering Log ainda
+informavam “preparado para validação”. A redação foi corrigida, o CPB foi
+regenerado e a integridade final dos quatro arquivos foi confirmada antes do
+versionamento.

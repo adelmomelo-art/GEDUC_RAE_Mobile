@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.3
+  Versão      2.4
   Status      Oficial
-  Sprint      ADM-001C — Identidade e Segurança
+  Sprint      ADM-001C.4-R3 — Sincronização Arquitetural Pós-Merge
 
 ------------------------------------------------------------------------
 
@@ -718,6 +718,66 @@ A ADM-001C está formalmente concluída. A publicação remota das regras do
 Firestore permanece fora deste encerramento e exige autorização expressa,
 backup da versão remota e teste de fumaça posterior.
 
+------------------------------------------------------------------------
+
+## 7.15 ADM-001C.4-R3 — Sincronização Arquitetural Pós-Merge
+
+**Data:** 02/08/2026
+**Branch:** `docs/adm-001c4-r3-sincronizacao-arquitetural`
+**Tipo:** Correção de consistência documental
+**Status:** HAT-2 documental concluída — Code Review no Pull Request nº 5
+
+### Causa-raiz
+
+O encerramento pós-merge da ADM-001C atualizou o Engineering Log e o README
+consolidado, mas não atualizou integralmente a seção de baseline da Arquitetura
+da Plataforma. O documento arquitetural ainda informava branch de feature e
+integração pendente, embora os Pull Requests nº 3 e nº 4 já estivessem
+integrados à `main`.
+
+### Correção preparada
+
+- atualização da Arquitetura da Plataforma para a versão 2.4;
+- registro do merge funcional `21f8ea2`;
+- registro do encerramento documental `b0738ef`;
+- substituição da feature branch pela `main` como branch oficial;
+- registro das branches encerradas;
+- preservação explícita do bloqueio de `firebase deploy`;
+- manutenção dos débitos controlados da ADM-001C.
+
+### Impacto
+
+A alteração é exclusivamente documental. Não modifica código Flutter,
+dependências, rotas, providers, modelos, regras do Firestore ou dados remotos.
+
+### Validações executadas
+
+- `git diff --check`: sem erros; avisos LF para CRLF classificados como
+  informativos no ambiente Windows;
+- `flutter analyze`: `No issues found!` na execução local;
+- CPB final em modo `-Full`: `No issues found!`;
+- CPB: quatro arquivos solicitados, quatro incluídos, zero ausentes e zero
+  comandos com falha;
+- branch confirmada: `docs/adm-001c4-r3-sincronizacao-arquitetural`;
+- baseline confirmada: `b0738ef`;
+- integridade dos quatro arquivos: confirmada por comparação binária;
+- HAT-2 final: aprovada sem ressalvas após correção editorial e regeneração do
+  CPB.
+
+### Tratamento da ressalva editorial
+
+O README e este Engineering Log ainda registravam o pacote como “preparado
+para validação”, embora as validações já estivessem concluídas. A redação foi
+atualizada, o CPB foi regenerado e os quatro arquivos foram novamente
+comparados antes do versionamento.
+
+### Controle de integração
+
+A correção foi versionada na branch
+`docs/adm-001c4-r3-sincronizacao-arquitetural` e submetida ao Pull Request nº 5.
+O merge na `main` permanece condicionado à Code Review documental e à validação
+pós-merge. Este registro não autoriza `firebase deploy`.
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -726,4 +786,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.3
+Versão 2.4

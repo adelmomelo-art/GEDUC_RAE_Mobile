@@ -10,9 +10,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   01_PLATFORM_ARCHITECTURE.md
-  Versão      2.3
+  Versão      2.4
   Status      Oficial
-  Sprint      ADM-001C — Identidade e Segurança
+  Sprint      ADM-001C.4-R3 — Sincronização Arquitetural Pós-Merge
 
 ------------------------------------------------------------------------
 
@@ -603,26 +603,66 @@ tentativa.
 
 ------------------------------------------------------------------------
 
-# 19. Baseline da ADM-001C
+# 19. Baseline final da ADM-001C
 
 ``` text
 ADM-001C.1: 072c5a5 — Identidade Confiável
 ADM-001C.2: fc575a0 — Política Única de Autorização
 ADM-001C.3: 42e3560 — Firestore Security Baseline
-Branch: feature/adm-001c-identidade-seguranca
-Regras locais: 15/15 testes aprovados
-Flutter analyze: 0 issues
-Firestore remoto: não publicado
+ADM-001C.3-R1: 2129355 — restauração das invariantes de domains
+ADM-001C.4: 0d3d831 — homologação integrada e encerramento
+Code Review: 7cd1104 — aprovação após correção R1
+PR nº 3 / merge: 21f8ea2 — integração da ADM-001C
+PR nº 4 / merge: b0738ef — encerramento documental pós-merge
+Branch oficial: main
+Flutter analyze pós-merge: 0 issues
+Firebase Emulator Suite: 15/15 testes
+Working tree pós-merge: clean
+Firestore remoto: regras ainda não publicadas
 ```
+
+A baseline oficial da Plataforma Fênix após a conclusão da ADM-001C é o
+commit `b0738ef` da branch `main`.
+
+A feature branch `feature/adm-001c-identidade-seguranca` e a branch
+documental `docs/enc-adm-001c-seguranca` foram removidas após os merges,
+conforme o procedimento de encerramento.
 
 ## 19.1 Débitos controlados
 
 - a matriz de permissões permanece estática no cliente;
 - `acoes` ainda não possui autoria imutável por UID, impedindo política de
   propriedade individual sem evolução do modelo;
-- publicação e teste de fumaça das regras remotas permanecem em procedimento
-  separado;
-- integração ao `main` depende de Pull Request e Code Review Arquitetural.
+- o repositório ainda não possui status checks ou workflows automatizados;
+- a publicação e o teste de fumaça das regras remotas permanecem em
+  procedimento separado.
+
+## 19.2 Controle de publicação
+
+As regras de segurança aprovadas no Firebase Emulator Suite ainda não foram
+publicadas no Firebase remoto.
+
+A publicação exige procedimento próprio, autorização expressa, preservação da
+versão remota anterior, plano de rollback e teste de fumaça posterior. A
+ADM-001C e esta sincronização documental não autorizam `firebase deploy`.
+
+## 19.3 Sincronização arquitetural pós-merge
+
+A ADM-001C.4-R3 corrige a divergência documental identificada após o
+encerramento R2. O Engineering Log já registrava os merges e a validação
+pós-merge, enquanto esta arquitetura ainda indicava integração pendente.
+
+A arquitetura oficial passa a refletir o estado real do Git e do GitHub:
+
+- Pull Request nº 3 integrado à `main`;
+- Pull Request nº 4 integrado à `main`;
+- baseline final `b0738ef`;
+- branches da ADM-001C encerradas;
+- validações pós-merge aprovadas;
+- regras remotas não publicadas.
+
+------------------------------------------------------------------------
+
 
 ──────────────────────────────────────────────
 
@@ -632,4 +672,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.3
+Versão 2.4

@@ -1,0 +1,9 @@
+.github/workflows/quality-gates.yml
+.npmrc
+package.json
+package-lock.json
+README_SEC-001C.md
+BLUEPRINT_SEC-001C.md
+PLANO_IMPLEMENTACAO_SEC-001C.md
+docs/SEC-001C_REFERENCIAS_SUPPLY_CHAIN.md
+tools/manifestos/SEC-001C-HARDENING-SUPPLY-CHAIN.txt

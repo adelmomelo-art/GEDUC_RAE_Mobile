@@ -2,7 +2,15 @@
   "name": "geduc-rae-firestore-rules-tests",
   "private": true,
   "scripts": {
+    "audit:security": "npm audit --audit-level=high",
+    "audit:scripts": "npm approve-scripts --allow-scripts-pending",
     "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js\""
+  },
+  "allowScripts": {
+    "@firebase/util@1.12.1": true,
+    "fsevents": false,
+    "protobufjs@7.6.5": true,
+    "re2@1.26.1": true
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",

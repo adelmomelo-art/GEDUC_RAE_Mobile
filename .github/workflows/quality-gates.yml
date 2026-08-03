@@ -68,6 +68,9 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Audit Node.js dependencies
+        run: npm run audit:security
+
       - name: Install Node.js dependencies
         run: npm ci
 

@@ -51,6 +51,19 @@ O `install` obtém artefato nativo compatível ou executa compilação local via
 `node-gyp`. É necessário para materializar o módulo opcional usado pela cadeia
 do `superstatic` e fica aprovado somente nessa versão auditada.
 
+## Resultado homologado
+
+- diagnóstico inicial: seis ocorrências moderadas;
+- `re2` atualizado de `1.24.1` para `1.26.1` sem `--force`;
+- resultado final: cinco ocorrências moderadas, zero alta e zero crítica;
+- scripts de instalação pendentes: zero;
+- Pull Request nº 11 aprovado pelos dois checks obrigatórios;
+- merge: `6b53c8f`;
+- workflow pós-merge da `main`: sucesso em 43 segundos.
+
+Os advisories `GHSA-ff84-5f28-78qj` e `GHSA-6hxr-mr5r-9836`, associados à
+versão anterior do `re2`, deixaram de compor o relatório após a atualização.
+
 ## Exceções temporárias
 
 | Advisory | Severidade | Motivo da exceção |
@@ -60,3 +73,13 @@ do `superstatic` e fica aprovado somente nessa versão auditada.
 
 As exceções não autorizam uso de `--force`, não dispensam monitoramento e não
 alteram o bloqueio automático para severidades alta e crítica.
+
+## Rastreabilidade Git
+
+| Item | Referência |
+| --- | --- |
+| Baseline de entrada | `3400563` |
+| Branch | `security/sec-001c-hardening-supply-chain` |
+| Commit de implementação | `2c16d4d86c7a4d25f421cb0e36f79b6d58c1d5df` |
+| Pull Request | nº 11 |
+| Merge / baseline final | `6b53c8fe0964d91dc018799bcff8fcd429fa53af` |

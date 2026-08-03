@@ -4,12 +4,15 @@
 | --- | --- |
 | Data | 03/08/2026 |
 | Baseline de entrada | `main` em `3400563` |
-| Branch prevista | `security/sec-001c-hardening-supply-chain` |
+| Branch | `security/sec-001c-hardening-supply-chain` |
+| Commit da implementação | `2c16d4d` |
+| Pull Request | nº 11 |
+| Baseline técnica final | `main` em `6b53c8f` |
 | Node homologado | `24.18.0` |
 | npm homologado | `11.16.0` |
 | Firebase CLI | `15.25.1` |
 | Risco tratado | dependências vulneráveis e scripts de instalação não governados |
-| Estado inicial | HAT-1 aprovada; implementação preparada |
+| Estado | HAT-1 a HAT-4 aprovadas; sincronização documental final preparada |
 
 ## 1. Objetivo
 
@@ -92,12 +95,12 @@ efetivo sem alterar o identificador do check nem exigir bypass ou nova regra.
 
 ## 7. Critérios de aceitação
 
-| HAT | Critério |
+| HAT | Resultado |
 | --- | --- |
-| HAT-1 | baseline e risco inventariados sem alterar o repositório |
-| HAT-2 | `npm ci`, scripts, audit, 15 testes e analyze aprovados localmente |
-| HAT-3 | Pull Request com os dois checks obrigatórios verdes |
-| HAT-4 | execução `push` da `main` verde e validação pós-merge limpa |
+| HAT-1 | aprovada — baseline e risco inventariados sem alteração |
+| HAT-2 | aprovada — cinco moderadas, scripts governados, 15/15 e analyze sem issues |
+| HAT-3 | aprovada — dois checks `Required` verdes no PR nº 11 |
+| HAT-4 | aprovada — `push` verde em 43s e validação pós-merge limpa |
 
 ## 8. Controles negativos
 
@@ -113,3 +116,17 @@ efetivo sem alterar o identificador do check nem exigir bypass ou nova regra.
 As exceções de `@opentelemetry/core` e `uuid` devem ser reavaliadas quando uma
 nova versão compatível do Firebase CLI atualizar suas dependências transitivas.
 Qualquer mudança dos pacotes com scripts exigirá nova aprovação versionada.
+
+## 10. Evidência de integração
+
+| Fase | Evidência | Resultado |
+| --- | --- | --- |
+| Implementação | commit `2c16d4d` | 9 arquivos; CPB aprovado |
+| Pull Request | nº 11 | Firestore 32s; Flutter 53s; sem conflitos |
+| Merge | `6b53c8f` | integração sem bypass |
+| Pós-merge remoto | workflow `push` | sucesso em 43s |
+| Pós-merge local | audit, 15 testes e analyze | aprovado; working tree limpa |
+
+O ruleset `main-quality-gates`, ID `20301322`, permaneceu ativo e sem bypass.
+O novo audit foi incorporado ao check de Firestore já obrigatório, preservando
+o contrato de proteção da `main`.

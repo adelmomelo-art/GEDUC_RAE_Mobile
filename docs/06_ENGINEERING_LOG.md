@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.5
+  Versão      2.6
   Status      Oficial
-  Sprint      SEC-001A — Publicação Controlada das Regras do Firestore
+  Sprint      SEC-001A-R1 — Sincronização Documental Pós-Merge
 
 ------------------------------------------------------------------------
 
@@ -786,8 +786,10 @@ remota permaneceu separada até a autorização expressa da SEC-001A.
 **Data:** 02/08/2026
 **Branch:** `security/sec-001a-publicacao-controlada-firestore`
 **Commit preparatório:** `9da5c94`
+**Commit documental:** `1ba5ba3`
+**Pull Request / merge:** nº 6 / `c8d2d95`
 **Tipo:** Segurança, publicação remota e homologação
-**Status:** Publicação e homologação remota concluídas sem ressalvas técnicas
+**Status:** Publicação, homologação e integração concluídas sem ressalvas técnicas
 
 ### Objetivo
 
@@ -877,13 +879,47 @@ ressalva à homologação atual.
 Referência consolidada:
 `docs/SEC-001A_PUBLICACAO_HOMOLOGACAO_REFERENCIAS.md`.
 
-### Próximos passos
+### Encerramento Git
 
-1. gerar e revisar o CPB de encerramento;
-2. versionar e publicar os registros documentais;
-3. abrir Pull Request contra `main`;
-4. executar Code Review e merge;
-5. validar `main`, working tree e `flutter analyze` pós-merge.
+- CPB de encerramento: gerado e revisado;
+- registros documentais: versionados no commit `1ba5ba3`;
+- Pull Request nº 6: aprovado e integrado;
+- merge commit: `c8d2d95`;
+- `main`: sincronizada com `origin/main`;
+- working tree pós-merge: limpa;
+- branch `security/sec-001a-publicacao-controlada-firestore`: removida local e
+  remotamente.
+
+------------------------------------------------------------------------
+
+## 7.17 SEC-001A-R1 — Sincronização Documental Pós-Merge
+
+**Data:** 03/08/2026
+**Baseline de entrada:** `c8d2d95`
+**Tipo:** Correção de consistência documental
+
+### Causa-raiz
+
+O Pull Request nº 6 já havia sido integrado e sua branch removida, mas o README
+e o Engineering Log ainda descreviam commit, push, Code Review e merge como
+etapas futuras. A Arquitetura registrava corretamente `6a6794d` como baseline
+histórica da ADM-001C e de entrada da SEC-001A, porém ainda não declarava
+`c8d2d95` como baseline final da Plataforma Fênix após a SEC-001A.
+
+### Decisão documental
+
+- preservar `6a6794d` como baseline histórica de entrada;
+- registrar `1ba5ba3` como commit documental;
+- registrar o Pull Request nº 6 e o merge `c8d2d95`;
+- registrar a remoção local e remota da branch da SEC-001A;
+- substituir etapas futuras já executadas por resultados concluídos;
+- elevar Arquitetura e Engineering Log para a versão 2.6.
+
+### Limite de escopo
+
+A correção não altera providers, rotas, dependências, código Flutter,
+`firestore.rules`, `firebase.json`, testes ou dados remotos. Nenhum comando de
+deploy integra a SEC-001A-R1.
 
 ──────────────────────────────────────────────
 
@@ -893,4 +929,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.5
+Versão 2.6

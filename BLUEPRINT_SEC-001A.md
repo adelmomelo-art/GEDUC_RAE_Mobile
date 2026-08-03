@@ -7,7 +7,10 @@
 | Projeto | Plataforma Fênix / GEDUC RAE Mobile |
 | Pacote | SEC-001A |
 | Data | 02/08/2026 |
-| Baseline Git | `main` em `6a6794d` |
+| Baseline Git de entrada | `main` em `6a6794d` |
+| Commit documental | `1ba5ba3` |
+| Pull Request / merge | nº 6 / `c8d2d95` |
+| Baseline Git final | `main` em `c8d2d95` |
 | Projeto Firebase | `geduc-rae-mobile` |
 | Número do projeto | `906308539006` |
 | Regra candidata | `firestore.rules` |
@@ -251,3 +254,25 @@ As próximas camadas recomendadas são avaliação gradual do Firebase App Check
 Cloud Audit Logs, alertas de uso, CI para as regras e revisão periódica de
 privilégios. Esses controles complementam as regras; não as substituem e não
 constituem ressalva à homologação atual.
+
+## 14. Encerramento Git
+
+O registro da publicação e da homologação foi versionado no commit `1ba5ba3`,
+submetido ao Pull Request nº 6 e integrado à `main` pelo merge commit
+`c8d2d95`.
+
+A validação pós-merge confirmou:
+
+- `main` sincronizada com `origin/main`;
+- working tree limpa;
+- histórico preservando `9da5c94` e `1ba5ba3`;
+- branch `security/sec-001a-publicacao-controlada-firestore` removida local e
+  remotamente;
+- ausência de nova publicação ou mutação remota.
+
+## 15. Sincronização SEC-001A-R1
+
+A referência `6a6794d` é preservada como baseline histórica de entrada da
+SEC-001A. A baseline final integrada é `c8d2d95`. A SEC-001A-R1 corrige somente
+o estado documental pós-merge e não altera arquitetura de execução, código
+Flutter, regras do Firestore, dependências ou dados remotos.

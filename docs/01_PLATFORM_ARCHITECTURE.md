@@ -10,9 +10,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   01_PLATFORM_ARCHITECTURE.md
-  Versão      2.5
+  Versão      2.6
   Status      Oficial
-  Sprint      SEC-001A — Publicação Controlada das Regras do Firestore
+  Sprint      SEC-001A-R1 — Sincronização Documental Pós-Merge
 
 ------------------------------------------------------------------------
 
@@ -711,6 +711,28 @@ Firebase App Check, Cloud Audit Logs, alertas e automação de CI foram
 classificados como defesas complementares a avaliar. Nenhum deles substitui a
 matriz de autorização publicada.
 
+## 20.4 Encerramento Git e baseline oficial
+
+``` text
+Baseline de entrada da SEC-001A: 6a6794d
+Commit preparatório: 9da5c94
+Commit documental: 1ba5ba3
+Pull Request: nº 6
+Merge na main: c8d2d95
+Branch oficial: main
+Working tree pós-merge: clean
+Branch da SEC-001A: removida local e remotamente
+```
+
+O commit `6a6794d` permanece como baseline histórica de entrada da SEC-001A e
+como encerramento da ADM-001C. Após a publicação, homologação, revisão e merge
+do Pull Request nº 6, a baseline oficial da Plataforma Fênix passou a ser o
+commit `c8d2d95` da branch `main`.
+
+A sincronização SEC-001A-R1 é exclusivamente documental. Ela não modifica as
+regras publicadas, o modelo de dados, o código Flutter ou a configuração do
+Firebase e não autoriza nova publicação remota.
+
 ------------------------------------------------------------------------
 
 
@@ -722,4 +744,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.5
+Versão 2.6

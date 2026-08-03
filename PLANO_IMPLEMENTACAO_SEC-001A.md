@@ -8,14 +8,18 @@ ações locais e mutações remotas.
 
 ## 2. Estado consolidado
 
-- `main` sincronizada com `origin/main` em `6a6794d`;
+- baseline de entrada: `main` sincronizada com `origin/main` em `6a6794d`;
 - working tree limpa;
 - projeto visível: `geduc-rae-mobile`;
 - nenhum alias ou projeto Firebase ativo;
 - regra remota preservada e comparada;
 - regra local candidata testada;
 - 15/15 testes aprovados;
-- publicação e homologação remota concluídas em 02/08/2026.
+- publicação e homologação remota concluídas em 02/08/2026;
+- commit documental de encerramento: `1ba5ba3`;
+- Pull Request nº 6 integrado à `main`;
+- baseline final pós-merge: `c8d2d95`;
+- branch da SEC-001A removida local e remotamente.
 
 ## 3. Fase A — Preparação versionada
 
@@ -244,12 +248,13 @@ A publicação e a homologação remota da SEC-001A foram concluídas após:
 - aprovação do administrador ativo e bloqueio das contas inativas;
 - ausência de acesso indevido, tela branca, exceção ou regressão crítica.
 
-O encerramento Git permanece no fluxo normal:
+O encerramento Git foi concluído pelo fluxo normal:
 
-- commit e push do registro documental;
-- Pull Request e Code Review;
-- merge na `main`;
-- validação pós-merge com working tree limpa.
+- commit e push do registro documental: `1ba5ba3`;
+- Pull Request e Code Review: nº 6, aprovados;
+- merge na `main`: `c8d2d95`;
+- validação pós-merge: `main` sincronizada e working tree limpa;
+- limpeza: branch da SEC-001A removida local e remotamente.
 
 ## 12. Pesquisa de referência
 
@@ -268,3 +273,13 @@ Foram confirmados como fundamentos da baseline:
 
 App Check, Cloud Audit Logs, alertas e CI foram registrados como evoluções de
 defesa em profundidade para pacotes próprios, sem ressalva à homologação atual.
+
+## 13. Sincronização documental pós-merge
+
+A SEC-001A-R1, iniciada em 03/08/2026, corrige a divergência editorial entre o
+plano e o estado real do Git. A baseline de entrada `6a6794d` permanece como
+registro histórico; a baseline final da SEC-001A é `c8d2d95`.
+
+Esta sincronização não modifica `firestore.rules`, `firebase.json`, testes,
+dependências, código Flutter ou dados remotos e não autoriza nova execução de
+`firebase deploy`.

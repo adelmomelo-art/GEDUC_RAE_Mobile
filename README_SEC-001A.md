@@ -1,21 +1,24 @@
-# SEC-001A — Preparação para Publicação Controlada das Regras do Firestore
+# SEC-001A — Publicação Controlada das Regras do Firestore
 
 ## Estado
 
-HAT-1 concluída e aprovada para preparação controlada. A HAT-2 e a publicação
-remota permanecem bloqueadas até nova revisão e autorização expressa.
+Publicação e homologação remota concluídas e aprovadas sem ressalvas técnicas.
+O encerramento documental está preparado para commit, push, Pull Request, Code
+Review, merge e validação pós-merge.
 
 ## Objetivo
 
-Preparar a publicação controlada da baseline de segurança do Firestore,
-preservando a regra remota anterior, identificando riscos, definindo critérios
-de interrupção, rollback condicionado e smoke tests posteriores.
+Registrar a preparação, autorização, publicação e homologação da baseline de
+segurança do Firestore, preservando a regra remota anterior e consolidando os
+controles de interrupção, rollback condicionado e smoke test pós-deploy.
 
 ## Baseline
 
 - repositório: `adelmomelo-art/GEDUC_RAE_Mobile`;
 - branch de entrada: `main`;
 - commit de entrada: `6a6794d`;
+- branch da SEC-001A: `security/sec-001a-publicacao-controlada-firestore`;
+- commit preparatório: `9da5c94`;
 - projeto Firebase: `geduc-rae-mobile`;
 - número do projeto: `906308539006`;
 - regra candidata: `firestore.rules`;
@@ -37,44 +40,82 @@ de interrupção, rollback condicionado e smoke tests posteriores.
 - CPB da HAT-1: 14/14 arquivos incluídos, zero ausentes e zero comandos com
   falha;
 - `flutter analyze` local e no CPB: `No issues found!`;
-- `git status`: working tree limpa antes da preparação.
+- autorização expressa registrada para o projeto `geduc-rae-mobile`;
+- deploy iniciado em `02/08/2026 às 21:04:30`, UTC-03:00;
+- Firebase CLI: compilação, upload e release concluídos com `Deploy complete!`;
+- Console Firebase: nova versão confirmada às 21:05;
+- comparação remota versus local: `git diff` com exit code `0`;
+- smoke test pós-deploy: aprovado sem acesso indevido, tela branca ou exceção;
+- `git status`: working tree limpa após a verificação remota.
 
-## Resultado da HAT-1
+## Resultado das HATs
 
-**APROVADA SEM RESSALVAS TÉCNICAS**, após sincronização editorial do estado
-deste README.
+### HAT-1
 
-A análise confirmou que Blueprint, plano, snapshot, manifesto e evidências são
-consistentes. A aprovação autoriza o versionamento do pacote preparatório e a
-entrada posterior na HAT-2, mas não autoriza qualquer mutação no Firebase.
+**APROVADA SEM RESSALVAS TÉCNICAS** para a preparação controlada.
+
+A análise confirmou que Blueprint, plano, snapshot, manifesto e evidências
+eram consistentes e autorizou o versionamento do pacote preparatório.
+
+### HAT-2
+
+**APROVADA SEM RESSALVAS TÉCNICAS** após revalidação do hash candidato, 15/15
+testes, `flutter analyze`, projeto explícito, contas de smoke e procedimento de
+rollback. A publicação somente ocorreu após autorização textual do responsável.
 
 ## Achado crítico
 
-A regra remota vigente permite leitura e escrita em qualquer documento para
-qualquer conta autenticada. Isso inclui documentos de identidade, perfis,
+A regra remota anterior permitia leitura e escrita em qualquer documento para
+qualquer conta autenticada. Isso incluía documentos de identidade, perfis,
 ações, contadores e coleções não inventariadas.
 
-A baseline local substitui a autorização genérica por identidade ativa,
+A baseline publicada substitui a autorização genérica por identidade ativa,
 perfil reconhecido, matriz de permissões por coleção e negação por padrão.
 
-## Arquivos novos
+## Resultado da publicação
 
-- `BLUEPRINT_SEC-001A.md`;
-- `PLANO_IMPLEMENTACAO_SEC-001A.md`;
-- `README_SEC-001A.md`;
-- `docs/SEC-001A_BASELINE_REMOTA_FIRESTORE.rules`;
-- `tools/manifestos/SEC-001A-PREPARACAO-PUBLICACAO-FIRESTORE.txt`.
+- projeto: `geduc-rae-mobile`;
+- escopo remoto: somente `firestore:rules`;
+- regra compilada e liberada para `cloud.firestore`;
+- fonte remota integralmente comparada com `firestore.rules`;
+- administrador ativo com consultas e módulos aprovados;
+- gestor, coordenador e agente inativos corretamente bloqueados;
+- nenhuma conta inativa acessou dados;
+- nenhuma tela branca, exceção ou regressão crítica;
+- rollback não indicado.
+
+## Arquivos de encerramento
+
+- `README_SEC-001A.md` atualizado;
+- `BLUEPRINT_SEC-001A.md` atualizado;
+- `PLANO_IMPLEMENTACAO_SEC-001A.md` atualizado;
+- `docs/01_PLATFORM_ARCHITECTURE.md` atualizado;
+- `docs/06_ENGINEERING_LOG.md` atualizado;
+- `docs/SEC-001A_PUBLICACAO_HOMOLOGACAO_REFERENCIAS.md` criado;
+- `tools/manifestos/SEC-001A-ENCERRAMENTO-PUBLICACAO-FIRESTORE.txt` criado.
 
 ## Limite de segurança
 
-Este pacote não autoriza nem executa:
+Este pacote registra uma publicação já autorizada e concluída. Ele não
+autoriza nem executa:
 
-- `firebase deploy`;
-- `firebase deploy --only firestore:rules`;
+- nova execução de `firebase deploy`;
+- republicação de `firestore.rules`;
 - alteração de alias Firebase;
 - edição de dados remotos;
 - exclusão de documentos;
-- restauração da regra anterior.
+- restauração da regra anterior;
+- habilitação de App Check ou Cloud Audit Logs.
 
-Qualquer publicação dependerá de CPB, HAT-2, autorização expressa e execução
-manual do runbook aprovado.
+Qualquer nova mutação remota dependerá de escopo próprio, revalidação, nova
+autorização expressa e execução controlada.
+
+## Referências de segurança
+
+A pesquisa técnica e o mapeamento de aderência estão consolidados em
+`docs/SEC-001A_PUBLICACAO_HOMOLOGACAO_REFERENCIAS.md`. As referências incluem
+documentação oficial do Firebase e Google Cloud, OWASP e NIST SP 800-207.
+
+App Check, Cloud Audit Logs, alertas, CI e revisão periódica de privilégios
+foram classificados como evoluções de defesa em profundidade. Eles não
+constituem ressalva à SEC-001A homologada.

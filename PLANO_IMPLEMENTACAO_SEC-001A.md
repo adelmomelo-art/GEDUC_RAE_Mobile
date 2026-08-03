@@ -6,7 +6,7 @@ Definir o procedimento operacional para preparar, autorizar, publicar e validar
 as regras do Firestore da Plataforma Fênix, com separação inequívoca entre
 ações locais e mutações remotas.
 
-## 2. Estado inicial confirmado
+## 2. Estado consolidado
 
 - `main` sincronizada com `origin/main` em `6a6794d`;
 - working tree limpa;
@@ -15,7 +15,7 @@ ações locais e mutações remotas.
 - regra remota preservada e comparada;
 - regra local candidata testada;
 - 15/15 testes aprovados;
-- publicação ainda não realizada.
+- publicação e homologação remota concluídas em 02/08/2026.
 
 ## 3. Fase A — Preparação versionada
 
@@ -75,10 +75,10 @@ Gerar o pacote:
   -Full
 ```
 
-O CPB deverá conter todos os arquivos do manifesto, registrar a baseline Git e
-executar o `flutter analyze` sem falha.
+O CPB conteve todos os arquivos do manifesto, registrou a baseline Git e
+executou o `flutter analyze` sem falha.
 
-A HAT-2 avaliará:
+A HAT-2 avaliou:
 
 1. integridade do snapshot remoto;
 2. integridade da regra candidata;
@@ -89,18 +89,16 @@ A HAT-2 avaliará:
 7. gatilhos de interrupção;
 8. rollback condicionado.
 
-## 6. Ponto obrigatório de parada
+## 6. Ponto obrigatório de parada cumprido
 
-Ao concluir a HAT-2, interromper o procedimento.
+Ao concluir a HAT-2, o procedimento foi interrompido.
 
-É proibido executar comando remoto até existir autorização textual e expressa
-para a publicação da SEC-001A.
+A autorização textual e expressa para a publicação da SEC-001A no projeto
+`geduc-rae-mobile` foi registrada antes de qualquer comando remoto.
 
-## 7. Fase D — Publicação futura
+## 7. Fase D — Publicação executada
 
-> **NÃO EXECUTAR DURANTE A PREPARAÇÃO DA SEC-001A.**
-
-Comando previsto, somente após autorização:
+Comando executado uma única vez após autorização:
 
 ```powershell
 .\node_modules\.bin\firebase.cmd deploy `
@@ -108,7 +106,7 @@ Comando previsto, somente após autorização:
   --project geduc-rae-mobile
 ```
 
-Controles imediatamente anteriores:
+Controles imediatamente anteriores, todos aprovados:
 
 ```powershell
 git branch --show-current
@@ -117,13 +115,21 @@ git status --short
 Get-FileHash .\firestore.rules -Algorithm SHA256
 ```
 
-Resultados esperados:
+Resultados confirmados:
 
 - branch correta;
 - working tree no estado aprovado;
 - CLI `15.25.1`;
 - hash candidato aprovado;
 - projeto exibido explicitamente no comando.
+
+Registro da execução:
+
+- início: `02/08/2026 21:04:30 -03:00`;
+- compilação: concluída sem erro;
+- upload: concluído;
+- release: concluído para `cloud.firestore`;
+- resultado final: `Deploy complete!`.
 
 ## 8. Fase E — Verificação pós-publicação
 
@@ -148,8 +154,8 @@ git diff --no-index --ignore-space-at-eol -- `
   .\firestore.rules
 ```
 
-Critério: nenhuma diferença lógica ou textual, exceto eventual normalização de
-fim de linha devidamente registrada.
+Resultado: `git diff --no-index --ignore-space-at-eol` retornou exit code `0`.
+Nenhuma diferença lógica ou textual foi identificada.
 
 ### E.2 Smoke test não destrutivo
 
@@ -226,12 +232,39 @@ execução desse rollback.
 
 ## 11. Encerramento
 
-A SEC-001A somente será concluída após:
+A publicação e a homologação remota da SEC-001A foram concluídas após:
 
 - publicação expressamente autorizada;
 - regra remota confirmada;
 - smoke tests aprovados;
 - ausência de regressão crítica;
 - atualização do Engineering Log e da Arquitetura;
-- commit, push, Pull Request, Code Review e merge;
+- preservação da regra remota anterior;
+- comparação integral da regra publicada;
+- aprovação do administrador ativo e bloqueio das contas inativas;
+- ausência de acesso indevido, tela branca, exceção ou regressão crítica.
+
+O encerramento Git permanece no fluxo normal:
+
+- commit e push do registro documental;
+- Pull Request e Code Review;
+- merge na `main`;
 - validação pós-merge com working tree limpa.
+
+## 12. Pesquisa de referência
+
+A pesquisa de segurança foi concluída e registrada em
+`docs/SEC-001A_PUBLICACAO_HOMOLOGACAO_REFERENCIAS.md`, com fontes oficiais do
+Firebase, Google Cloud, OWASP e NIST.
+
+Foram confirmados como fundamentos da baseline:
+
+- autenticação não equivale a autorização;
+- autorização deve ser validada no backend em toda requisição;
+- menor privilégio e negação por padrão;
+- validação de campos, tipos e invariantes;
+- testes automatizados positivos e negativos;
+- revisão periódica de permissões.
+
+App Check, Cloud Audit Logs, alertas e CI foram registrados como evoluções de
+defesa em profundidade para pacotes próprios, sem ressalva à homologação atual.

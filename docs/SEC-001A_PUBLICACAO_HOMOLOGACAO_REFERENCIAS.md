@@ -13,7 +13,10 @@
 | Nova versão confirmada no Console | 21:05, horário local exibido |
 | Branch | `security/sec-001a-publicacao-controlada-firestore` |
 | Commit preparatório | `9da5c94` |
-| Estado | Publicação e homologação remota concluídas |
+| Commit documental | `1ba5ba3` |
+| Pull Request / merge | nº 6 / `c8d2d95` |
+| Baseline final | `main` em `c8d2d95` |
+| Estado | Publicação, homologação e integração concluídas |
 
 ## 2. Baselines preservadas
 
@@ -168,3 +171,17 @@ A regra permissiva anterior foi substituída pela baseline segura e testada. A
 fonte remota coincide com a fonte versionada, o administrador ativo manteve o
 acesso esperado, as contas inativas foram bloqueadas e não ocorreu regressão
 crítica. Não há indicação de rollback nem autorização para nova publicação.
+
+## 10. Encerramento Git
+
+O registro documental foi versionado no commit `1ba5ba3`, revisado no Pull
+Request nº 6 e integrado à `main` pelo merge commit `c8d2d95`. A validação
+pós-merge confirmou `main` sincronizada, working tree limpa e remoção local e
+remota da branch `security/sec-001a-publicacao-controlada-firestore`.
+
+## 11. Sincronização SEC-001A-R1
+
+Em 03/08/2026, os documentos oficiais foram sincronizados com o estado final
+do Git. `6a6794d` permanece como baseline histórica de entrada da SEC-001A;
+`c8d2d95` é a baseline final integrada. A correção é exclusivamente documental
+e não altera nem republica as regras do Firestore.

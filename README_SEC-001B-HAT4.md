@@ -2,66 +2,65 @@
 
 ## Estado
 
-Pacote documental preparado para validar o ruleset `main-quality-gates` em um
-Pull Request real, sem alterar código funcional, regras do Firestore ou
-configuração do workflow.
+Prova concluída e aprovada sem ressalvas técnicas. O ruleset
+`main-quality-gates` protegeu um Pull Request real, exigiu os dois quality gates
+e permitiu o merge somente após o sucesso de ambos.
 
-## Baseline
+## Configuração provada
 
-- branch de entrada: `main`;
-- commit de entrada: `1d279e9`;
-- PR de implantação do workflow: nº 8;
 - ruleset: `main-quality-gates`;
-- identificador do ruleset: `20301322`;
+- identificador: `20301322`;
 - enforcement: `Active`;
 - bypass: vazio;
-- branch protegida: default branch (`main`).
+- branch protegida: default branch (`main`);
+- Pull Request obrigatório;
+- branch atualizada com a base;
+- resolução de conversas obrigatória;
+- exclusão e force push bloqueados;
+- checks obrigatórios:
+  - `Quality Gate - Flutter Analyze`;
+  - `Quality Gate - Firestore Rules`.
 
-## Branch da prova
+## Rastreabilidade
 
-```text
-docs/sec-001b-hat4-prova-ruleset
-```
+| Marco | Valor |
+| --- | --- |
+| Baseline de entrada | `1d279e9` |
+| Branch da prova | `docs/sec-001b-hat4-prova-ruleset` |
+| Commit da prova | `7ce49d9` |
+| Pull Request | nº 9 |
+| Merge commit | `a45c142` |
+| Baseline pós-merge | `main` em `a45c142` |
 
-## Escopo
+## Evidência do Pull Request nº 9
 
-O pacote adiciona somente:
+- alteração exclusivamente documental: 3 arquivos e 139 inserções;
+- Firestore Rules: `Required`, sucesso em 34 segundos;
+- Flutter Analyze: `Required`, sucesso em 48 segundos;
+- merge automático tecnicamente possível somente após os dois sucessos;
+- bypass não utilizado;
+- Pull Request integrado e encerrado.
 
-- `README_SEC-001B-HAT4.md`;
-- `docs/SEC-001B_HAT4_PROVA_RULESET.md`;
-- `tools/manifestos/SEC-001B-HAT4-PROVA-RULESET.txt`.
+## Evidência pós-merge
 
-## Objetivo da prova
+- evento automático: `push` na `main`;
+- workflow: `Quality Gates`;
+- commit: `a45c142`;
+- resultado: sucesso;
+- duração total: 59 segundos;
+- `flutter analyze` local: `No issues found!` em 135,1 segundos;
+- working tree: limpa e sincronizada com `origin/main`.
 
-O Pull Request desta branch deve demonstrar que:
+## Conclusão
 
-1. alterações na `main` exigem Pull Request;
-2. o merge permanece bloqueado enquanto os checks estão pendentes;
-3. `Quality Gate - Flutter Analyze` é obrigatório;
-4. `Quality Gate - Firestore Rules` é obrigatório;
-5. o merge é liberado somente depois que os dois checks passam;
-6. após o merge, o evento `push` da `main` inicia automaticamente o workflow.
+Os seis critérios definidos para a HAT-4 foram atendidos:
 
-## Aplicação
+1. atualização da `main` realizada por Pull Request;
+2. checks exibidos como obrigatórios;
+3. merge condicionado ao resultado dos checks;
+4. dois jobs aprovados;
+5. merge concluído sem bypass;
+6. execução pós-merge da `main` iniciada automaticamente e aprovada.
 
-```powershell
-Set-Location C:\Projetos\GEDUC_RAE_Mobile
-git switch main
-git pull --ff-only origin main
-git status -sb
-git rev-parse --short HEAD
-git switch -c docs/sec-001b-hat4-prova-ruleset
-```
-
-Extraia o ZIP na raiz do repositório e valide:
-
-```powershell
-git status --short
-git diff --check
-git diff --stat
-git diff --name-only
-flutter analyze
-git status --short
-```
-
-Não realizar commit ou push antes da homologação local do escopo.
+A HAT-4 está encerrada. Os resultados são consolidados na sincronização
+documental final da SEC-001B.

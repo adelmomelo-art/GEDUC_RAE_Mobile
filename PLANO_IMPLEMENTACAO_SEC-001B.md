@@ -1,160 +1,129 @@
-# Plano de implementação SEC-001B
+# Plano de implementação SEC-001B — Registro de execução
 
-## 1. Entrada controlada
+## 1. Estado final
 
-```powershell
-Set-Location C:\Projetos\GEDUC_RAE_Mobile
-git switch main
-git pull --ff-only origin main
-git status -sb
-git rev-parse --short HEAD
-```
+| Item | Resultado |
+| --- | --- |
+| Baseline de entrada | `e5dd019` |
+| Workflow | integrado |
+| Ruleset da `main` | ativo e homologado |
+| HAT-1 a HAT-4 | aprovadas |
+| Baseline técnica final | `a45c142` |
+| Código funcional alterado | não |
+| Regras do Firestore alteradas | não |
+| Deploy Firebase | não executado |
 
-Resultado exigido:
+## 2. Fase 1 — workflow
 
-- branch `main` sincronizada;
-- `HEAD` em `e5dd019`;
-- working tree limpa.
+### Entrada
 
-## 2. Criar branch
+- `main` sincronizada em `e5dd019`;
+- working tree limpa;
+- branch `security/sec-001b-quality-gates-ci` criada.
 
-```powershell
-git switch -c security/sec-001b-quality-gates-ci
-```
+### Pacote aplicado
 
-## 3. Aplicar o pacote
+- arquivo: `SEC-001B_QUALITY_GATES_CI.zip`;
+- SHA-256:
+  `12CA576226E54FD48522D234D6A65C50F02AD2CE65B1BE758F5FEFAEAEEB6A5F`;
+- escopo: 6 arquivos e 498 inserções;
+- `git diff --cached --check`: aprovado.
 
-Calcule o hash SHA-256 do ZIP recebido, registre-o e extraia-o na raiz do
-repositório:
+### HAT-2 local
 
-```powershell
-$pacote = Join-Path `
-  $env:USERPROFILE `
-  "Downloads\SEC-001B_QUALITY_GATES_CI.zip"
+- `npm ci`: aprovado;
+- Firestore Rules: 15 testes aprovados e zero falhas;
+- `flutter pub get`: aprovado;
+- `flutter analyze`: `No issues found!`;
+- working tree limpa após o commit.
 
-Test-Path $pacote
-Get-FileHash $pacote -Algorithm SHA256
-Expand-Archive `
-  -LiteralPath $pacote `
-  -DestinationPath C:\Projetos\GEDUC_RAE_Mobile `
-  -Force
-```
+### Commit e Pull Request
 
-## 4. Conferir o escopo
+- commit: `f7db380`;
+- mensagem: `ci(security): automatiza testes e quality gates`;
+- Pull Request: nº 8;
+- branch remota confirmada;
+- ambos os jobs remotos aprovados;
+- merge commit: `1d279e9`.
 
-```powershell
-git status --short
-git diff --check
-git diff --stat
-git diff --name-only
-```
+### Pós-merge
 
-O diff deve conter somente:
+- `main` sincronizada com `origin/main`;
+- execução automática do evento `push`: aprovada;
+- execução manual do workflow: aprovada em 46 segundos;
+- `flutter analyze` local: zero issues;
+- working tree: limpa.
 
-```text
-.github/workflows/quality-gates.yml
-BLUEPRINT_SEC-001B.md
-PLANO_IMPLEMENTACAO_SEC-001B.md
-README_SEC-001B.md
-docs/SEC-001B_REFERENCIAS_CI.md
-tools/manifestos/SEC-001B-QUALITY-GATES-CI.txt
-```
+## 3. Fase 2 — proteção da main
 
-## 5. Homologação local — HAT-2
+Foi criado o ruleset `main-quality-gates`, ID `20301322`, com enforcement
+`Active`, alvo na default branch e lista de bypass vazia.
 
-```powershell
-npm ci
-npm run test:rules
-flutter pub get
-flutter analyze
-git diff --check
-git status --short
-```
+Foram ativados:
 
-Critérios:
+- Pull Request obrigatório;
+- resolução de conversas;
+- atualização da branch com a base;
+- `Quality Gate - Flutter Analyze` obrigatório;
+- `Quality Gate - Firestore Rules` obrigatório;
+- restrição de exclusão;
+- bloqueio de force push.
 
-- `npm ci` sem erro;
-- 15 testes aprovados e zero falhas;
-- `flutter analyze` com `No issues found!`;
-- nenhuma alteração não planejada.
+O número de aprovações obrigatórias permaneceu em `0`, compatível com o
+repositório mantido por um único responsável. Histórico linear e commits
+assinados não foram exigidos nesta fase.
 
-## 6. Stage e inspeção
+## 4. HAT-4 — prova controlada
 
-```powershell
-git add -- `
-  .github/workflows/quality-gates.yml `
-  BLUEPRINT_SEC-001B.md `
-  PLANO_IMPLEMENTACAO_SEC-001B.md `
-  README_SEC-001B.md `
-  docs/SEC-001B_REFERENCIAS_CI.md `
-  tools/manifestos/SEC-001B-QUALITY-GATES-CI.txt
+### Pacote aplicado
 
-git diff --cached --check
-git diff --cached --stat
-git diff --cached --name-only
-```
+- arquivo: `SEC-001B-HAT4_PROVA_RULESET.zip`;
+- SHA-256:
+  `33C9FE494EB7BE76B2745BFC36C0D160C820F89D041F764E4ADD2CD09099BEF7`;
+- branch: `docs/sec-001b-hat4-prova-ruleset`;
+- escopo: 3 arquivos e 139 inserções;
+- `flutter analyze`: zero issues;
+- commit: `7ce49d9`.
 
-## 7. Commit e push
+### Pull Request nº 9
 
-Executar somente após aprovação da HAT-2:
+- os dois checks foram exibidos como `Required`;
+- Firestore Rules aprovado em 34 segundos;
+- Flutter Analyze aprovado em 48 segundos;
+- merge liberado após os dois sucessos;
+- bypass não utilizado;
+- merge commit: `a45c142`.
 
-```powershell
-git commit -m `
-  "ci(security): automatiza testes e quality gates"
+### Pós-merge final
 
-git push -u origin security/sec-001b-quality-gates-ci
-```
+- workflow automático da `main`: sucesso em 59 segundos;
+- `main` local sincronizada em `a45c142`;
+- `flutter analyze`: `No issues found!` em 135,1 segundos;
+- working tree: limpa.
 
-## 8. Pull Request — HAT-3
+## 5. Controles negativos confirmados
 
-Título sugerido:
+- nenhum secret ou service account utilizado;
+- nenhum acesso ao Firebase de produção;
+- nenhum login Firebase;
+- nenhum deploy;
+- nenhuma alteração em `firestore.rules`;
+- nenhum bypass do ruleset;
+- nenhuma integração direta na `main`.
 
-```text
-ci(security): automatiza testes e quality gates
-```
+## 6. Dívida técnica separada
 
-Validar no Pull Request:
+O `npm ci` informou seis vulnerabilidades moderadas e três pacotes com scripts
+de instalação ainda não aprovados pelo mecanismo `allowScripts`. O tratamento
+fica fora da SEC-001B e exige auditoria própria antes de qualquer atualização.
 
-- `Quality Gate - Flutter Analyze` em sucesso;
-- `Quality Gate - Firestore Rules` em sucesso;
-- logs sem acesso ao Firebase remoto;
-- diff limitado ao escopo aprovado;
-- revisão sem ressalvas técnicas.
+## 7. Sincronização documental final
 
-Não habilitar ainda os checks obrigatórios caso os nomes exatos ainda não
-estejam disponíveis no seletor de proteção do GitHub.
+Este pacote final deve ser aplicado sobre a `main` em `a45c142`, em branch
+documental própria. Após validar `git diff --check` e `flutter analyze`, deve
+ser versionado, submetido a Pull Request e passar pelos dois checks
+obrigatórios.
 
-## 9. Merge e pós-merge
-
-Após a HAT-3:
-
-```powershell
-git switch main
-git pull --ff-only origin main
-git status -sb
-git rev-parse --short HEAD
-git log -3 --oneline
-flutter analyze
-git status -sb
-```
-
-Confirmar no GitHub Actions que o push da `main` também executou e aprovou os
-dois jobs.
-
-## 10. Fase 2 — proteção da main
-
-Somente depois da comprovação pós-merge:
-
-1. abrir a regra de proteção ou ruleset aplicável à `main`;
-2. exigir Pull Request antes do merge;
-3. exigir os checks exatos observados no GitHub;
-4. impedir bypass não planejado;
-5. validar o bloqueio com um Pull Request de prova;
-6. registrar a configuração e a evidência no encerramento documental.
-
-## 11. Encerramento
-
-- remover a branch de trabalho local e remota após o merge;
-- registrar PR, commits, execuções e resultado da proteção;
-- sincronizar os documentos arquiteturais somente com identificadores reais;
-- gerar CPB final e executar a homologação documental.
+A remoção das branches locais e remotas da implementação e da HAT-4 deve
+ocorrer somente após o merge dessa sincronização documental e a validação
+pós-merge.

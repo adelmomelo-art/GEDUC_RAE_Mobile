@@ -1,4 +1,4 @@
-# SEC-001B-HAT4 — Roteiro de prova do ruleset
+# SEC-001B-HAT4 — Prova do ruleset concluída
 
 ## 1. Configuração submetida à prova
 
@@ -19,40 +19,78 @@
 | Bloqueio de force push | ativo |
 | Histórico linear | não exigido |
 
-## 2. Evidências anteriores
+## 2. Objeto da prova
 
-- PR nº 8 integrado à `main` pelo merge commit `1d279e9`;
-- workflow executado no PR com os dois jobs em sucesso;
-- `flutter analyze` local pós-merge com zero issues;
-- execução manual do workflow na `main` em sucesso, duração total de 46
-  segundos;
-- ruleset criado e confirmado como ativo na interface do GitHub.
+O Pull Request nº 9 utilizou uma alteração exclusivamente documental para
+submeter o ruleset a uma validação real, sem modificar código funcional,
+`firestore.rules`, dependências ou workflow.
 
-## 3. Prova controlada
+| Item | Identificador |
+| --- | --- |
+| Baseline | `1d279e9` |
+| Branch | `docs/sec-001b-hat4-prova-ruleset` |
+| Commit | `7ce49d9` |
+| Pull Request | nº 9 |
+| Merge | `a45c142` |
 
-Este próprio documento origina um Pull Request exclusivamente documental. A
-sequência de homologação será:
+## 3. Evidências remotas
 
-1. abrir o Pull Request contra a `main`;
-2. observar o bloqueio do merge enquanto os checks estiverem pendentes;
-3. confirmar a execução automática dos dois jobs no evento `pull_request`;
-4. confirmar sucesso dos dois jobs;
-5. confirmar a liberação do merge pelo ruleset;
-6. integrar por merge commit;
-7. confirmar a execução automática dos dois jobs no evento `push` da `main`.
+### Evento `pull_request`
 
-## 4. Critérios da HAT-4
+| Check obrigatório | Resultado | Duração |
+| --- | --- | --- |
+| `Quality Gate - Firestore Rules` | sucesso | 34 s |
+| `Quality Gate - Flutter Analyze` | sucesso | 48 s |
 
-- nenhuma atualização direta da `main` fora de Pull Request;
-- ambos os checks exibidos como obrigatórios;
-- merge indisponível enquanto houver check pendente ou falho;
-- merge disponível somente após os dois sucessos;
-- push pós-merge da `main` inicia o workflow automaticamente;
-- nenhuma utilização de bypass;
-- working tree local limpa após sincronização pós-merge.
+Os dois checks foram exibidos com a marca `Required`. O ruleset avaliou a
+branch atualizada com a `main` e o merge somente foi concluído após os dois
+resultados verdes. A lista de bypass permaneceu vazia e nenhum bypass foi
+utilizado.
 
-## 5. Encerramento posterior
+### Evento `push` pós-merge
 
-Os identificadores do Pull Request de prova, do merge commit e das execuções
-remotas serão consolidados no pacote documental final da SEC-001B após a
-conclusão desta prova.
+- workflow: `Quality Gates`;
+- branch: `main`;
+- commit: `a45c142`;
+- execução: nº 5;
+- resultado: sucesso;
+- duração total: 59 segundos;
+- artefatos: não aplicável.
+
+## 4. Evidências locais pós-merge
+
+```text
+Branch: main
+HEAD: a45c142
+Relação remota: main...origin/main
+Flutter analyze: No issues found! (135,1 s)
+Working tree: limpa
+```
+
+## 5. Resultado dos critérios
+
+| Critério | Resultado |
+| --- | --- |
+| alteração da `main` somente por Pull Request | aprovado |
+| checks obrigatórios visíveis | aprovado |
+| merge condicionado aos checks | aprovado |
+| dois checks concluídos com sucesso | aprovado |
+| execução sem bypass | aprovado |
+| workflow automático pós-merge | aprovado |
+| sincronização local e working tree limpa | aprovado |
+
+## 6. Parecer
+
+```text
+HAT-4: APROVADA
+Ressalvas técnicas: nenhuma
+Ruleset: ativo e efetivo
+Quality gates: obrigatórios e operacionais
+Baseline técnica final: a45c142
+```
+
+## 7. Limite da conclusão
+
+A prova valida o mecanismo de proteção e os checks configurados. Ela não inclui
+correção de dependências npm, ampliação de testes, deploy Firebase, build de
+aplicativo ou exigência de revisão por segundo colaborador.

@@ -1036,6 +1036,76 @@ A SEC-001B não modifica código funcional, regras do Firestore, dados remotos o
 configuração Firebase. O tratamento das vulnerabilidades moderadas do npm e a
 remoção das branches de trabalho ocorrerão em fluxo separado e controlado.
 
+## 7.19 SEC-001C — hardening da cadeia de dependências npm
+
+**Data:** 03/08/2026
+
+**Baseline de entrada:** `main` em `3400563`
+
+**Branch:** `security/sec-001c-hardening-supply-chain`
+
+**Commit:** `2c16d4d86c7a4d25f421cb0e36f79b6d58c1d5df`
+
+**Pull Request / merge:** nº 11 / `6b53c8f`
+
+### Diagnóstico
+
+O `npm audit` inicial encontrou seis ocorrências moderadas, zero alta e zero
+crítica. O limiar `high` retornou sucesso. A inspeção de scripts identificou
+`@firebase/util@1.12.1`, `protobufjs@7.6.5` e `re2@1.24.1` sem decisão
+registrada. O `npm outdated` apontou apenas uma nova versão major de
+`@firebase/rules-unit-testing`, mantida fora deste escopo.
+
+### Implementação
+
+- atualização segura do `re2` para `1.26.1`, sem `--force`;
+- ativação de `strict-allow-scripts=true`;
+- aprovação versionada dos três scripts revisados;
+- negação explícita de `fsevents`;
+- scripts `audit:security` e `audit:scripts` no `package.json`;
+- auditoria de severidade antes do `npm ci` no gate obrigatório de Firestore.
+
+O relatório final contém cinco ocorrências moderadas. A correção forçada não
+foi aceita porque propõe downgrade para `firebase-tools@14.23.0`.
+
+### HAT-2 — validação local e CPB
+
+`npm ci`, a política de scripts e o audit de severidade foram aprovados. Os 15
+testes das regras do Firestore passaram e `flutter analyze` retornou
+`No issues found!`.
+
+O CPB
+`SEC-001C-HARDENING-SUPPLY-CHAIN_2026-08-03_13-39-46.zip`, SHA-256
+`3803BDCD0ECB8EA0354C8C8611F43ADC379203E63E06FAD536D6147420D1707A`,
+foi aprovado com 9/9 arquivos exatos e analyze sem issues em 110,6 segundos.
+
+### HAT-3 — Pull Request nº 11
+
+O Pull Request não apresentou conflitos. `Quality Gate - Firestore Rules` foi
+aprovado em 32 segundos e `Quality Gate - Flutter Analyze` em 53 segundos;
+ambos estavam marcados como `Required`. O merge ocorreu sem bypass.
+
+### HAT-4 — pós-merge
+
+O merge commit `6b53c8fe0964d91dc018799bcff8fcd429fa53af` tornou-se a
+baseline oficial. O workflow automático da `main` concluiu em verde em 43
+segundos. Localmente, não havia scripts pendentes, o audit de severidade
+retornou sucesso, os 15 testes passaram em 15,247 segundos e
+`flutter analyze` terminou sem issues em 143,1 segundos. A working tree ficou
+limpa e sincronizada com `origin/main`.
+
+### Parecer
+
+```text
+HAT-1: APROVADA
+HAT-2: APROVADA
+HAT-3: APROVADA
+HAT-4: APROVADA
+Ressalvas impeditivas: nenhuma
+Risco residual: cinco ocorrências moderadas transitivas monitoradas
+Baseline técnica final: 6b53c8f
+```
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -1044,4 +1114,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.7
+Versão 2.8

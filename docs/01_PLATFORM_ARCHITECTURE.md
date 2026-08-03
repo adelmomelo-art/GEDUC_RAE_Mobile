@@ -829,6 +829,63 @@ Firestore, o código Flutter ou os dados remotos. As seis vulnerabilidades npm
 de severidade moderada identificadas durante `npm ci` permanecem registradas
 como dívida de supply chain para tratamento independente.
 
+# 22. Hardening da cadeia npm — SEC-001C
+
+## 22.1 Objetivo e limite arquitetural
+
+A SEC-001C endurece a instalação e a auditoria das dependências usadas nos
+testes das regras do Firestore. O fluxo não modifica o código Flutter, as
+regras publicadas, os dados remotos nem a matriz de autorização.
+
+## 22.2 Política de scripts de instalação
+
+O npm opera com `strict-allow-scripts=true`. Scripts de instalação somente
+podem executar quando o pacote e a versão estiverem registrados em
+`allowScripts`:
+
+- `@firebase/util@1.12.1`;
+- `protobufjs@7.6.5`;
+- `re2@1.26.1`.
+
+O pacote opcional `fsevents`, exclusivo de macOS, permanece explicitamente
+negado. Mudanças de versão exigem nova revisão e aprovação.
+
+## 22.3 Gate de vulnerabilidades
+
+O job obrigatório `Quality Gate - Firestore Rules` executa
+`npm run audit:security` antes do `npm ci`. O limiar `high` permite registrar
+ocorrências moderadas, mas bloqueia automaticamente severidades alta e crítica
+antes da instalação e dos testes.
+
+A atualização segura do `re2`, de `1.24.1` para `1.26.1`, reduziu o relatório
+de seis para cinco ocorrências moderadas. O uso de `npm audit fix --force`
+permanece proibido porque a solução proposta pelo npm exige downgrade para
+`firebase-tools@14.23.0`.
+
+## 22.4 Homologação
+
+```text
+Baseline de entrada: 3400563
+Commit da SEC-001C: 2c16d4d
+Pull Request: nº 11
+Merge / baseline final: 6b53c8f
+HAT-1: aprovada
+HAT-2: aprovada — 15/15 testes e analyze sem issues
+HAT-3: aprovada — dois checks Required em sucesso
+HAT-4: aprovada — workflow pós-merge verde em 43 s
+```
+
+Na validação pós-merge, a política de scripts não apresentou pendências, o
+audit de severidade retornou sucesso, os 15 testes das regras foram aprovados e
+o `flutter analyze` terminou sem issues. A working tree permaneceu limpa.
+
+## 22.5 Risco residual
+
+As cinco ocorrências moderadas remanescentes são transitivas da cadeia do
+Firebase CLI, associadas a OpenTelemetry e UUID. Elas continuam visíveis nos
+logs, não dispensam monitoramento e deverão ser corrigidas quando houver
+atualização compatível sem regressão da toolchain.
+
 ------------------------------------------------------------------------
 
 
@@ -840,4 +897,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.7
+Versão 2.8

@@ -1,123 +1,122 @@
-# Plano de implementação SEC-001C — Supply chain npm
+# Plano de implementação SEC-001C — Registro de execução
 
-## 1. Entrada obrigatória
+## 1. Entrada confirmada
 
 - `main` sincronizada com `origin/main` em `3400563`;
 - working tree limpa;
-- Node `24.18.0` e npm `11.16.0`;
-- branch `security/sec-001c-hardening-supply-chain` criada somente após a
-  confirmação da baseline.
+- Node `24.18.0`, npm `11.16.0` e Firebase CLI `15.25.1`;
+- branch `security/sec-001c-hardening-supply-chain` criada a partir da baseline
+  autorizada.
 
-## 2. Fase 1 — HAT-1 concluída
+## 2. HAT-1 — diagnóstico
 
-Foram executados sem alteração do projeto:
+Foram executados, sem alteração do projeto:
 
-- inventário das versões Git e Node.js;
-- `npm audit` padrão;
+- `npm audit`;
 - `npm audit --audit-level=high`;
 - `npm outdated`;
 - `npm approve-scripts --allow-scripts-pending`;
-- confirmação final da working tree limpa.
+- inventário das versões Git e Node.js.
 
-Resultado: seis ocorrências moderadas, zero alta/crítica, uma correção
-compatível para `re2` e três scripts pendentes de política.
+O diagnóstico encontrou seis ocorrências moderadas, zero alta ou crítica, uma
+correção compatível para `re2` e três pacotes com scripts de instalação ainda
+sem política explícita. O limiar `high` retornou código zero.
 
-## 3. Fase 2 — implementação
+## 3. Implementação concluída
 
 ### 3.1 Lockfile
 
-Aplicar a atualização segura gerada sem `--force`:
+A atualização segura, sem `--force`, alterou:
 
 - `re2`: `1.24.1` → `1.26.1`;
-- dependências auxiliares do módulo nativo ajustadas pelo resolvedor npm;
-- nenhuma mudança nas dependências diretas.
+- dependências auxiliares do módulo nativo conforme o resolvedor npm;
+- nenhuma dependência direta da aplicação.
+
+O total auditado caiu de seis para cinco ocorrências moderadas.
 
 ### 3.2 Política npm
 
-Adicionar ao `package.json`:
+O `package.json` passou a registrar:
 
-- `audit:security`;
-- `audit:scripts`;
-- `allowScripts` com versões fixadas para `@firebase/util`, `protobufjs` e
-  `re2`, além da negação explícita de `fsevents`.
+- `audit:security`, com limiar `high`;
+- `audit:scripts`, para verificar pendências;
+- `allowScripts` fixado para `@firebase/util@1.12.1`,
+  `protobufjs@7.6.5` e `re2@1.26.1`;
+- negação explícita de `fsevents`.
 
-Adicionar `.npmrc` com política estrita de scripts.
+O arquivo `.npmrc` ativou `strict-allow-scripts=true`. Assim, versões futuras
+de pacotes com scripts voltam a exigir decisão explícita.
 
 ### 3.3 CI
 
-No job obrigatório de Firestore Rules, executar o audit de severidade depois da
-configuração da toolchain e antes do `npm ci`.
+O job obrigatório `Quality Gate - Firestore Rules` passou a executar
+`npm run audit:security` antes de `npm ci`. Vulnerabilidades altas ou críticas
+interrompem a instalação e impedem a integração.
 
-## 4. Fase 3 — HAT-2 local
+## 4. HAT-2 — homologação local
 
-Executar, nesta ordem:
+Foram aprovados:
 
-```powershell
-npm ci
-npm run audit:scripts
-npm audit
-npm run audit:security
-npm run test:rules
-flutter analyze
-git diff --check
-git status --short
-```
+| Controle | Resultado |
+| --- | --- |
+| `npm ci` | sucesso |
+| `npm run audit:scripts` | nenhuma pendência |
+| `npm audit` | cinco moderadas; saída `1` esperada |
+| `npm run audit:security` | zero alta/crítica; saída `0` |
+| `npm run test:rules` | 15/15 testes aprovados |
+| `flutter analyze` | `No issues found!` |
+| `git diff --check` | sem erro |
 
-Resultados esperados:
+## 5. Git e CPB
 
-- `npm ci`: sucesso, sem script pendente;
-- `audit:scripts`: nenhuma pendência;
-- `npm audit`: apenas moderadas remanescentes e saída `1`;
-- `audit:security`: saída `0`;
-- Firestore Rules: 15 testes aprovados e zero falhas;
-- Flutter: `No issues found!`;
-- nenhuma alteração fora do manifesto.
+- commit: `2c16d4d86c7a4d25f421cb0e36f79b6d58c1d5df`;
+- mensagem: `ci(security): endurece cadeia de dependências npm`;
+- nove arquivos no escopo do manifesto;
+- CPB: `SEC-001C-HARDENING-SUPPLY-CHAIN_2026-08-03_13-39-46.zip`;
+- SHA-256 do CPB:
+  `3803BDCD0ECB8EA0354C8C8611F43ADC379203E63E06FAD536D6147420D1707A`;
+- análise do CPB: 9/9 arquivos exatos, `git diff --check` aprovado e
+  `flutter analyze` sem issues em 110,6 segundos.
 
-## 5. Fase 4 — Git e CPB
+## 6. HAT-3 — homologação remota
 
-1. revisar `git diff --check`, `--stat` e `--name-only`;
-2. adicionar somente os arquivos do manifesto;
-3. gerar CPB completo com o manifesto da SEC-001C;
-4. analisar o ZIP antes do commit;
-5. registrar o commit sugerido:
+O Pull Request nº 11 foi integrado sem conflito e sem bypass após:
 
-```text
-ci(security): endurece cadeia de dependências npm
-```
+| Check obrigatório | Resultado |
+| --- | --- |
+| `Quality Gate - Firestore Rules` | sucesso em 32 s; `Required` |
+| `Quality Gate - Flutter Analyze` | sucesso em 53 s; `Required` |
 
-6. push da branch e abertura de Pull Request para `main`.
+O workflow do Pull Request foi concluído em 56 segundos. O passo de auditoria
+confirmou somente severidade moderada permitida pelo limiar documentado.
 
-## 6. Fase 5 — HAT-3 remota
+## 7. HAT-4 — pós-merge
 
-O Pull Request deve apresentar:
+- merge commit: `6b53c8fe0964d91dc018799bcff8fcd429fa53af`;
+- baseline final: `main` em `6b53c8f`;
+- workflow automático do push: sucesso em 43 segundos;
+- `npm run audit:scripts`: nenhuma pendência;
+- `npm run audit:security`: cinco moderadas, saída `0`;
+- Firestore Rules: 15/15 testes aprovados em 15,247 segundos;
+- `flutter analyze`: `No issues found!` em 143,1 segundos;
+- working tree limpa e sincronizada com `origin/main`.
 
-- `Quality Gate - Flutter Analyze`: sucesso e `Required`;
-- `Quality Gate - Firestore Rules`: sucesso e `Required`;
-- log do passo `Audit Node.js dependencies` com somente severidade moderada;
-- ausência de bypass e conflitos.
+## 8. Risco residual aceito
 
-## 7. Fase 6 — HAT-4 pós-merge
+Permanecem cinco ocorrências moderadas transitivas associadas a OpenTelemetry
+e UUID na árvore do Firebase CLI. Não há correção compatível no conjunto atual;
+o `npm audit fix --force` propõe downgrade para `firebase-tools@14.23.0` e segue
+proibido. O risco permanece visível nos logs e será reavaliado quando houver
+correção compatível.
 
-Após o merge:
+## 9. Rollback preservado
 
-- sincronizar a `main`;
-- confirmar o novo merge commit;
-- verificar execução automática do workflow em verde;
-- executar `flutter analyze` local;
-- confirmar working tree limpa;
-- somente então remover a branch local e remota.
+Não foi necessário executar rollback. Se uma evolução futura romper `npm ci`,
+os testes ou o workflow, a integração deverá ser interrompida e a correção
+feita por novo patch revisado, sem `--force` e sem comando Git destrutivo.
 
-## 8. Rollback
+## 10. Encerramento documental
 
-Se `npm ci`, os testes ou o workflow falharem:
-
-- não executar `--force`;
-- não integrar o Pull Request;
-- preservar os logs;
-- corrigir somente na branch da SEC-001C;
-- retornar ao lockfile anterior por novo patch revisado, sem comando destrutivo.
-
-## 9. Encerramento documental
-
-Após a HAT-4, atualizar Arquitetura, Engineering Log, README, Blueprint, Plano e
-referências com commits, Pull Request, tempos e baseline final.
+Este registro, o README, o Blueprint, as referências, a Arquitetura e o
+Engineering Log foram sincronizados após a HAT-4. A SEC-001C está tecnicamente
+homologada; resta integrar este fechamento documental por Pull Request próprio.

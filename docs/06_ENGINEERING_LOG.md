@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.4
+  Versão      2.5
   Status      Oficial
-  Sprint      ADM-001C.4-R3 — Sincronização Arquitetural Pós-Merge
+  Sprint      SEC-001A — Publicação Controlada das Regras do Firestore
 
 ------------------------------------------------------------------------
 
@@ -725,7 +725,7 @@ backup da versão remota e teste de fumaça posterior.
 **Data:** 02/08/2026
 **Branch:** `docs/adm-001c4-r3-sincronizacao-arquitetural`
 **Tipo:** Correção de consistência documental
-**Status:** HAT-2 documental concluída — Code Review no Pull Request nº 5
+**Status:** Concluída após o merge do Pull Request nº 5
 
 ### Causa-raiz
 
@@ -774,9 +774,116 @@ comparados antes do versionamento.
 ### Controle de integração
 
 A correção foi versionada na branch
-`docs/adm-001c4-r3-sincronizacao-arquitetural` e submetida ao Pull Request nº 5.
-O merge na `main` permanece condicionado à Code Review documental e à validação
-pós-merge. Este registro não autoriza `firebase deploy`.
+`docs/adm-001c4-r3-sincronizacao-arquitetural`, submetida ao Pull Request nº 5
+e integrada à `main` pelo merge commit `6a6794d`. A validação pós-merge foi
+concluída com `flutter analyze` sem issues e working tree limpa. A publicação
+remota permaneceu separada até a autorização expressa da SEC-001A.
+
+------------------------------------------------------------------------
+
+## 7.16 SEC-001A — Publicação Controlada das Regras do Firestore
+
+**Data:** 02/08/2026
+**Branch:** `security/sec-001a-publicacao-controlada-firestore`
+**Commit preparatório:** `9da5c94`
+**Tipo:** Segurança, publicação remota e homologação
+**Status:** Publicação e homologação remota concluídas sem ressalvas técnicas
+
+### Objetivo
+
+Substituir a regra remota genérica, que concedia leitura e escrita total a
+qualquer conta autenticada, pela baseline versionada e testada da ADM-001C.3.
+
+### Baseline anterior
+
+- publicação exibida: `29/07/2026 às 22:31`;
+- snapshot: `docs/SEC-001A_BASELINE_REMOTA_FIRESTORE.rules`;
+- SHA-256:
+  `9537678D49AD35DB5D8F85F7D976FEF36104D7C9C52546E1EF9F3195F65D6805`;
+- severidade: crítica, por confundir autenticação com autorização total.
+
+### Preparação e HATs
+
+- Blueprint, plano, README, snapshot e manifesto versionados;
+- CPB: 14/14 arquivos, zero ausentes e zero comandos falhos;
+- Firebase CLI local: `15.25.1`;
+- Firebase Emulator Suite: 15/15 testes aprovados;
+- `flutter analyze`: `No issues found!`;
+- hash candidato:
+  `8838A3F097168C342289F51D2746B265AA540457C59AA226819EB730B2CA3BFD`;
+- HAT-1 e HAT-2: aprovadas sem ressalvas técnicas;
+- conta ativa e contas inativas preparadas para smoke test;
+- rollback condicionado revisado.
+
+### Autorização
+
+O responsável autorizou textual e expressamente a publicação das regras da
+SEC-001A no projeto `geduc-rae-mobile`. O comando remoto permaneceu bloqueado
+até essa manifestação.
+
+### Publicação
+
+O deploy foi iniciado em `02/08/2026 às 21:04:30`, UTC-03:00, com o executável
+local e o projeto explicitamente informado:
+
+```powershell
+.\node_modules\.bin\firebase.cmd deploy `
+  --only firestore:rules `
+  --project geduc-rae-mobile
+```
+
+O Firebase CLI confirmou compilação, upload, release para `cloud.firestore` e
+`Deploy complete!`. Nenhum dado, índice, função, hosting ou código Flutter foi
+publicado.
+
+### Verificação remota
+
+- nova versão confirmada no Console Firebase às 21:05;
+- banco confirmado: `(default)`;
+- versão anterior preservada no histórico;
+- regra remota copiada integralmente após o deploy;
+- comparação com `firestore.rules`: exit code `0`;
+- working tree: limpa;
+- nova publicação: não executada nem necessária.
+
+### Homologação pós-deploy
+
+- administrador ativo: aprovado;
+- módulos administrativos: visíveis;
+- consultas aos dados existentes: aprovadas;
+- lista de usuários: aprovada;
+- gestor inativo: bloqueado;
+- coordenador inativo: bloqueado;
+- agente inativo: bloqueado;
+- contas inativas acessaram dados: não;
+- tela branca ou exceção: não;
+- mensagem de conta inativa: correta e orientativa;
+- rollback: não indicado.
+
+O smoke test remoto foi não destrutivo. As escritas e negações permanecem
+cobertas pelos 15 testes do Emulador.
+
+### Pesquisa de referência
+
+A pesquisa foi concluída com fontes oficiais do Firebase, Google Cloud, OWASP
+e NIST SP 800-207. A baseline publicada atende aos fundamentos de separação
+entre autenticação e autorização, menor privilégio, decisão no backend,
+negação por padrão, validação estrutural e testes automatizados.
+
+Firebase App Check, Cloud Audit Logs, alertas, CI e revisão periódica de
+privilégios foram registrados como evoluções de defesa em profundidade, sem
+ressalva à homologação atual.
+
+Referência consolidada:
+`docs/SEC-001A_PUBLICACAO_HOMOLOGACAO_REFERENCIAS.md`.
+
+### Próximos passos
+
+1. gerar e revisar o CPB de encerramento;
+2. versionar e publicar os registros documentais;
+3. abrir Pull Request contra `main`;
+4. executar Code Review e merge;
+5. validar `main`, working tree e `flutter analyze` pós-merge.
 
 ──────────────────────────────────────────────
 
@@ -786,4 +893,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.4
+Versão 2.5

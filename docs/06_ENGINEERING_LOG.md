@@ -9,9 +9,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   06_ENGINEERING_LOG.md
-  Versão      2.6
+  Versão      2.7
   Status      Oficial
-  Sprint      SEC-001A-R1 — Sincronização Documental Pós-Merge
+  Sprint      SEC-001B-R1 — Quality Gates e Proteção da Main
 
 ------------------------------------------------------------------------
 
@@ -921,6 +921,121 @@ A correção não altera providers, rotas, dependências, código Flutter,
 `firestore.rules`, `firebase.json`, testes ou dados remotos. Nenhum comando de
 deploy integra a SEC-001A-R1.
 
+------------------------------------------------------------------------
+
+## 7.18 SEC-001B — Automação de testes e proteção da main
+
+**Data:** 03/08/2026
+
+**Baseline de entrada:** `e5dd019`
+
+**Branch da implementação:** `security/sec-001b-quality-gates-ci`
+
+**Commit da implementação:** `f7db380`
+
+**Pull Request / merge:** nº 8 / `1d279e9`
+
+**Tipo:** Segurança de integração contínua e governança Git
+
+**Status:** HAT-1 a HAT-4 aprovadas; sincronização documental final preparada
+
+### Problema
+
+Os 15 testes das regras do Firestore e o analisador Flutter estavam disponíveis
+e aprovados localmente, mas não existia workflow no repositório nem gate remoto
+obrigatório. A integração na `main` dependia de execução e conferência manuais.
+
+### Decisão
+
+Foi criado o workflow `Quality Gates` com dois jobs independentes:
+
+- `Quality Gate - Flutter Analyze`;
+- `Quality Gate - Firestore Rules`.
+
+O workflow é iniciado em Pull Requests para a `main`, em pushes na `main` e por
+`workflow_dispatch`. Não há filtros de caminho, deploy Firebase, secrets,
+service accounts ou `pull_request_target`.
+
+### Controles de supply chain
+
+- `GITHUB_TOKEN` limitado a `contents: read`;
+- checkout sem persistência de credenciais;
+- actions fixadas por SHA completo;
+- Node `24.18.0`;
+- Java `21`;
+- Flutter `3.44.4` stable;
+- Firebase CLI `15.25.1`;
+- testes executados no projeto isolado `geduc-rae-mobile-test`.
+
+### HAT-2 — validação local
+
+- `npm ci`: aprovado;
+- Firestore Emulator Suite: 15/15 testes aprovados;
+- `flutter pub get`: aprovado;
+- `flutter analyze`: `No issues found!`;
+- diff: 6 arquivos e 498 inserções;
+- commit: `f7db380`;
+- working tree: limpa.
+
+O npm registrou seis vulnerabilidades moderadas e avisos de scripts de
+instalação para três pacotes. Nenhuma correção automática foi aplicada. O tema
+permanece como débito controlado de supply chain.
+
+### HAT-3 — Pull Request nº 8
+
+Os dois jobs foram executados e aprovados no Pull Request. O merge foi concluído
+em `1d279e9`, seguido por nova execução automática na `main`. Uma execução
+manual adicional também foi aprovada em 46 segundos. O `flutter analyze` local
+pós-merge permaneceu sem issues.
+
+### Ruleset
+
+Foi criado o ruleset `main-quality-gates`, identificador `20301322`, com estado
+`Active`, alvo na default branch e bypass vazio.
+
+Controles ativos:
+
+- Pull Request obrigatório;
+- resoluções de conversas obrigatórias;
+- branch atualizada com a base;
+- dois checks obrigatórios com origem GitHub Actions;
+- restrição de exclusão;
+- bloqueio de force push.
+
+### HAT-4 — prova controlada
+
+**Branch:** `docs/sec-001b-hat4-prova-ruleset`
+
+**Commit:** `7ce49d9`
+
+**Pull Request / merge:** nº 9 / `a45c142`
+
+O Pull Request documental exibiu ambos os checks como `Required`. Firestore
+Rules foi aprovado em 34 segundos e Flutter Analyze em 48 segundos. O merge
+foi concluído sem bypass somente após os dois sucessos.
+
+O push pós-merge da `main` iniciou automaticamente a execução nº 5 do workflow,
+concluída com sucesso em 59 segundos. A cópia local foi sincronizada em
+`a45c142`; `flutter analyze` retornou `No issues found!` em 135,1 segundos e a
+working tree permaneceu limpa.
+
+### Parecer
+
+``` text
+HAT-1: APROVADA
+HAT-2: APROVADA
+HAT-3: APROVADA
+HAT-4: APROVADA
+Ressalvas técnicas: nenhuma
+Baseline técnica final: a45c142
+```
+
+### Limite de escopo
+
+A SEC-001B não modifica código funcional, regras do Firestore, dados remotos ou
+configuração Firebase. O tratamento das vulnerabilidades moderadas do npm e a
+remoção das branches de trabalho ocorrerão em fluxo separado e controlado.
+
 ──────────────────────────────────────────────
 
 **Sistema de Conhecimento da Plataforma Fênix (SKPF)**
@@ -929,4 +1044,4 @@ Documento Oficial
 
 Engineering Log
 
-Versão 2.6
+Versão 2.7

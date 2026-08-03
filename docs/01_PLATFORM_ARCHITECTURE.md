@@ -10,9 +10,9 @@
   Item        Valor
   ----------- ----------------------------------------
   Documento   01_PLATFORM_ARCHITECTURE.md
-  Versão      2.6
+  Versão      2.7
   Status      Oficial
-  Sprint      SEC-001A-R1 — Sincronização Documental Pós-Merge
+  Sprint      SEC-001B-R1 — Quality Gates e Proteção da Main
 
 ------------------------------------------------------------------------
 
@@ -735,6 +735,102 @@ Firebase e não autoriza nova publicação remota.
 
 ------------------------------------------------------------------------
 
+# 21. Quality gates e proteção da main — SEC-001B
+
+## 21.1 Pipeline oficial
+
+O repositório possui o workflow `Quality Gates`, versionado em
+`.github/workflows/quality-gates.yml`. Ele é executado em Pull Requests
+destinados à `main`, em pushes na `main` e por acionamento manual.
+
+``` text
+Pull Request ou push na main
+            │
+       Quality Gates
+        ┌───┴───┐
+        │       │
+Flutter Analyze Firestore Rules
+        │       │
+        └───┬───┘
+            │
+      Ruleset da main
+```
+
+Os jobs oficiais são:
+
+- `Quality Gate - Flutter Analyze`, executando `flutter analyze`;
+- `Quality Gate - Firestore Rules`, executando os 15 testes no Firebase
+  Emulator Suite.
+
+## 21.2 Reprodutibilidade e isolamento
+
+``` text
+Runner: ubuntu-24.04
+Flutter: 3.44.4 stable
+Node: 24.18.0
+Java: 21 Temurin
+Firebase CLI: 15.25.1
+Projeto do emulador: geduc-rae-mobile-test
+Permissões do token: contents: read
+Actions: fixadas por SHA completo
+Deploy Firebase: ausente
+```
+
+O workflow não utiliza secrets, service accounts, login Firebase ou
+`pull_request_target`. O checkout não persiste credenciais e as execuções
+antigas do mesmo ref são canceladas por controle de concorrência.
+
+## 21.3 Ruleset da branch oficial
+
+O ruleset `main-quality-gates`, identificador `20301322`, está `Active` e tem
+como alvo a default branch (`main`). A lista de bypass está vazia.
+
+São exigidos:
+
+- Pull Request antes do merge;
+- resolução de conversas;
+- branch atualizada com a base;
+- `Quality Gate - Flutter Analyze` em sucesso;
+- `Quality Gate - Firestore Rules` em sucesso;
+- restrição de exclusão;
+- bloqueio de force push.
+
+O número de aprovações obrigatórias é `0`, compatível com a manutenção atual
+por um único responsável. Essa configuração não reduz a obrigatoriedade dos
+dois checks técnicos.
+
+## 21.4 Homologação
+
+``` text
+Commit do workflow: f7db380
+Pull Request do workflow: nº 8
+Merge do workflow: 1d279e9
+Commit da prova: 7ce49d9
+Pull Request da prova: nº 9
+Merge da prova: a45c142
+HAT-1: aprovada
+HAT-2: aprovada — 15/15 testes e analyze sem issues
+HAT-3: aprovada — dois jobs remotos em sucesso
+HAT-4: aprovada — dois checks Required e merge sem bypass
+```
+
+Após o Pull Request nº 9, o push da `main` executou automaticamente o workflow
+e foi aprovado em 59 segundos. A validação local pós-merge confirmou
+`flutter analyze` sem issues, working tree limpa e sincronização com
+`origin/main`.
+
+## 21.5 Baseline e limites
+
+A baseline técnica oficial após a implantação e a prova dos quality gates é o
+commit `a45c142` da branch `main`.
+
+A SEC-001B não altera a matriz de autorização, as regras publicadas do
+Firestore, o código Flutter ou os dados remotos. As seis vulnerabilidades npm
+de severidade moderada identificadas durante `npm ci` permanecem registradas
+como dívida de supply chain para tratamento independente.
+
+------------------------------------------------------------------------
+
 
 ──────────────────────────────────────────────
 
@@ -744,4 +840,4 @@ Documento Oficial
 
 Arquitetura da Plataforma Fênix
 
-Versão 2.6
+Versão 2.7

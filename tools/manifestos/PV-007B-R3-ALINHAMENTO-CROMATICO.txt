@@ -1,0 +1,24 @@
+PACOTE: PV-007B-R3-ALINHAMENTO-CROMATICO
+DATA: 2026-08-05
+BRANCH: feature/pv-007b-home-operacional-compacta
+OBJETIVO: alinhar a paleta da Home Operacional ao layout aprovado, preservando a responsividade da R2.
+
+ARQUIVOS MODIFICADOS:
+lib/modules/home/theme/home_visual_tokens.dart
+lib/modules/home/widgets/centro_operacoes_header.dart
+lib/modules/home/widgets/atalhos_widget.dart
+lib/modules/home/widgets/faixita_operacional_card.dart
+lib/modules/home/widgets/indicadores_widget.dart
+test/modules/home/widgets/home_operacional_compacta_test.dart
+
+DOCUMENTAÇÃO ADICIONADA:
+BLUEPRINT_PV-007B-R3.md
+PLANO_IMPLEMENTACAO_PV-007B-R3.md
+README_PV-007B-R3.md
+tools/manifestos/PV-007B-R3-ALINHAMENTO-CROMATICO.txt
+
+QUALITY GATE PREVISTO:
+15 testes aprovados
+flutter analyze com 0 issues
+git diff --check sem erros
+homologação visual no Samsung A05 e Samsung Tab S6

@@ -1,0 +1,9 @@
+README_PV-007B-R2.md
+BLUEPRINT_PV-007B-R2.md
+PLANO_IMPLEMENTACAO_PV-007B-R2.md
+
+lib/modules/home/theme/home_visual_tokens.dart
+lib/modules/home/widgets/centro_operacoes_header.dart
+test/modules/home/widgets/home_operacional_compacta_test.dart
+
+tools/manifestos/PV-007B-R2-RESPONSIVIDADE-MULTIDISPOSITIVO.txt

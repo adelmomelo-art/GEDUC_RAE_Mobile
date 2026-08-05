@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../acoes/controllers/acao_controller.dart';
 import '../../core/security/authorization_service.dart';
+import '../../data/models/acao_model.dart';
+import '../acoes/controllers/acao_controller.dart';
+import '../acoes/detalhe_acao_page.dart';
 import 'controllers/home_controller.dart';
 import 'models/home_state.dart';
+import 'theme/home_visual_tokens.dart';
 import 'widgets/atalhos_widget.dart';
 import 'widgets/centro_operacoes_header.dart';
 import 'widgets/faixita_operacional_card.dart';
@@ -53,9 +56,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void abrirRae(AcaoModel acao) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => DetalheAcaoPage(acao: acao)),
+    );
+  }
+
   Future<void> abrirOrientacoesFaixita() async {
-    final possuiRascunho =
-        context.read<AcaoController>().possuiRascunhoEmAndamento;
+    final possuiRascunho = context
+        .read<AcaoController>()
+        .possuiRascunhoEmAndamento;
     final offline = homeController.state.estaOffline;
 
     await showDialog<void>(
@@ -68,7 +78,7 @@ class _HomePageState extends State<HomePage> {
           title: const Text(
             'Orientações da Faixita',
             style: TextStyle(
-              color: Color(0xFF007A78),
+              color: HomeVisualTokens.teal,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -76,12 +86,9 @@ class _HomePageState extends State<HomePage> {
             offline
                 ? 'Você está trabalhando em modo offline. O rascunho permanece salvo neste dispositivo e poderá ser sincronizado quando a conexão for restabelecida.'
                 : possuiRascunho
-                    ? 'Existe um rascunho salvo neste dispositivo. Recomendo continuar essa ação antes de iniciar um novo registro.'
-                    : 'Nenhum rascunho está pendente. Você pode iniciar uma nova ação, consultar os registros ou acompanhar os indicadores operacionais.',
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.45,
-            ),
+                ? 'Existe um rascunho salvo neste dispositivo. Recomendo continuar essa ação antes de iniciar um novo registro.'
+                : 'Nenhum rascunho está pendente. Você pode iniciar uma nova ação, consultar os registros ou acompanhar os indicadores operacionais.',
+            style: const TextStyle(fontSize: 15, height: 1.45),
           ),
           actions: [
             FilledButton(
@@ -106,138 +113,82 @@ class _HomePageState extends State<HomePage> {
 
         if (state.carregando || state.status == HomeStatus.inicial) {
           return const Scaffold(
-            backgroundColor: Color(0xFFF3F7F7),
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            backgroundColor: HomeVisualTokens.canvas,
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF3F7F7),
+          backgroundColor: HomeVisualTokens.canvas,
           body: SafeArea(
             child: RefreshIndicator(
               onRefresh: atualizarPortal,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(HomeVisualTokens.space16),
                 children: [
-                  CentroOperacoesHeader(
-                    usuario: authorizationService.usuarioAtual,
-                    onAtualizar: atualizarPortal,
-                    onSair: sair,
-                  ),
-                  if (state.estaOffline || state.possuiErro) ...[
-                    const SizedBox(height: 12),
-                    _ModoOperacionalBanner(
-                      offline: state.estaOffline,
-                      mensagem: state.mensagem,
-                      onAtualizar: atualizarPortal,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (acaoController.possuiRascunhoEmAndamento) ...[
-                    _RascunhoCard(
-                      titulo: acaoController.resumoRascunho,
-                      onContinuar: () {
-                        context.go(acaoController.rotaContinuacaoRascunho);
-                      },
-                      onDescartar: () async {
-                        final confirmar = await showDialog<bool>(
-                          context: context,
-                          builder: (dialogContext) {
-                            return AlertDialog(
-                              title: const Text('Descartar rascunho?'),
-                              content: const Text(
-                                'Essa ação removerá o rascunho salvo neste dispositivo.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogContext, false),
-                                  child: const Text('Cancelar'),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogContext, true),
-                                  child: const Text('Descartar'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (confirmar != true) return;
-
-                        await acaoController.descartarRascunho();
-
-                        if (!context.mounted) return;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Rascunho descartado.'),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: HomeVisualTokens.contentMaxWidth,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CentroOperacoesHeader(
+                            usuario: authorizationService.usuarioAtual,
+                            onAtualizar: atualizarPortal,
+                            onSair: sair,
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  IndicadoresWidget(
-                    totalAcoes: state.totalAcoes,
-                    totalPessoas: state.totalPessoas,
-                    totalVeiculos: state.totalVeiculos,
-                    totalCredenciais: state.totalCredenciais,
-                  ),
-                  const SizedBox(height: 16),
-                  const AtalhosWidget(),
-                  const SizedBox(height: 16),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth >= 950;
-
-                      if (!isWide) {
-                        return Column(
-                          children: [
-                            UltimosRaesWidget(
-                              acoes: state.ultimosRaes,
-                            ),
-                            const SizedBox(height: 16),
-                            FaixitaOperacionalCard(
-                              possuiRascunho:
-                                  acaoController.possuiRascunhoEmAndamento,
-                              totalAcoes: state.totalAcoes,
-                              totalPessoas: state.totalPessoas,
-                              onOrientacoes: abrirOrientacoesFaixita,
+                          if (state.estaOffline || state.possuiErro) ...[
+                            const SizedBox(height: HomeVisualTokens.space12),
+                            _ModoOperacionalBanner(
+                              offline: state.estaOffline,
+                              mensagem: state.mensagem,
+                              onAtualizar: atualizarPortal,
                             ),
                           ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: UltimosRaesWidget(
-                              acoes: state.ultimosRaes,
+                          if (acaoController.possuiRascunhoEmAndamento) ...[
+                            const SizedBox(height: HomeVisualTokens.space12),
+                            _RascunhoCard(
+                              titulo: acaoController.resumoRascunho,
+                              onContinuar: () {
+                                context.go(
+                                  acaoController.rotaContinuacaoRascunho,
+                                );
+                              },
+                              onDescartar: () =>
+                                  _descartarRascunho(acaoController),
                             ),
+                          ],
+                          const SizedBox(height: HomeVisualTokens.space16),
+                          const AtalhosWidget(),
+                          const SizedBox(height: HomeVisualTokens.space16),
+                          FaixitaOperacionalCard(
+                            possuiRascunho:
+                                acaoController.possuiRascunhoEmAndamento,
+                            totalAcoes: state.totalAcoes,
+                            totalPessoas: state.totalPessoas,
+                            onOrientacoes: abrirOrientacoesFaixita,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            flex: 2,
-                            child: FaixitaOperacionalCard(
-                              possuiRascunho:
-                                  acaoController.possuiRascunhoEmAndamento,
-                              totalAcoes: state.totalAcoes,
-                              totalPessoas: state.totalPessoas,
-                              onOrientacoes: abrirOrientacoesFaixita,
-                            ),
+                          const SizedBox(height: HomeVisualTokens.space16),
+                          IndicadoresWidget(
+                            totalAcoes: state.totalAcoes,
+                            totalPessoas: state.totalPessoas,
+                            totalVeiculos: state.totalVeiculos,
+                            totalCredenciais: state.totalCredenciais,
                           ),
+                          const SizedBox(height: HomeVisualTokens.space16),
+                          UltimosRaesWidget(
+                            acoes: state.ultimosRaes,
+                            onAbrirRae: abrirRae,
+                          ),
+                          const SizedBox(height: HomeVisualTokens.space16),
+                          StatusWidget(homeState: state),
                         ],
-                      );
-                    },
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  StatusWidget(homeState: state),
                 ],
               ),
             ),
@@ -245,6 +196,35 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  Future<void> _descartarRascunho(AcaoController acaoController) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Descartar rascunho?'),
+        content: const Text(
+          'Essa ação removerá o rascunho salvo neste dispositivo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Descartar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+    await acaoController.descartarRascunho();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Rascunho descartado.')));
   }
 }
 
@@ -261,7 +241,7 @@ class _ModoOperacionalBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = offline ? const Color(0xFFF37021) : Colors.red.shade700;
+    final cor = offline ? HomeVisualTokens.orange : Colors.red.shade700;
 
     return Material(
       color: cor.withValues(alpha: 0.10),
@@ -307,19 +287,16 @@ class _RascunhoCard extends StatelessWidget {
   final VoidCallback onContinuar;
   final Future<void> Function() onDescartar;
 
-  static const Color verdeInstitucional = Color(0xFF007A78);
-  static const Color laranjaInstitucional = Color(0xFFF37021);
-
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
-      color: const Color(0xFFFFF5E8),
+      color: HomeVisualTokens.orangeLight,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: laranjaInstitucional.withValues(alpha: 0.35),
+          color: HomeVisualTokens.orange.withValues(alpha: 0.35),
         ),
       ),
       child: Padding(
@@ -333,16 +310,13 @@ class _RascunhoCard extends StatelessWidget {
               children: [
                 const Row(
                   children: [
-                    Icon(
-                      Icons.edit_note,
-                      color: laranjaInstitucional,
-                    ),
+                    Icon(Icons.edit_note, color: HomeVisualTokens.orange),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Rascunho em andamento',
                         style: TextStyle(
-                          color: verdeInstitucional,
+                          color: HomeVisualTokens.teal,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -351,10 +325,7 @@ class _RascunhoCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  titulo,
-                  style: const TextStyle(height: 1.35),
-                ),
+                Text(titulo, style: const TextStyle(height: 1.35)),
               ],
             );
 
@@ -378,11 +349,7 @@ class _RascunhoCard extends StatelessWidget {
             if (compacto) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  conteudo,
-                  const SizedBox(height: 14),
-                  acoes,
-                ],
+                children: [conteudo, const SizedBox(height: 14), acoes],
               );
             }
 

@@ -1,0 +1,11 @@
+PACOTE=PV-007B-R1-CORRECAO-TESTE-RAE
+DATA=2026-08-03
+BASELINE_IMPLEMENTACAO=PV-007B-HOME-OPERACIONAL-COMPACTA-R1
+BRANCH_DESTINO=feature/pv-007b-home-operacional-compacta
+ARQUIVOS=2
+ESCOPO=test/modules/home/widgets/home_operacional_compacta_test.dart;tools/manifestos/PV-007B-R1-CORRECAO-TESTE-RAE.txt
+CAUSA=teste_contava_InkWell_interno_do_StatusAcaoChip
+CORRECAO=validacao_por_alinhamento_e_posicao_das_linhas_RAE
+CODIGO_PRODUCAO=inalterado
+DEPENDENCIAS=inalteradas
+EFEITO_REMOTO=nenhum

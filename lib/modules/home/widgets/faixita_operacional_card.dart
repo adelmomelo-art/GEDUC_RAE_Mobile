@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/home_visual_tokens.dart';
+
 class FaixitaOperacionalCard extends StatelessWidget {
   const FaixitaOperacionalCard({
     super.key,
@@ -14,49 +16,46 @@ class FaixitaOperacionalCard extends StatelessWidget {
   final int totalPessoas;
   final VoidCallback onOrientacoes;
 
-  static const Color verdeInstitucional = Color(0xFF007A78);
-  static const Color laranjaInstitucional = Color(0xFFF37021);
-  static const Color azulSuave = Color(0xFFEAF7F7);
-  static const String imagemFaixita = 'assets/images/faixita_login.png';
+  static const String imagemFaixita =
+      'assets/images/faixita_home_operacional.png';
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 3,
+      elevation: 0,
       margin: EdgeInsets.zero,
+      color: HomeVisualTokens.faixitaSurface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: verdeInstitucional.withValues(alpha: 0.20),
-          ),
+        side: BorderSide(
+          color: HomeVisualTokens.orange.withValues(alpha: 0.14),
         ),
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusLarge),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compacto = constraints.maxWidth < 560;
-
-            if (compacto) {
+            final narrow = constraints.maxWidth < 390;
+            if (narrow) {
               return Column(
                 children: [
-                  _imagem(),
-                  const SizedBox(height: 14),
-                  _conteudo(),
+                  _content(context, includeImage: true),
+                  const SizedBox(height: HomeVisualTokens.space12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _orientationButton(),
+                  ),
                 ],
               );
             }
 
             return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _imagem(),
-                const SizedBox(width: 18),
-                Expanded(child: _conteudo()),
+                const _FaixitaImage(),
+                const SizedBox(width: HomeVisualTokens.space12),
+                Expanded(child: _content(context)),
+                const SizedBox(width: HomeVisualTokens.space8),
+                _orientationButton(compact: true),
               ],
             );
           },
@@ -65,127 +64,112 @@ class FaixitaOperacionalCard extends StatelessWidget {
     );
   }
 
-  Widget _imagem() {
-    return SizedBox(
-      width: 118,
-      height: 150,
-      child: Image.asset(
-        imagemFaixita,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: CircleAvatar(
-              radius: 44,
-              backgroundColor: azulSuave,
-              child: Text(
-                'F',
-                style: TextStyle(
-                  color: verdeInstitucional,
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _content(BuildContext context, {bool includeImage = false}) {
+    final hasData = totalAcoes > 0 || totalPessoas > 0;
+    final message = possuiRascunho
+        ? 'Você tem um rascunho. Continue o registro antes de iniciar outra ação.'
+        : hasData
+            ? 'Operação atualizada: $totalAcoes ações e $totalPessoas pessoas alcançadas.'
+            : 'Tudo pronto para registrar sua primeira ação educativa.';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (includeImage) ...[
+          const _FaixitaImage(),
+          const SizedBox(width: HomeVisualTokens.space12),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 19,
+                    color: HomeVisualTokens.orange,
+                  ),
+                  const SizedBox(width: HomeVisualTokens.space8),
+                  Expanded(
+                    child: Text(
+                      'Faixita orienta',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: HomeVisualTokens.navy,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: HomeVisualTokens.space4),
+              Text(
+                message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: HomeVisualTokens.mutedText,
+                      height: 1.3,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _orientationButton({bool compact = false}) {
+    final buttonStyle = OutlinedButton.styleFrom(
+      foregroundColor: HomeVisualTokens.teal,
+      side: const BorderSide(color: HomeVisualTokens.teal),
+    );
+
+    return Semantics(
+      button: true,
+      label: 'Ver orientações da Faixita',
+      child: compact
+          ? IconButton.outlined(
+              onPressed: onOrientacoes,
+              tooltip: 'Ver orientações',
+              color: HomeVisualTokens.teal,
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+            )
+          : OutlinedButton.icon(
+              onPressed: onOrientacoes,
+              style: buttonStyle,
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              label: const Text('VER ORIENTAÇÕES'),
             ),
-          );
-        },
+    );
+  }
+}
+
+class _FaixitaImage extends StatelessWidget {
+  const _FaixitaImage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      height: 84,
+      child: Image.asset(
+        FaixitaOperacionalCard.imagemFaixita,
+        fit: BoxFit.contain,
+        semanticLabel: 'Faixita, assistente educativa da Plataforma Fênix',
+        errorBuilder: (_, __, ___) => const CircleAvatar(
+          backgroundColor: HomeVisualTokens.tealLight,
+          child: Text(
+            'F',
+            style: TextStyle(
+              color: HomeVisualTokens.teal,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  Widget _conteudo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(
-              Icons.auto_awesome,
-              color: laranjaInstitucional,
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Análise operacional da Faixita',
-                style: TextStyle(
-                  color: verdeInstitucional,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          _mensagemPrincipal(),
-          style: const TextStyle(
-            fontSize: 14,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _insight(
-          icon: possuiRascunho ? Icons.edit_note : Icons.check_circle_outline,
-          texto: possuiRascunho
-              ? 'Existe um rascunho aguardando continuidade.'
-              : 'Nenhum rascunho pendente neste dispositivo.',
-          cor: possuiRascunho ? laranjaInstitucional : verdeInstitucional,
-        ),
-        const SizedBox(height: 6),
-        _insight(
-          icon: Icons.analytics_outlined,
-          texto: '$totalAcoes ações e $totalPessoas pessoas registradas.',
-          cor: verdeInstitucional,
-        ),
-        const SizedBox(height: 14),
-        Align(
-          alignment: Alignment.centerRight,
-          child: OutlinedButton.icon(
-            onPressed: onOrientacoes,
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text('VER ORIENTAÇÕES'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _insight({
-    required IconData icon,
-    required String texto,
-    required Color cor,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: cor,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            texto,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.35,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _mensagemPrincipal() {
-    if (possuiRascunho) {
-      return 'Identifiquei uma atividade que ainda não foi concluída. Você pode continuar o preenchimento antes de iniciar uma nova ação.';
-    }
-
-    if (totalAcoes == 0) {
-      return 'O portal está pronto para receber o primeiro registro. Inicie uma nova ação educativa para começar a alimentar os indicadores.';
-    }
-
-    return 'Os dados operacionais estão disponíveis. Consulte os indicadores e utilize os atalhos para continuar o trabalho da equipe.';
   }
 }

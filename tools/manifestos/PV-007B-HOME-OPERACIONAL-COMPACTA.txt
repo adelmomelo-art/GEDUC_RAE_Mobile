@@ -1,0 +1,13 @@
+PACOTE=PV-007B-HOME-OPERACIONAL-COMPACTA
+DATA=2026-08-03
+BASELINE_BRANCH=main
+BASELINE_COMMIT=2155ea8
+CHECKPOINT=checkpoint/pv-007b-pre-implementacao-2155ea8
+BRANCH_DESTINO=feature/pv-007b-home-operacional-compacta
+ARQUIVOS=12
+ESCOPO=pubspec.yaml;assets/images/faixita_home_operacional.png;lib/modules/home/home_page.dart;lib/modules/home/theme/home_visual_tokens.dart;lib/modules/home/widgets/atalhos_widget.dart;lib/modules/home/widgets/centro_operacoes_header.dart;lib/modules/home/widgets/faixita_operacional_card.dart;lib/modules/home/widgets/indicadores_widget.dart;lib/modules/home/widgets/status_widget.dart;lib/modules/home/widgets/ultimos_raes_widget.dart;test/modules/home/widgets/home_operacional_compacta_test.dart;tools/manifestos/PV-007B-HOME-OPERACIONAL-COMPACTA.txt
+CONTROLLERS_SERVICES_MODELS=preservados
+NAVEGACAO_RAE=DetalheAcaoPage_por_MaterialPageRoute
+DEPENDENCIAS_NOVAS=nenhuma
+FIRESTORE_RULES=inalteradas
+EFEITO_REMOTO=nenhum

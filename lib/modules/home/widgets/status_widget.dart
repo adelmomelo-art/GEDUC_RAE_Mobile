@@ -3,140 +3,107 @@ import 'package:flutter/material.dart';
 import '../domain/alert_level.dart';
 import '../domain/operational_alert.dart';
 import '../models/home_state.dart';
+import '../theme/home_visual_tokens.dart';
 
 class StatusWidget extends StatelessWidget {
-  const StatusWidget({
-    super.key,
-    required this.homeState,
-  });
+  const StatusWidget({super.key, required this.homeState});
 
   final HomeState homeState;
 
   @override
   Widget build(BuildContext context) {
     final status = homeState.monitoramentoOperacional;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final itens = <_StatusItem>[
-      _StatusItem(
-        icon: status.conectado
-            ? Icons.cloud_done_rounded
-            : Icons.cloud_off_rounded,
-        titulo: 'Conectividade',
-        descricao:
-            status.conectado ? 'Rede disponível' : 'Operação sem conexão',
-        cor: status.conectado ? Colors.teal : Colors.orange,
-      ),
-      _StatusItem(
-        icon: homeState.dadosEmCache
-            ? Icons.storage_rounded
-            : Icons.cloud_sync_rounded,
-        titulo: 'Origem dos dados',
-        descricao: homeState.dadosEmCache
-            ? 'Cache local • ${_formatarData(homeState.atualizadoEm)}'
-            : 'Servidor • ${_formatarData(homeState.atualizadoEm)}',
-        cor: homeState.dadosEmCache ? Colors.orange : Colors.green,
-      ),
-      _StatusItem(
-        icon:
-            status.sincronizando ? Icons.sync_rounded : Icons.task_alt_rounded,
-        titulo: 'Sincronização',
-        descricao: status.sincronizando
-            ? 'Sincronização em andamento'
-            : status.possuiErro
-                ? status.erro!
-                : 'Serviço disponível',
-        cor: status.possuiErro
-            ? Colors.red
-            : status.sincronizando
-                ? Colors.blue
-                : Colors.green,
-        carregando: status.sincronizando,
-      ),
-      _StatusItem(
-        icon: status.possuiPendencias
-            ? Icons.pending_actions_rounded
-            : Icons.verified_rounded,
-        titulo: 'Pendências',
-        descricao: status.possuiPendencias
-            ? '${status.totalPendentes} ação(ões) aguardando envio'
-            : 'Nenhuma ação aguardando envio',
-        cor: status.possuiPendencias ? Colors.orange : Colors.green,
-      ),
-      _StatusItem(
-        icon: Icons.schedule_rounded,
-        titulo: 'Última sincronização',
-        descricao: _formatarData(
-          status.ultimaSincronizacaoBemSucedidaEm ??
-              homeState.ultimaSincronizacaoAutomaticaEm,
-        ),
-        cor: Colors.indigo,
-      ),
-      _StatusItem(
-        icon: Icons.monitor_heart_rounded,
-        titulo: 'Monitoramento',
-        descricao: status.monitoramentoAtivo
-            ? 'Acompanhamento automático ativo'
-            : 'Inicializando acompanhamento',
-        cor: status.monitoramentoAtivo ? Colors.purple : Colors.grey,
-      ),
-    ];
+    final hasAttention =
+        homeState.alertasOperacionais.isNotEmpty ||
+        homeState.estaOffline ||
+        homeState.possuiErro ||
+        status.possuiErro ||
+        status.possuiPendencias ||
+        status.sincronizando;
+    final details = _buildDetails();
 
     return Card(
-      elevation: 2,
+      elevation: 0,
       margin: EdgeInsets.zero,
+      color: HomeVisualTokens.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: HomeVisualTokens.border),
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusLarge),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusLarge),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Icon(Icons.monitor_heart_rounded, color: colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Monitoramento Operacional',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _SystemSummary(hasAttention: hasAttention),
+            ),
+            if (homeState.alertasOperacionais.isNotEmpty) ...[
+              const SizedBox(height: HomeVisualTokens.space12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _OperationalAlerts(
+                  alerts: homeState.alertasOperacionais,
+                ),
+              ),
+            ],
+            const SizedBox(height: HomeVisualTokens.space8),
+            Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
+                splashColor: HomeVisualTokens.tealLight,
+              ),
+              child: ExpansionTile(
+                initiallyExpanded: false,
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                leading: const Icon(
+                  Icons.monitor_heart_outlined,
+                  color: HomeVisualTokens.teal,
+                ),
+                title: Text(
+                  'Monitoramento operacional',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: HomeVisualTokens.text,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _AlertasOperacionaisSection(
-              alertas: homeState.alertasOperacionais,
-            ),
-            const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final colunas = constraints.maxWidth >= 900
-                    ? 3
-                    : constraints.maxWidth >= 560
-                        ? 2
-                        : 1;
-                const espacamento = 12.0;
-                final largura =
-                    (constraints.maxWidth - espacamento * (colunas - 1)) /
-                        colunas;
-
-                return Wrap(
-                  spacing: espacamento,
-                  runSpacing: espacamento,
-                  children: [
-                    for (final item in itens)
-                      SizedBox(
-                        width: largura,
-                        child: _StatusCard(item: item),
-                      ),
-                  ],
-                );
-              },
+                subtitle: Text(
+                  'Toque para ver conectividade, origem e sincronização',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: HomeVisualTokens.mutedText,
+                  ),
+                ),
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 840
+                          ? 3
+                          : constraints.maxWidth >= 520
+                          ? 2
+                          : 1;
+                      const spacing = HomeVisualTokens.space12;
+                      final width =
+                          (constraints.maxWidth - spacing * (columns - 1)) /
+                          columns;
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: [
+                          for (final detail in details)
+                            SizedBox(
+                              width: width,
+                              child: _StatusDetail(detail: detail),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -144,114 +111,176 @@ class StatusWidget extends StatelessWidget {
     );
   }
 
-  static String _formatarData(DateTime? data) {
-    if (data == null) return 'Ainda não registrada';
+  List<_StatusData> _buildDetails() {
+    final status = homeState.monitoramentoOperacional;
+    return [
+      _StatusData(
+        icon: status.conectado
+            ? Icons.cloud_done_rounded
+            : Icons.cloud_off_rounded,
+        title: 'Conectividade',
+        description: status.conectado
+            ? 'Rede disponível'
+            : 'Operação sem conexão',
+        color: status.conectado
+            ? HomeVisualTokens.success
+            : HomeVisualTokens.warning,
+      ),
+      _StatusData(
+        icon: homeState.dadosEmCache
+            ? Icons.storage_rounded
+            : Icons.cloud_sync_rounded,
+        title: 'Origem dos dados',
+        description: homeState.dadosEmCache
+            ? 'Cache local • ${_formatDate(homeState.atualizadoEm)}'
+            : 'Servidor • ${_formatDate(homeState.atualizadoEm)}',
+        color: homeState.dadosEmCache
+            ? HomeVisualTokens.warning
+            : HomeVisualTokens.teal,
+      ),
+      _StatusData(
+        icon: status.sincronizando
+            ? Icons.sync_rounded
+            : status.possuiErro
+            ? Icons.sync_problem_rounded
+            : Icons.task_alt_rounded,
+        title: 'Sincronização',
+        description: status.sincronizando
+            ? 'Sincronização em andamento'
+            : status.possuiErro
+            ? status.erro!
+            : 'Serviço disponível',
+        color: status.possuiErro
+            ? const Color(0xFFC62828)
+            : status.sincronizando
+            ? HomeVisualTokens.blue
+            : HomeVisualTokens.success,
+      ),
+      _StatusData(
+        icon: status.possuiPendencias
+            ? Icons.pending_actions_rounded
+            : Icons.verified_rounded,
+        title: 'Pendências',
+        description: status.possuiPendencias
+            ? '${status.totalPendentes} ação(ões) aguardando envio'
+            : 'Nenhuma ação aguardando envio',
+        color: status.possuiPendencias
+            ? HomeVisualTokens.warning
+            : HomeVisualTokens.success,
+      ),
+      _StatusData(
+        icon: Icons.schedule_rounded,
+        title: 'Última sincronização',
+        description: _formatDate(
+          status.ultimaSincronizacaoBemSucedidaEm ??
+              homeState.ultimaSincronizacaoAutomaticaEm,
+        ),
+        color: HomeVisualTokens.blue,
+      ),
+      _StatusData(
+        icon: Icons.monitor_heart_rounded,
+        title: 'Monitoramento',
+        description: status.monitoramentoAtivo
+            ? 'Acompanhamento automático ativo'
+            : 'Inicializando acompanhamento',
+        color: status.monitoramentoAtivo
+            ? HomeVisualTokens.purple
+            : HomeVisualTokens.mutedText,
+      ),
+    ];
+  }
 
-    final dia = data.day.toString().padLeft(2, '0');
-    final mes = data.month.toString().padLeft(2, '0');
-    final hora = data.hour.toString().padLeft(2, '0');
-    final minuto = data.minute.toString().padLeft(2, '0');
-
-    return '$dia/$mes às $hora:$minuto';
+  static String _formatDate(DateTime? date) {
+    if (date == null) return 'Ainda não registrada';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month às $hour:$minute';
   }
 }
 
-class _AlertasOperacionaisSection extends StatelessWidget {
-  const _AlertasOperacionaisSection({
-    required this.alertas,
-  });
+class _SystemSummary extends StatelessWidget {
+  const _SystemSummary({required this.hasAttention});
 
-  final List<OperationalAlert> alertas;
+  final bool hasAttention;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (alertas.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.green.withValues(alpha: 0.25),
+    final color = hasAttention
+        ? HomeVisualTokens.warning
+        : HomeVisualTokens.success;
+    return Container(
+      padding: const EdgeInsets.all(HomeVisualTokens.space12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusMedium),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasAttention
+                ? Icons.notification_important_outlined
+                : Icons.verified_rounded,
+            color: color,
           ),
-        ),
-        child: const Row(
-          children: [
-            Icon(
-              Icons.verified_rounded,
-              color: Colors.green,
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Nenhum alerta operacional identificado.',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
+          const SizedBox(width: HomeVisualTokens.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hasAttention
+                      ? 'Sistema requer atenção'
+                      : 'Sistema operacional',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: HomeVisualTokens.text,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  hasAttention
+                      ? 'Consulte os alertas e detalhes abaixo.'
+                      : 'Tudo funcionando normalmente.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: HomeVisualTokens.mutedText,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    final alertasVisiveis = alertas.take(3).toList(growable: false);
-    final quantidadeOculta = alertas.length - alertasVisiveis.length;
+class _OperationalAlerts extends StatelessWidget {
+  const _OperationalAlerts({required this.alerts});
 
+  final List<OperationalAlert> alerts;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = alerts.take(3).toList(growable: false);
+    final hidden = alerts.length - visible.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.rule_rounded,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Alertas inteligentes',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 5,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '${alertas.length}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        for (var index = 0; index < alertasVisiveis.length; index++) ...[
-          _OperationalAlertCard(
-            alerta: alertasVisiveis[index],
-          ),
-          if (index < alertasVisiveis.length - 1) const SizedBox(height: 8),
+        for (var index = 0; index < visible.length; index++) ...[
+          _AlertRow(alert: visible[index]),
+          if (index < visible.length - 1)
+            const SizedBox(height: HomeVisualTokens.space8),
         ],
-        if (quantidadeOculta > 0) ...[
-          const SizedBox(height: 8),
+        if (hidden > 0) ...[
+          const SizedBox(height: HomeVisualTokens.space8),
           Text(
-            '+ $quantidadeOculta alerta(s) adicional(is), ordenado(s) por prioridade.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            '+ $hidden alerta(s) adicional(is), ordenado(s) por prioridade.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: HomeVisualTokens.mutedText),
           ),
         ],
       ],
@@ -259,95 +288,55 @@ class _AlertasOperacionaisSection extends StatelessWidget {
   }
 }
 
-class _OperationalAlertCard extends StatelessWidget {
-  const _OperationalAlertCard({
-    required this.alerta,
-  });
+class _AlertRow extends StatelessWidget {
+  const _AlertRow({required this.alert});
 
-  final OperationalAlert alerta;
+  final OperationalAlert alert;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final visual = _AlertVisual.fromLevel(alerta.level);
-
+    final visual = _AlertVisual.fromLevel(alert.level);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(HomeVisualTokens.space12),
       decoration: BoxDecoration(
-        color: visual.cor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: visual.cor.withValues(alpha: 0.30),
-        ),
+        color: visual.color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusMedium),
+        border: Border.all(color: visual.color.withValues(alpha: 0.22)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: visual.cor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              visual.icone,
-              color: visual.cor,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
+          Icon(visual.icon, color: visual.color, size: 22),
+          const SizedBox(width: HomeVisualTokens.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      alerta.title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: visual.cor.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        alerta.level.label,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: visual.cor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
                 Text(
-                  alerta.message,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  alert.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: HomeVisualTokens.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: HomeVisualTokens.space4),
+                Text(
+                  alert.message,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: HomeVisualTokens.mutedText,
                     height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  alerta.recommendation,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
+                if (alert.recommendation.trim().isNotEmpty) ...[
+                  const SizedBox(height: HomeVisualTokens.space4),
+                  Text(
+                    'Orientação: ${alert.recommendation}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: visual.color,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -357,93 +346,46 @@ class _OperationalAlertCard extends StatelessWidget {
   }
 }
 
-class _AlertVisual {
-  const _AlertVisual({
-    required this.cor,
-    required this.icone,
-  });
+class _StatusDetail extends StatelessWidget {
+  const _StatusDetail({required this.detail});
 
-  final Color cor;
-  final IconData icone;
-
-  factory _AlertVisual.fromLevel(AlertLevel level) {
-    switch (level) {
-      case AlertLevel.info:
-        return const _AlertVisual(
-          cor: Colors.blue,
-          icone: Icons.info_outline_rounded,
-        );
-      case AlertLevel.warning:
-        return const _AlertVisual(
-          cor: Colors.orange,
-          icone: Icons.warning_amber_rounded,
-        );
-      case AlertLevel.critical:
-        return const _AlertVisual(
-          cor: Colors.red,
-          icone: Icons.error_outline_rounded,
-        );
-    }
-  }
-}
-
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.item});
-
-  final _StatusItem item;
+  final _StatusData detail;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Container(
-      constraints: const BoxConstraints(minHeight: 112),
-      padding: const EdgeInsets.all(14),
+      constraints: const BoxConstraints(minHeight: 72),
+      padding: const EdgeInsets.all(HomeVisualTokens.space12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.40),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
+        color: detail.color.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(HomeVisualTokens.radiusMedium),
+        border: Border.all(color: detail.color.withValues(alpha: 0.16)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: item.cor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: item.carregando
-                ? Padding(
-                    padding: const EdgeInsets.all(11),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: item.cor,
-                    ),
-                  )
-                : Icon(item.icon, color: item.cor, size: 24),
-          ),
-          const SizedBox(width: 12),
+          Icon(detail.icon, color: detail.color, size: 24),
+          const SizedBox(width: HomeVisualTokens.space12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.titulo,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  detail.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: HomeVisualTokens.text,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  item.descricao,
+                  detail.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.2,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: HomeVisualTokens.mutedText,
                   ),
                 ),
               ],
@@ -455,18 +397,43 @@ class _StatusCard extends StatelessWidget {
   }
 }
 
-class _StatusItem {
-  const _StatusItem({
+class _StatusData {
+  const _StatusData({
     required this.icon,
-    required this.titulo,
-    required this.descricao,
-    required this.cor,
-    this.carregando = false,
+    required this.title,
+    required this.description,
+    required this.color,
   });
 
   final IconData icon;
-  final String titulo;
-  final String descricao;
-  final Color cor;
-  final bool carregando;
+  final String title;
+  final String description;
+  final Color color;
+}
+
+class _AlertVisual {
+  const _AlertVisual({required this.color, required this.icon});
+
+  final Color color;
+  final IconData icon;
+
+  factory _AlertVisual.fromLevel(AlertLevel level) {
+    switch (level) {
+      case AlertLevel.info:
+        return const _AlertVisual(
+          color: HomeVisualTokens.blue,
+          icon: Icons.info_outline_rounded,
+        );
+      case AlertLevel.warning:
+        return const _AlertVisual(
+          color: HomeVisualTokens.warning,
+          icon: Icons.warning_amber_rounded,
+        );
+      case AlertLevel.critical:
+        return const _AlertVisual(
+          color: Color(0xFFC62828),
+          icon: Icons.error_outline_rounded,
+        );
+    }
+  }
 }

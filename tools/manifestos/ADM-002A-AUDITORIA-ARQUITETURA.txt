@@ -1,0 +1,32 @@
+MANIFESTO — ADM-002A AUDITORIA E ARQUITETURA
+Projeto: Plataforma Fênix — GEDUC/RAE Mobile
+Data: 05/08/2026
+Branch: feature/adm-002a-tipos-acoes
+Baseline: 08a2262
+
+ENTRADA
+- Pacote: ADM-002A-AUDITORIA-TIPOS-ACOES_2026-08-05_18-07-42.zip
+- SHA-256: E0EB418C294BF489E6D0819078AB4BD10414288AB578DF584D45D53723C402A3
+- Arquivos inspecionados no ZIP: 97
+
+SAÍDA
+- README_ADM-002A_AUDITORIA.md
+- BLUEPRINT_ADM-002A.md
+- PLANO_IMPLEMENTACAO_ADM-002A.md
+- docs/ADM-002A_DIAGNOSTICO_ARQUITETURAL.md
+- docs/ADM-002A_DECISOES_TECNICAS.md
+- tools/manifestos/ADM-002A-AUDITORIA-ARQUITETURA.txt
+
+DECISÃO
+- Tipos de Ações permanece entidade própria.
+- Acesso direto ao Firestore nas telas será eliminado.
+- Exclusão física continuará proibida.
+- A integração com Nova Ação deverá filtrar itens ativos.
+- Hardening de schema depende de inventário dos documentos reais.
+- Paleta PV-007B-R3 será a referência visual.
+
+STATUS
+- Auditoria concluída.
+- Blueprint elaborado.
+- Plano incremental elaborado.
+- Implementação ainda não iniciada.

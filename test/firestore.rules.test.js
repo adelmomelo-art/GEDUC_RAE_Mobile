@@ -52,6 +52,9 @@ async function semear() {
     await db.collection('domains').doc('foco_teste').set(
       dominioValido('semente'),
     );
+    const dominioLegado = dominioValido('legado');
+    delete dominioLegado.createdAt;
+    await db.collection('domains').doc('foco_legado').set(dominioLegado);
     await db.collection('tipos_acoes').doc('tipo-1').set({ nomeAcao: 'Teste' });
     await db.collection('coordenadores').doc('coord-1').set({ nome: 'Teste' });
     await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste' });
@@ -155,6 +158,22 @@ test('domínios exigem estrutura válida e preservam createdAt', async () => {
   await assertFails(existente.update({
     createdAt: new Date('2026-08-01T14:00:00.000Z'),
     updatedAt: new Date('2026-08-01T14:00:00.000Z'),
+  }));
+});
+
+test('regulariza createdAt ausente em domínio legado uma única vez', async () => {
+  const legado = banco('admin').collection('domains').doc('foco_legado');
+  const createdAt = new Date('2026-08-08T12:00:00.000Z');
+
+  await assertSucceeds(legado.update({
+    nome: 'Domínio legado regularizado',
+    createdAt,
+    updatedAt: createdAt,
+  }));
+
+  await assertFails(legado.update({
+    createdAt: new Date('2026-08-08T13:00:00.000Z'),
+    updatedAt: new Date('2026-08-08T13:00:00.000Z'),
   }));
 });
 

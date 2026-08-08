@@ -72,6 +72,18 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
     }
 
+    function createdAtPreservadoOuRegularizado() {
+      return (
+          resource.data.keys().hasAll(['createdAt'])
+          && resource.data.createdAt is timestamp
+          && request.resource.data.createdAt == resource.data.createdAt
+        ) || (
+          !resource.data.keys().hasAll(['createdAt'])
+          && request.resource.data.createdAt
+            == request.resource.data.updatedAt
+        );
+    }
+
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
@@ -89,7 +101,7 @@ service cloud.firestore {
         && domainValido();
       allow update: if administradorOuGestor()
         && domainValido()
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && createdAtPreservadoOuRegularizado();
       allow delete: if false;
     }
 

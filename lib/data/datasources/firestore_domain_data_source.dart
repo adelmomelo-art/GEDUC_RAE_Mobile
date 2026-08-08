@@ -123,9 +123,15 @@ class FirestoreDomainDataSource implements DomainDataSource {
         throw DomainNotFoundException(domain.id);
       }
 
+      final precisaRegularizarCreatedAt =
+          !(snapshot.data()?.containsKey('createdAt') ?? false);
+
       transaction.update(
         reference,
-        _toFirestore(domain),
+        _toFirestore(
+          domain,
+          incluirCreatedAt: precisaRegularizarCreatedAt,
+        ),
       );
     });
   }
@@ -182,11 +188,16 @@ class FirestoreDomainDataSource implements DomainDataSource {
         throw DomainNotFoundException(id);
       }
 
+      final precisaRegularizarCreatedAt =
+          !(snapshot.data()?.containsKey('createdAt') ?? false);
+
       transaction.update(
         reference,
         {
           'ativo': ativo,
           'updatedAt': FieldValue.serverTimestamp(),
+          if (precisaRegularizarCreatedAt)
+            'createdAt': FieldValue.serverTimestamp(),
         },
       );
     });

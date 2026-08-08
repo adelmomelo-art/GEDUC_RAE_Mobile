@@ -32,3 +32,17 @@ continuam autorizados a criar e atualizar domínios. Exclusão permanece negada.
 Valores como `Teste22` são exibidos quando estão ativos no grupo cadastrado.
 Após a regularização, a Central de Domínios poderá corrigir ou inativar esses
 registros normalmente.
+
+## Publicação
+
+Concluída em 08/08/2026:
+
+- PR #17 integrado à `main` no commit
+  `15c888f400d0c981804836bfd2805c3799a95e5d`;
+- deploy restrito a `firestore:rules` no projeto `geduc-rae-mobile`;
+- regras compiladas e liberadas com sucesso;
+- SHA-256 da baseline anterior:
+  `DC1C7E634B560AE96C7D9360D52C2E8D6EF8A876BE3563586EE49937D4AF9DBD`;
+- SHA-256 da regra publicada:
+  `398350A08B825D8FF932FE912BB46FF307645EDB0C7B02108D9FD8973E542641`;
+- APK não gerado nesta etapa por decisão do responsável.

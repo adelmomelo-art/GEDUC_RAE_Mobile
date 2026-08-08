@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/services/kpi_service.dart';
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
+import '../../shared/widgets/layout/fenix_page_scaffold.dart';
 import 'controllers/acao_controller.dart';
 
 class ResultadosPage extends StatefulWidget {
@@ -283,45 +286,13 @@ class _ResultadosPageState extends State<ResultadosPage> {
   }
 
   Widget _cabecalhoEtapa() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.analytics_outlined,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Resultados da ação',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Text(
-              '6 de 9',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Text(
+    return const FenixJourneyHeader(
+      step: 6,
+      totalSteps: 9,
+      title: 'Resultados da ação',
+      subtitle:
           'Registre os resultados e acompanhe os indicadores operacionais.',
-        ),
-        const SizedBox(height: 12),
-        const LinearProgressIndicator(
-          value: 6 / 9,
-          minHeight: 8,
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-      ],
+      icon: Icons.analytics_outlined,
     );
   }
 
@@ -891,12 +862,13 @@ class _ResultadosPageState extends State<ResultadosPage> {
           _voltar();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Resultados'),
+      child: FenixPageScaffold(
+        appBar: FenixAppBar(
+          title: 'Resultados',
+          onBack: _voltar,
         ),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: EdgeInsets.zero,
           children: [
             _cabecalhoEtapa(),
             const SizedBox(height: 16),

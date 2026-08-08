@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/services/evidencia_storage_service.dart';
 import '../../core/services/imagem_service.dart';
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
+import '../../shared/widgets/layout/fenix_page_scaffold.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class EvidenciasPage extends StatefulWidget {
@@ -405,53 +408,12 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
   }
 
   Widget _cabecalho() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.photo_camera_back_outlined,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Evidências da ação',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Registre imagens e descreva o contexto da atividade.',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          const _IndicadorEtapa(
-            etapaAtual: 8,
-            totalEtapas: 9,
-          ),
-        ],
-      ),
+    return const FenixJourneyHeader(
+      step: 7,
+      totalSteps: 9,
+      title: 'Evidências da ação',
+      subtitle: 'Registre imagens e descreva o contexto da atividade.',
+      icon: Icons.photo_camera_back_outlined,
     );
   }
 
@@ -774,13 +736,14 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
           _voltar();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Evidências'),
-          automaticallyImplyLeading: false,
+      child: FenixPageScaffold(
+        appBar: FenixAppBar(
+          title: 'Evidências',
+          onBack: _voltar,
+          backEnabled: !_processando,
         ),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.zero,
           children: [
             _cabecalho(),
             const SizedBox(height: 16),
@@ -797,48 +760,6 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
           ],
         ),
         bottomNavigationBar: _barraInferior(),
-      ),
-    );
-  }
-}
-
-class _IndicadorEtapa extends StatelessWidget {
-  const _IndicadorEtapa({
-    required this.etapaAtual,
-    required this.totalEtapas,
-  });
-
-  final int etapaAtual;
-  final int totalEtapas;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Text(
-            '$etapaAtual/$totalEtapas',
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-            ),
-          ),
-          const Text(
-            'ETAPA',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }

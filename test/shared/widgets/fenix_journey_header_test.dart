@@ -73,4 +73,57 @@ void main() {
     expect(button.onPressed, isNull);
     expect(backCount, 0);
   });
+
+  for (final stage in <({int step, String title, IconData icon})>[
+    (step: 6, title: 'Resultados da ação', icon: Icons.analytics_outlined),
+    (
+      step: 7,
+      title: 'Evidências da ação',
+      icon: Icons.photo_camera_back_outlined,
+    ),
+    (
+      step: 8,
+      title: 'Avaliação e aprendizagem operacional',
+      icon: Icons.rate_review_outlined,
+    ),
+    (
+      step: 9,
+      title: 'Revisão do relatório',
+      icon: Icons.fact_check_outlined,
+    ),
+  ]) {
+    testWidgets('contrato visual da etapa ${stage.step} de 9', (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 900),
+              textScaler: TextScaler.linear(1.3),
+            ),
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: FenixJourneyHeader(
+                  step: stage.step,
+                  totalSteps: 9,
+                  title: stage.title,
+                  subtitle: 'Conteúdo da etapa de fechamento da jornada RAE.',
+                  icon: stage.icon,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Etapa ${stage.step} de 9'), findsOneWidget);
+      expect(find.text(stage.title), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

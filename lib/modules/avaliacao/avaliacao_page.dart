@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/domains/domain_groups.dart';
 import '../../core/domains/domain_provider.dart';
 import '../../shared/widgets/domain/domain_dropdown.dart';
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
+import '../../shared/widgets/layout/fenix_page_scaffold.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class AvaliacaoPage extends StatefulWidget {
@@ -217,14 +220,10 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Voltar',
-          onPressed: _voltar,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('Avaliação da ação'),
+    return FenixPageScaffold(
+      appBar: FenixAppBar(
+        title: 'Avaliação da ação',
+        onBack: _voltar,
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -250,98 +249,35 @@ class _AvaliacaoPageState extends State<AvaliacaoPage> {
           ),
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _cabecalho(),
-                const SizedBox(height: 12),
-                _faxitaCard(),
-                const SizedBox(height: 12),
-                _dashboard(),
-                const SizedBox(height: 12),
-                _secaoAvaliacaoGeral(),
-                const SizedBox(height: 12),
-                _secaoComportamentoERiscos(),
-                const SizedBox(height: 12),
-                _secaoAnaliseQualitativa(),
-                const SizedBox(height: 12),
-                _checklistFinal(),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _cabecalho(),
+          const SizedBox(height: 12),
+          _faxitaCard(),
+          const SizedBox(height: 12),
+          _dashboard(),
+          const SizedBox(height: 12),
+          _secaoAvaliacaoGeral(),
+          const SizedBox(height: 12),
+          _secaoComportamentoERiscos(),
+          const SizedBox(height: 12),
+          _secaoAnaliseQualitativa(),
+          const SizedBox(height: 12),
+          _checklistFinal(),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
   Widget _cabecalho() {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primaryContainer,
-            ],
-          ),
-        ),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 27,
-              backgroundColor: Colors.white,
-              foregroundColor: Color(0xFF1565C0),
-              child: Icon(Icons.rate_review_outlined, size: 30),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Avaliação e aprendizagem operacional',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Consolide a percepção de qualidade antes da revisão final.',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'ETAPA 9/9',
-                style: TextStyle(
-                  color: Color(0xFF1565C0),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const FenixJourneyHeader(
+      step: 8,
+      totalSteps: 9,
+      title: 'Avaliação e aprendizagem operacional',
+      subtitle: 'Consolide a percepção de qualidade antes da revisão final.',
+      icon: Icons.rate_review_outlined,
     );
   }
 

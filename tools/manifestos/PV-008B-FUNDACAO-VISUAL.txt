@@ -1,0 +1,14 @@
+PACOTE=PV-008B-FUNDACAO-VISUAL
+BASELINE_BRANCH=main
+BASELINE_COMMIT=08a22621af5b05af5db478afcf3355d76b1c44c1
+BRANCH_DESTINO=feature/pv-008b-fundacao-visual
+ESCOPO=lib/core/theme/fenix_visual_tokens.dart;lib/core/theme/app_theme.dart;lib/core/constants/app_colors.dart;lib/modules/home/theme/home_visual_tokens.dart;lib/shared/widgets/layout/fenix_page_scaffold.dart;lib/shared/widgets/fenix_section_card.dart;test/core/theme/fenix_visual_foundation_test.dart;README_PV-008B.md;tools/manifestos/PV-008B-FUNDACAO-VISUAL.txt
+HOME_PV007B=valores_e_composicao_preservados
+PROVIDERS_ROTAS_PERMISSOES=inalterados
+DEPENDENCIAS_NOVAS=nenhuma
+EFEITO_REMOTO=nenhum
+HOMOLOGACAO_A05=login_home_navegacao_escala_ampliada_aprovados
+HOMOLOGACAO_TAB_S6=login_home_navegacao_escala_ampliada_aprovados
+TESTES_AUTOMATIZADOS=513_aprovados
+FLUTTER_ANALYZE=no_issues_found
+APK_SHA256=9AAEBBDFD1D4BD3EFB88B37E454EE0B9616679FE4AB0AAA8715530D741417859

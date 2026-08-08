@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
+
 import '../../core/services/localizacao/location_exception.dart';
 import '../acoes/controllers/acao_controller.dart';
 import 'controllers/localizacao_controller.dart';
@@ -81,8 +84,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
-      const mensagem =
-          'Não foi possível obter a localização neste momento.';
+      const mensagem = 'Não foi possível obter a localização neste momento.';
       _registrarErroFaxita(mensagem);
       _mostrarMensagem(mensagem);
     }
@@ -116,8 +118,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
-      const mensagem =
-          'Não foi possível identificar a Regional neste momento. '
+      const mensagem = 'Não foi possível identificar a Regional neste momento. '
           'Preencha o campo manualmente.';
       _registrarErroFaxita(mensagem);
       _mostrarMensagem(mensagem);
@@ -182,8 +183,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
-      const mensagem =
-          'Não foi possível pesquisar o endereço neste momento.';
+      const mensagem = 'Não foi possível pesquisar o endereço neste momento.';
       _registrarErroFaxita(mensagem);
       _mostrarMensagem(mensagem);
     }
@@ -244,8 +244,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
         return;
       }
 
-      const mensagem =
-          'Não foi possível identificar o endereço deste ponto. '
+      const mensagem = 'Não foi possível identificar o endereço deste ponto. '
           'Tente novamente ou preencha os dados manualmente.';
       _registrarErroFaxita(mensagem);
       _mostrarMensagem(mensagem);
@@ -395,8 +394,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
 
   void _limparFeedbackFaxita() {
     if (!mounted ||
-        (_mensagemFaxitaTemporaria == null &&
-            _toneFaxitaTemporario == null)) {
+        (_mensagemFaxitaTemporaria == null && _toneFaxitaTemporario == null)) {
       return;
     }
 
@@ -455,13 +453,10 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
             }
           },
           child: Scaffold(
-            appBar: AppBar(
-              leading: IconButton(
-                tooltip: 'Voltar',
-                onPressed: controller.ocupado ? null : _salvarEVoltar,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              title: const Text('Localização da Ação'),
+            appBar: FenixAppBar(
+              title: 'Localização da Ação',
+              onBack: _salvarEVoltar,
+              backEnabled: !controller.ocupado,
             ),
             body: SafeArea(
               // EST-003B.1:
@@ -477,90 +472,96 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                     children: [
                       Expanded(
                         child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 980),
-                        child: ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            const _CabecalhoLocalizacao(),
-                            const SizedBox(height: 12),
-                            FaxitaLocationCard(
-                              mensagem: _mensagemFaxitaTemporaria ??
-                                  controller.mensagemFaxita,
-                              tone: _obterToneFaxita(controller),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 980),
+                            child: ListView(
+                              padding: const EdgeInsets.all(16),
+                              children: [
+                                const FenixJourneyHeader(
+                                  step: 2,
+                                  totalSteps: 9,
+                                  title: 'Localização da Ação',
+                                  subtitle:
+                                      'Defina o ponto exato da atividade educativa.',
+                                  icon: Icons.location_on_outlined,
+                                ),
+                                const SizedBox(height: 12),
+                                FaxitaLocationCard(
+                                  mensagem: _mensagemFaxitaTemporaria ??
+                                      controller.mensagemFaxita,
+                                  tone: _obterToneFaxita(controller),
+                                ),
+                                const SizedBox(height: 12),
+                                _ModoLocalizacaoCard(
+                                  valor: controller.estaNoLocal,
+                                  habilitado: !controller.ocupado,
+                                  onChanged: _selecionarModo,
+                                ),
+                                const SizedBox(height: 12),
+                                if (controller.estaNoLocal == false) ...[
+                                  EnderecoManualCard(
+                                    pesquisaController:
+                                        controller.pesquisaEnderecoController,
+                                    onPesquisar: controller.ocupado
+                                        ? null
+                                        : _pesquisarEndereco,
+                                    pesquisando: controller.consultandoEndereco,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                MapaLocalizacaoWidget(
+                                  latitude: controller.latitude,
+                                  longitude: controller.longitude,
+                                  possuiLocalizacao:
+                                      controller.possuiLocalizacao,
+                                  onCentralizar:
+                                      controller.estaNoLocal == true &&
+                                              !controller.ocupado
+                                          ? _capturarLocalizacaoGps
+                                          : null,
+                                  selecaoHabilitada:
+                                      controller.estaNoLocal == false &&
+                                          !controller.ocupado,
+                                  onSelecionarLocal:
+                                      controller.estaNoLocal == false &&
+                                              !controller.ocupado
+                                          ? _selecionarLocalNoMapa
+                                          : null,
+                                ),
+                                const SizedBox(height: 12),
+                                GpsStatusCard(
+                                  latitude: controller.latitude,
+                                  longitude: controller.longitude,
+                                  precisaoGps: controller.precisaoGps,
+                                  dataHoraCaptura: controller.dataHoraCaptura,
+                                ),
+                                const SizedBox(height: 12),
+                                LocalizacaoFormCard(
+                                  nomeLocalController:
+                                      controller.nomeLocalController,
+                                  enderecoController:
+                                      controller.enderecoController,
+                                  bairroController: controller.bairroController,
+                                  regionalController:
+                                      controller.regionalController,
+                                  pontoReferenciaController:
+                                      controller.pontoReferenciaController,
+                                  onBairroChanged: _buscarRegionalPorBairro,
+                                  onRegionalChanged: _regionalFoiEditada,
+                                  onDadosChanged: _dadosForamEditados,
+                                ),
+                                const SizedBox(height: 12),
+                                _ResumoLocalizacaoCard(controller: controller),
+                                const SizedBox(height: 24),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            _ModoLocalizacaoCard(
-                              valor: controller.estaNoLocal,
-                              habilitado: !controller.ocupado,
-                              onChanged: _selecionarModo,
-                            ),
-                            const SizedBox(height: 12),
-                            if (controller.estaNoLocal == false) ...[
-                              EnderecoManualCard(
-                                pesquisaController:
-                                    controller.pesquisaEnderecoController,
-                                onPesquisar: controller.ocupado
-                                    ? null
-                                    : _pesquisarEndereco,
-                                pesquisando: controller.consultandoEndereco,
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                            MapaLocalizacaoWidget(
-                              latitude: controller.latitude,
-                              longitude: controller.longitude,
-                              possuiLocalizacao:
-                                  controller.possuiLocalizacao,
-                              onCentralizar: controller.estaNoLocal == true &&
-                                      !controller.ocupado
-                                  ? _capturarLocalizacaoGps
-                                  : null,
-                              selecaoHabilitada:
-                                  controller.estaNoLocal == false &&
-                                      !controller.ocupado,
-                              onSelecionarLocal:
-                                  controller.estaNoLocal == false &&
-                                          !controller.ocupado
-                                      ? _selecionarLocalNoMapa
-                                      : null,
-                            ),
-                            const SizedBox(height: 12),
-                            GpsStatusCard(
-                              latitude: controller.latitude,
-                              longitude: controller.longitude,
-                              precisaoGps: controller.precisaoGps,
-                              dataHoraCaptura: controller.dataHoraCaptura,
-                            ),
-                            const SizedBox(height: 12),
-                            LocalizacaoFormCard(
-                              nomeLocalController:
-                                  controller.nomeLocalController,
-                              enderecoController:
-                                  controller.enderecoController,
-                              bairroController:
-                                  controller.bairroController,
-                              regionalController:
-                                  controller.regionalController,
-                              pontoReferenciaController:
-                                  controller.pontoReferenciaController,
-                              onBairroChanged: _buscarRegionalPorBairro,
-                              onRegionalChanged: _regionalFoiEditada,
-                              onDadosChanged: _dadosForamEditados,
-                            ),
-                            const SizedBox(height: 12),
-                            _ResumoLocalizacaoCard(controller: controller),
-                            const SizedBox(height: 24),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
                       SizedBox(
                         height: alturaBarra,
                         child: LocalizacaoActionBar(
-                          onVoltar:
-                              controller.ocupado ? null : _salvarEVoltar,
+                          onVoltar: controller.ocupado ? null : _salvarEVoltar,
                           onAtualizarLocalizacao:
                               controller.estaNoLocal == true &&
                                       !controller.ocupado
@@ -580,58 +581,6 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
           ),
         );
       },
-    );
-  }
-}
-
-
-class _CabecalhoLocalizacao extends StatelessWidget {
-  const _CabecalhoLocalizacao();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primary, scheme.primaryContainer],
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: scheme.onPrimary.withValues(alpha: 0.14),
-            foregroundColor: scheme.onPrimary,
-            child: const Icon(Icons.location_on_outlined, size: 30),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Localização da Ação',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Defina o ponto exato da atividade educativa.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onPrimary.withValues(alpha: 0.88),
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -660,9 +609,8 @@ class _ResumoLocalizacaoCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: valido
-                      ? Colors.green.shade50
-                      : scheme.primaryContainer,
+                  backgroundColor:
+                      valido ? Colors.green.shade50 : scheme.primaryContainer,
                   foregroundColor: valido
                       ? Colors.green.shade800
                       : scheme.onPrimaryContainer,
@@ -679,9 +627,10 @@ class _ResumoLocalizacaoCard extends StatelessWidget {
                     children: [
                       Text(
                         'Resumo da localização',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
                       ),
                       Text(
                         valido

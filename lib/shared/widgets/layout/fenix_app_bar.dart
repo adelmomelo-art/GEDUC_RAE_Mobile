@@ -7,6 +7,7 @@ class FenixAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.actions = const [],
     this.showBackButton = true,
+    this.backEnabled = true,
     this.fallbackRoute = '/home',
     this.onBack,
     this.backgroundColor,
@@ -18,6 +19,7 @@ class FenixAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget> actions;
   final bool showBackButton;
+  final bool backEnabled;
   final String fallbackRoute;
   final VoidCallback? onBack;
   final Color? backgroundColor;
@@ -54,11 +56,13 @@ class FenixAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? IconButton(
               tooltip: 'Voltar',
               icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () => navigateBack(
-                context,
-                fallbackRoute: fallbackRoute,
-                onBack: onBack,
-              ),
+              onPressed: backEnabled
+                  ? () => navigateBack(
+                        context,
+                        fallbackRoute: fallbackRoute,
+                        onBack: onBack,
+                      )
+                  : null,
             )
           : null,
       title: Text(title),

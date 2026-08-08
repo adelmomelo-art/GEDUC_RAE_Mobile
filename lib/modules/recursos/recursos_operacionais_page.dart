@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class RecursosOperacionaisPage extends StatefulWidget {
@@ -477,23 +479,23 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Recursos Operacionais'),
+        appBar: FenixAppBar(
+          title: 'Recursos Operacionais',
+          onBack: _voltar,
         ),
         bottomNavigationBar: _barraInferior(),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           children: [
-            Text(
-              'Etapa 4 do preenchimento da ação',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
+            const FenixJourneyHeader(
+              step: 4,
+              totalSteps: 9,
+              title: 'Recursos Operacionais',
+              subtitle:
+                  'Registre equipe, materiais e apoio mobilizados na ação.',
+              icon: Icons.groups_2_outlined,
             ),
-            const SizedBox(height: 8),
-            const LinearProgressIndicator(value: 4 / 9),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _painelFaxita(),
             const SizedBox(height: 16),
             _cardSecao(

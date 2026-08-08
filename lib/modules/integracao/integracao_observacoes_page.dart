@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class IntegracaoObservacoesPage extends StatefulWidget {
@@ -433,8 +435,6 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -443,22 +443,22 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Integração e Observações'),
+        appBar: FenixAppBar(
+          title: 'Integração e Observações',
+          onBack: _voltar,
         ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           children: [
-            Text(
-              'Etapa 5 do preenchimento da ação',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
+            const FenixJourneyHeader(
+              step: 5,
+              totalSteps: 9,
+              title: 'Integração e Observações',
+              subtitle:
+                  'Registre parcerias, aprendizados e recomendações da ação.',
+              icon: Icons.hub_outlined,
             ),
-            const SizedBox(height: 8),
-            const LinearProgressIndicator(value: 5 / 9),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _painelFaxita(),
             const SizedBox(height: 16),
             _cardSecao(

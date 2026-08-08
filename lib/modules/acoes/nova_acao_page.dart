@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/tipo_acao_model.dart';
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class NovaAcaoPage extends StatefulWidget {
@@ -206,13 +208,9 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     final dataFormatada = DateFormat('dd/MM/yyyy').format(dataSelecionada);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Voltar',
-          onPressed: () => context.go('/home'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('Nova Ação'),
+      appBar: FenixAppBar(
+        title: 'Nova Ação',
+        onBack: () => context.go('/home'),
         actions: [
           IconButton(
             tooltip: 'Atualizar cadastros',
@@ -256,7 +254,13 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _Cabecalho(dataFormatada: dataFormatada),
+                FenixJourneyHeader(
+                  step: 1,
+                  totalSteps: 9,
+                  title: 'Nova Ação Educativa',
+                  subtitle: 'Cadastro inicial da operação • $dataFormatada',
+                  icon: Icons.add_task_outlined,
+                ),
                 const SizedBox(height: 12),
                 _FaxitaCard(
                   mensagem: mensagemFaxita,
@@ -383,57 +387,6 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Cabecalho extends StatelessWidget {
-  const _Cabecalho({required this.dataFormatada});
-  final String dataFormatada;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primary, scheme.primaryContainer],
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: scheme.onPrimary.withValues(alpha: 0.14),
-            foregroundColor: scheme.onPrimary,
-            child: const Icon(Icons.add_task_outlined, size: 30),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Nova Ação Educativa',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Cadastro inicial da operação • $dataFormatada',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onPrimary.withValues(alpha: 0.88),
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

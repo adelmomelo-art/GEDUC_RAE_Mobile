@@ -6,6 +6,8 @@ import '../../core/domains/domain_groups.dart';
 import '../../core/domains/domain_provider.dart';
 import '../../shared/widgets/domain/domain_checkbox_group.dart';
 import '../../shared/widgets/domain/domain_dropdown.dart';
+import '../../shared/widgets/journey/fenix_journey_header.dart';
+import '../../shared/widgets/layout/fenix_app_bar.dart';
 import 'controllers/acao_controller.dart';
 
 class CaracterizacaoAcaoPage extends StatefulWidget {
@@ -857,14 +859,24 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
             }
           },
           child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Caracterização da Ação'),
+            appBar: FenixAppBar(
+              title: 'Caracterização da Ação',
+              onBack: _voltar,
             ),
             bottomNavigationBar: _barraInferior(),
             body: SafeArea(
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  const FenixJourneyHeader(
+                    step: 3,
+                    totalSteps: 9,
+                    title: 'Caracterização da Ação',
+                    subtitle:
+                        'Defina o público, a formação e os focos da atividade.',
+                    icon: Icons.fact_check_outlined,
+                  ),
+                  const SizedBox(height: 12),
                   _faxitaCard(),
                   const SizedBox(height: 12),
                   _secao(

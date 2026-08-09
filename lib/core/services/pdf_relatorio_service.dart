@@ -418,9 +418,12 @@ class PdfRelatorioService {
         ),
         pw.SizedBox(height: 1),
         pw.Text(
-          _valor(campo.valor),
+          _textoCompacto(campo.valor, 82),
           maxLines: 2,
-          style: const pw.TextStyle(fontSize: 7.1, color: _cinza),
+          style: pw.TextStyle(
+            fontSize: _tamanhoFonteCompacta(campo.valor, normal: 7.1),
+            color: _cinza,
+          ),
         ),
       ]),
     );
@@ -537,12 +540,42 @@ class PdfRelatorioService {
         ),
         pw.SizedBox(height: 1),
         pw.Text(
-          _valor(valor),
+          _textoCompacto(valor, 150),
           maxLines: 2,
-          style: const pw.TextStyle(fontSize: 7, color: _cinza),
+          style: pw.TextStyle(
+            fontSize: _tamanhoFonteCompacta(
+              valor,
+              normal: 7,
+              medio: 6.2,
+              reduzido: 5.5,
+            ),
+            color: _cinza,
+          ),
         ),
       ]),
     );
+  }
+
+  String _textoCompacto(String? valor, int limite) {
+    final texto = _valor(valor).replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (texto.length <= limite) return texto;
+
+    final trecho = texto.substring(0, limite - 1).trimRight();
+    final ultimoEspaco = trecho.lastIndexOf(' ');
+    final corte = ultimoEspaco >= (limite * .7) ? ultimoEspaco : trecho.length;
+    return '${trecho.substring(0, corte).trimRight()}...';
+  }
+
+  double _tamanhoFonteCompacta(
+    String? valor, {
+    required double normal,
+    double medio = 6.2,
+    double reduzido = 5.5,
+  }) {
+    final tamanho = _valor(valor).length;
+    if (tamanho > 64) return reduzido;
+    if (tamanho > 38) return medio;
+    return normal;
   }
 
   pw.Widget _revisaoFaixita(

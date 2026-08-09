@@ -1,0 +1,33 @@
+PACOTE: RAE - RELATORIO AMPLIADO
+DATA: 2026-08-09
+STATUS: HOMOLOGADO NO A05 E TAB S6
+
+ESCOPO:
+- PDF RAE timbrado da Gerencia de Educacao em duas paginas A4
+- assinatura conjunta AMC e Prefeitura conforme alinhamento institucional
+- rodape oficial com endereco e faixa cromatica
+- itens 1 a 4 em tres colunas
+- avaliacao e aprendizagem em duas colunas
+- nomes dos catalogos no lugar de identificadores internos
+- avaliacao e aprendizagem operacional da equipe
+- revisao inteligente da Faixita com indice, nivel e parecer
+- pontos fortes, alertas e recomendacoes da Faixita
+- evidencias com tres posicoes para fotos
+- QR de validacao unico
+- assinaturas do coordenador da acao e do Gerente da GEDUC
+- revisao em tela ampliada com caracterizacao, recursos e avaliacao
+
+VALIDACAO:
+- flutter analyze --no-pub: sem problemas
+- flutter test --no-pub: 524 testes aprovados
+- PDF gerado pelo Flutter: 2 paginas renderizadas e inspecionadas
+- QR, assinaturas e espacos fotograficos conferidos em ampliacao
+- Samsung A05: homologacao fisica aprovada em 09/08/2026
+- Samsung Tab S6: homologacao fisica aprovada em 09/08/2026
+- APK: FENIX_RAE_TIMBRADO_CATALOGOS_HOMOLOGACAO_20260809_DEBUG.apk
+- SHA-256: 32376944BFC3EAEE0ECBF3C695236B152C9CF6DCF8CA290382E868DA197C4779
+
+PENDENTE DE AUTORIZACAO:
+- commit
+- push
+- PR

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/domains/domain_provider.dart';
 import '../../core/services/faxita_insights_service.dart';
 import '../../core/services/faxita_review_service.dart';
 import '../../core/services/pdf_relatorio_service.dart';
@@ -54,7 +55,11 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
       return;
     }
 
-    await PdfRelatorioService().gerarRelatorioAcao(acao);
+    final domainProvider = context.read<DomainProvider>();
+    await PdfRelatorioService().gerarRelatorioAcao(
+      acao,
+      catalogos: PdfRelatorioService.catalogosDe(domainProvider),
+    );
   }
 
   Future<void> _enviarRelatorio(AcaoController controller) async {
@@ -93,6 +98,28 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
         ),
       ),
     );
+  }
+
+  String _nomeDominio(
+    DomainProvider provider,
+    String grupo,
+    String id,
+  ) {
+    if (id.trim().isEmpty) {
+      return 'Não informado';
+    }
+    return provider.opcoesDoGrupo(grupo)[id] ?? id;
+  }
+
+  String _nomesDominios(
+    DomainProvider provider,
+    String grupo,
+    List<String> ids,
+  ) {
+    if (ids.isEmpty) {
+      return 'Não informado';
+    }
+    return ids.map((id) => _nomeDominio(provider, grupo, id)).join(', ');
   }
 
   @override
@@ -144,6 +171,7 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
     }
 
     final review = faxitaReviewService.revisar(acao);
+    final domainProvider = context.watch<DomainProvider>();
     final alertasPriorizados =
         faxitaInsightsService.priorizarAlertas(review.alertas);
 
@@ -288,6 +316,44 @@ ${acao.equipamentoReferencia}
           ),
           const SizedBox(height: 10),
           ReviewSectionCard(
+            titulo: 'Caracterização da ação',
+            subtitulo: 'Público, formação e temas trabalhados',
+            icone: Icons.category_rounded,
+            conteudo: '''
+Formação: ${_nomeDominio(domainProvider, 'formacao', acao.formacaoId)}
+
+Público-alvo: ${_nomeDominio(domainProvider, 'publico', acao.publicoId)}
+
+Tipo de participação: ${_nomesDominios(domainProvider, 'tipo_participacao', acao.tipoParticipacaoIds)}
+
+Perfis atendidos: ${_nomesDominios(domainProvider, 'perfil_usuario', acao.perfilUsuarioIds)}
+
+Sexo predominante: ${_nomeDominio(domainProvider, 'sexo_predominante', acao.sexoPredominanteId)}
+
+Focos temáticos: ${_nomesDominios(domainProvider, 'foco_tematico', acao.focoTematicoIds)}
+
+Fatores de risco: ${_nomesDominios(domainProvider, 'fator_risco', acao.fatorRiscoIds)}
+''',
+          ),
+          const SizedBox(height: 10),
+          ReviewSectionCard(
+            titulo: 'Recursos e integração',
+            subtitulo: 'Equipe, materiais e participação institucional',
+            icone: Icons.handshake_rounded,
+            conteudo: '''
+Agentes de trânsito: ${acao.agentesTransito}
+
+Equipe terceirizada: ${acao.equipeTerceirizada}
+
+Materiais: ${_nomesDominios(domainProvider, 'material', acao.materialUtilizadoIds)}
+
+Cobertura de mídia: ${acao.coberturaMidia ? 'Sim' : 'Não'}
+
+Outro órgão participante: ${acao.houveParticipacaoOutroOrgao ? _nomeDominio(domainProvider, 'orgao', acao.orgaoParticipanteId) : 'Não'}
+''',
+          ),
+          const SizedBox(height: 10),
+          ReviewSectionCard(
             titulo: 'Resultados',
             subtitulo: 'Indicadores consolidados da execução',
             icone: Icons.groups_rounded,
@@ -300,6 +366,24 @@ ${acao.veiculosAbordados}
 
 Credenciais:
 ${acao.credenciaisEmitidas}
+''',
+          ),
+          const SizedBox(height: 10),
+          ReviewSectionCard(
+            titulo: 'Avaliação e aprendizagem operacional',
+            subtitulo: 'Lições registradas pela equipe',
+            icone: Icons.insights_rounded,
+            conteudo: '''
+Avaliação: ${acao.notaAvaliacao > 0 ? '${acao.notaAvaliacao}/5' : 'Não avaliada'}
+
+Pontos positivos:
+${acao.pontosPositivos.isEmpty ? 'Não informado' : acao.pontosPositivos}
+
+Dificuldades encontradas:
+${acao.dificuldadesEncontradas.isEmpty ? 'Não informado' : acao.dificuldadesEncontradas}
+
+Recomendações da equipe:
+${acao.recomendacoes.isEmpty ? 'Não informado' : acao.recomendacoes}
 ''',
           ),
           const SizedBox(height: 10),

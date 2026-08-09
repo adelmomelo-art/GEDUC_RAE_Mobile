@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/domains/domain_provider.dart';
 import '../../core/services/pdf_relatorio_service.dart';
 import '../../core/widgets/rae_qrcode_widget.dart';
 import '../../data/models/acao_model.dart';
@@ -24,25 +26,15 @@ class DetalheAcaoPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _cardTitulo(),
-
           const SizedBox(height: 12),
-
           _cardDadosAcao(),
-
           const SizedBox(height: 12),
-
           _cardLocalizacao(),
-
           const SizedBox(height: 12),
-
           _cardResultados(),
-
           const SizedBox(height: 12),
-
           _cardQrCode(),
-
           const SizedBox(height: 24),
-
           SizedBox(
             height: 50,
             child: ElevatedButton.icon(
@@ -53,13 +45,14 @@ class DetalheAcaoPage extends StatelessWidget {
               onPressed: () async {
                 await pdfService.gerarRelatorioAcao(
                   acao,
+                  catalogos: PdfRelatorioService.catalogosDe(
+                    context.read<DomainProvider>(),
+                  ),
                 );
               },
             ),
           ),
-
           const SizedBox(height: 12),
-
           SizedBox(
             height: 50,
             child: ElevatedButton.icon(
@@ -70,6 +63,9 @@ class DetalheAcaoPage extends StatelessWidget {
               onPressed: () async {
                 await pdfService.compartilharRelatorio(
                   acao,
+                  catalogos: PdfRelatorioService.catalogosDe(
+                    context.read<DomainProvider>(),
+                  ),
                 );
               },
             ),
@@ -101,37 +97,29 @@ class DetalheAcaoPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _titulo('Dados da Ação'),
-
             _linha(
               'Tipo',
               acao.tipoAcao,
             ),
-
             _linha(
               'Turno',
               acao.turno,
             ),
-
             _linha(
               'Hora inicial',
               acao.horaInicio,
             ),
-
             _linha(
               'Hora final',
-              acao.horaFinal ??
-                  'Não informada',
+              acao.horaFinal ?? 'Não informada',
             ),
-
             _linha(
               'Coordenador',
               acao.coordenadorNome,
             ),
-
             _linha(
               'Status',
               acao.status,
@@ -147,31 +135,25 @@ class DetalheAcaoPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _titulo('Localização'),
-
             _linha(
               'Endereço',
               acao.endereco,
             ),
-
             _linha(
               'Bairro',
               acao.bairro,
             ),
-
             _linha(
               'Regional',
               acao.regional,
             ),
-
             _linha(
               'Latitude',
               acao.latitude.toString(),
             ),
-
             _linha(
               'Longitude',
               acao.longitude.toString(),
@@ -187,41 +169,29 @@ class DetalheAcaoPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _titulo('Resultados'),
-
             _linha(
               'Pessoas alcançadas',
-              acao.pessoasAlcancadas
-                  .toString(),
+              acao.pessoasAlcancadas.toString(),
             ),
-
             _linha(
               'Veículos abordados',
-              acao.veiculosAbordados
-                  .toString(),
+              acao.veiculosAbordados.toString(),
             ),
-
             _linha(
               'Credenciais emitidas',
-              acao.credenciaisEmitidas
-                  .toString(),
+              acao.credenciaisEmitidas.toString(),
             ),
-
             _linha(
               'Meta atingida',
-              acao.metaAtingida
-                  ? 'SIM'
-                  : 'NÃO',
+              acao.metaAtingida ? 'SIM' : 'NÃO',
             ),
-
             if (!acao.metaAtingida)
               _linha(
                 'Motivo',
-                acao.motivoMetaNaoAtingida ??
-                    'Não informado',
+                acao.motivoMetaNaoAtingida ?? 'Não informado',
               ),
           ],
         ),
@@ -247,16 +217,14 @@ class DetalheAcaoPage extends StatelessWidget {
     String texto,
   ) {
     return Padding(
-      padding:
-          const EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: 8,
       ),
       child: Text(
         texto,
         style: const TextStyle(
           fontSize: 16,
-          fontWeight:
-              FontWeight.bold,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -267,8 +235,7 @@ class DetalheAcaoPage extends StatelessWidget {
     String valor,
   ) {
     return Padding(
-      padding:
-          const EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: 6,
       ),
       child: Text(

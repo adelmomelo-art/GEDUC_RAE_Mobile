@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -328,6 +330,22 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     super.initState();
     _restaurarRascunho();
     instituicaoParceiraController.addListener(_aoAlterarInstituicao);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_recarregarCatalogos());
+      }
+    });
+  }
+
+  Future<void> _recarregarCatalogos() async {
+    try {
+      await _domainProvider.recarregarGrupos(
+        DomainGroups.caracterizacaoAcao,
+      );
+    } catch (_) {
+      // O DomainProvider preserva o cache como contingência e expõe o erro
+      // aos widgets de domínio, que oferecem nova tentativa ao usuário.
+    }
   }
 
   void _restaurarRascunho() {
@@ -957,11 +975,11 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                         }),
                       ),
                       const SizedBox(height: 18),
+                      _rotuloObrigatorio('Qual o sexo predominante'),
                       DomainDropdown(
                         grupo: DomainGroups.sexoPredominante,
-                        label: 'Sexo predominante',
+                        label: 'Selecione uma opção',
                         value: sexoPredominanteId,
-                        obrigatorio: true,
                         valorLegadoNome: sexoPredominanteId == null
                             ? null
                             : _nomesLegadosSexo[sexoPredominanteId],

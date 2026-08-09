@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/domains/domain_provider.dart';
 import '../../core/services/domain_service.dart';
 import '../../data/models/domain_model.dart';
 import '../../repositories/domain_repository.dart';
@@ -78,6 +80,7 @@ class _DomainListPageState extends State<DomainListPage> {
   }
 
   Future<void> abrirFormulario(DomainFormArgs args) async {
+    final domainProvider = context.read<DomainProvider>();
     final alterado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => DomainFormPage(args: args),
@@ -88,6 +91,7 @@ class _DomainListPageState extends State<DomainListPage> {
       return;
     }
 
+    await domainProvider.limpar();
     await carregarDominios();
 
     if (!mounted) return;
@@ -152,6 +156,7 @@ class _DomainListPageState extends State<DomainListPage> {
 
   Future<void> alternarAtivo(DomainModel domain) async {
     final novoStatus = !domain.ativo;
+    final domainProvider = context.read<DomainProvider>();
 
     try {
       if (novoStatus) {
@@ -160,6 +165,7 @@ class _DomainListPageState extends State<DomainListPage> {
         await repository.desativar(domain.id);
       }
 
+      domainProvider.invalidarGrupo(domain.grupo);
       final lista = await repository.listarTodos();
 
       if (!mounted) return;

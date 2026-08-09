@@ -1,0 +1,26 @@
+RAE-PDF-001 - HOMOLOGACAO DE CONTEUDO REAL
+Data: 2026-08-09
+Branch: feature/rae-pdf-001-homologacao-conteudo-real
+
+ESCOPO
+- Validacao do PDF sem fotografias.
+- Validacao do PDF com tres fotografias.
+- Validacao do PDF com textos extensos.
+- Prevencao de campos em branco por excesso de texto.
+- Preservacao do limite de duas paginas A4.
+
+ARQUIVOS ALTERADOS
+- lib/core/services/pdf_relatorio_service.dart
+- test/core/services/pdf_relatorio_service_test.dart
+- README_RAE-PDF-001.md
+- tools/manifestos/RAE-PDF-001.txt
+
+QUALITY GATES
+- flutter analyze --no-pub: aprovado
+- testes dedicados: 3/3 aprovados
+- suite completa: 526/526 aprovados
+- inspecao visual: aprovada nos tres cenarios
+
+PUBLICACAO
+- Nenhum commit, push ou PR realizado nesta etapa.
+- Nenhum APK de release gerado nesta etapa.

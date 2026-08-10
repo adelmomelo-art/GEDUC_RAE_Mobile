@@ -98,6 +98,7 @@ class AcaoModel {
   final List<String> fatorRiscoIds;
   final String mudancaComportamentoId;
   final String formacaoId;
+  final String tipoPublicoId;
   final String publicoId;
   final List<String> tipoParticipacaoIds;
   final List<String> focoTematicoIds;
@@ -185,6 +186,7 @@ class AcaoModel {
     this.fatorRiscoIds = const [],
     this.mudancaComportamentoId = '',
     this.formacaoId = '',
+    this.tipoPublicoId = '',
     this.publicoId = '',
     this.tipoParticipacaoIds = const [],
     this.focoTematicoIds = const [],
@@ -243,6 +245,7 @@ class AcaoModel {
     List<String>? fatorRiscoIds,
     String? mudancaComportamentoId,
     String? formacaoId,
+    String? tipoPublicoId,
     String? publicoId,
     List<String>? tipoParticipacaoIds,
     List<String>? focoTematicoIds,
@@ -305,6 +308,7 @@ class AcaoModel {
       mudancaComportamentoId:
           mudancaComportamentoId ?? this.mudancaComportamentoId,
       formacaoId: formacaoId ?? this.formacaoId,
+      tipoPublicoId: tipoPublicoId ?? this.tipoPublicoId,
       publicoId: publicoId ?? this.publicoId,
       tipoParticipacaoIds:
           tipoParticipacaoIds ?? this.tipoParticipacaoIds,
@@ -373,6 +377,7 @@ class AcaoModel {
         'fatorRiscoIds': fatorRiscoIds,
         'mudancaComportamentoId': mudancaComportamentoId,
         'formacaoId': formacaoId,
+        'tipoPublicoId': tipoPublicoId,
         'publicoId': publicoId,
         'tipoParticipacaoIds': tipoParticipacaoIds,
         'focoTematicoIds': focoTematicoIds,
@@ -441,6 +446,7 @@ class AcaoModel {
       fatorRiscoIds: _listaTexto(map['fatorRiscoIds']),
       mudancaComportamentoId: _texto(map['mudancaComportamentoId']),
       formacaoId: _texto(map['formacaoId']),
+      tipoPublicoId: _texto(map['tipoPublicoId']),
       publicoId: _texto(map['publicoId']),
       tipoParticipacaoIds: _listaTexto(map['tipoParticipacaoIds']),
       focoTematicoIds: _listaTexto(map['focoTematicoIds']),

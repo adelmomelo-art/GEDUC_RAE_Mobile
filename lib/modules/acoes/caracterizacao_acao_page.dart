@@ -27,6 +27,7 @@ enum _StatusSecao {
 
 class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   String? formacaoId;
+  String? tipoPublicoId;
   String? publicoId;
   String? sexoPredominanteId;
   String? mudancaComportamentoId;
@@ -52,6 +53,11 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
     'publico_interno': 'Público interno',
     'publico_externo': 'Público externo',
     'publico_misto': 'Público interno e externo',
+  };
+
+  static const Map<String, String> _tiposPublico = {
+    'interno': 'Interno',
+    'externo': 'Externo',
   };
 
   static const Map<String, String> _nomesLegadosSexo = {
@@ -194,7 +200,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   }
 
   bool get _publicoAlvoCompleto {
-    return publicoId != null &&
+    return tipoPublicoId != null &&
+        publicoId != null &&
         perfilUsuarioIds.isNotEmpty &&
         sexoPredominanteId != null;
   }
@@ -263,26 +270,30 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   }
 
   String get _resumoPublicoSelecionado {
-    final tipo = publicoId == null ? null : publicos[publicoId];
+    final tipo = tipoPublicoId == null ? null : _tiposPublico[tipoPublicoId];
+    final faixaEtaria = publicoId == null ? null : publicos[publicoId];
     final perfis = perfilUsuarioIds
         .map((id) => perfisUsuario[id])
         .whereType<String>()
         .toList();
 
-    if (tipo == null && perfis.isEmpty) {
-      return 'Informe se o público é interno, externo ou misto e selecione '
-          'ao menos um perfil de usuário.';
+    if (tipo == null && faixaEtaria == null && perfis.isEmpty) {
+      return 'Informe o tipo de público, a faixa etária e selecione ao menos '
+          'um perfil de usuário.';
     }
 
-    if (tipo != null && perfis.isEmpty) {
-      return '$tipo selecionado. Agora identifique os perfis atendidos.';
+    if (perfis.isEmpty) {
+      return '${tipo ?? 'Tipo de público pendente'} • '
+          '${faixaEtaria ?? 'Faixa etária pendente'}. Agora identifique os '
+          'perfis atendidos.';
     }
 
     final quantidade = perfis.length;
     final descricaoPerfis =
         quantidade == 1 ? perfis.first : '$quantidade perfis selecionados';
 
-    return '${tipo ?? 'Tipo de público pendente'} • $descricaoPerfis';
+    return '${tipo ?? 'Tipo de público pendente'} • '
+        '${faixaEtaria ?? 'Faixa etária pendente'} • $descricaoPerfis';
   }
 
   String get _mensagemFaxita {
@@ -353,6 +364,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
     if (acao != null) {
       formacaoId = acao.formacaoId.isEmpty ? null : acao.formacaoId;
+      tipoPublicoId = acao.tipoPublicoId.isEmpty ? null : acao.tipoPublicoId;
       publicoId = _normalizarPublicoLegado(acao.publicoId);
       sexoPredominanteId =
           acao.sexoPredominanteId.isEmpty ? null : acao.sexoPredominanteId;
@@ -388,6 +400,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
           fatorRiscoIds: fatorRiscoIds.toList(),
           mudancaComportamentoId: mudancaComportamentoId ?? '',
           formacaoId: formacaoId ?? '',
+          tipoPublicoId: tipoPublicoId ?? '',
           publicoId: publicoId ?? '',
           tipoParticipacaoIds: tipoParticipacaoIds.toList(),
           focoTematicoIds: focoTematicoIds.toList(),
@@ -442,7 +455,8 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
       return _StatusSecao.completa;
     }
 
-    if (publicoId != null ||
+    if (tipoPublicoId != null ||
+        publicoId != null ||
         perfilUsuarioIds.isNotEmpty ||
         sexoPredominanteId != null) {
       return _StatusSecao.emAndamento;
@@ -736,6 +750,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
 
   Widget _resumoExecutivo() {
     final formacao = formacoes[formacaoId] ?? 'Não informado';
+    final tipoPublico = _tiposPublico[tipoPublicoId] ?? 'Não informado';
     final publico = publicos[publicoId] ?? 'Não informado';
     final sexo = sexos[sexoPredominanteId] ?? 'Não informado';
     final mudanca = mudancas[mudancaComportamentoId] ?? 'Não informado';
@@ -790,7 +805,11 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                 icone: Icons.handshake_outlined,
               ),
             _linhaResumo(
-              titulo: 'Público',
+              titulo: 'Tipo de público',
+              valor: tipoPublico,
+            ),
+            _linhaResumo(
+              titulo: 'Público por faixa etária',
               valor: publico,
             ),
             _linhaResumo(
@@ -941,9 +960,33 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                     icone: Icons.groups_outlined,
                     status: _statusPublicoAlvo(),
                     filhos: [
+                      _rotuloObrigatorio('Tipo de público'),
+                      const SizedBox(height: 8),
+                      RadioGroup<String>(
+                        groupValue: tipoPublicoId,
+                        onChanged: (value) =>
+                            _atualizar(() => tipoPublicoId = value),
+                        child: Column(
+                          children: _tiposPublico.entries
+                              .map(
+                                (entry) => RadioListTile<String>(
+                                  value: entry.key,
+                                  title: Text(entry.value),
+                                  dense: true,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _rotuloObrigatorio('Público por faixa etária'),
+                      const SizedBox(height: 8),
                       DomainDropdown(
                         grupo: DomainGroups.publico,
-                        label: 'Público',
+                        label: 'Selecione uma faixa etária',
                         value: publicoId,
                         obrigatorio: true,
                         valorLegadoNome: publicoId == null
@@ -951,13 +994,6 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
                             : _nomesLegadosPublico[publicoId],
                         onChanged: (value) =>
                             _atualizar(() => publicoId = value),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Considere como público interno os servidores e equipes '
-                        'do próprio órgão. Público externo corresponde à '
-                        'comunidade e às instituições atendidas.',
-                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 18),
                       _rotuloObrigatorio('Perfil do usuário'),

@@ -8,6 +8,14 @@ import 'package:geduc_rae_mobile/data/models/acao_model.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('preserva o tipo de público no rascunho serializado', () {
+    final acao = _acaoCompleta().copyWith(tipoPublicoId: 'interno');
+
+    final restaurada = AcaoModel.fromMap(acao.toMap());
+
+    expect(restaurada.tipoPublicoId, 'interno');
+  });
+
   test('gera relatório RAE sem fotos e preserva espaços de evidências',
       () async {
     final acao = _acaoCompleta().copyWith(fotosUrls: const []);
@@ -143,6 +151,7 @@ AcaoModel _acaoCompleta() {
     fatorRiscoIds: const ['velocidade', 'celular'],
     mudancaComportamentoId: 'sim',
     formacaoId: 'oficina',
+    tipoPublicoId: 'externo',
     publicoId: 'externo',
     tipoParticipacaoIds: const ['presencial'],
     focoTematicoIds: const ['mobilidade', 'seguranca'],

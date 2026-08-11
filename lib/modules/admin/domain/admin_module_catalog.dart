@@ -37,9 +37,9 @@ class AdminModuleCatalog {
       permissao: Permission.gerenciarTiposAcoes,
     ),
     AdminModule(
-      id: 'coordenadores',
-      titulo: 'Coordenadores',
-      descricao: 'Consulte responsáveis e vínculos operacionais.',
+      id: 'equipe-operacional',
+      titulo: 'Equipe Operacional',
+      descricao: 'Classifique agentes, terceirizados e coordenadores.',
       icone: Icons.badge_outlined,
       rota: AppRoutes.coordenadoresPath,
       status: AdminModuleStatus.emEvolucao,

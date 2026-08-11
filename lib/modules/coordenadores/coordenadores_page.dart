@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+
+import '../../core/services/equipe_operacional_service.dart';
+import '../../data/models/membro_equipe_model.dart';
 
 class CoordenadoresPage extends StatefulWidget {
   const CoordenadoresPage({super.key});
@@ -10,116 +11,268 @@ class CoordenadoresPage extends StatefulWidget {
 }
 
 class _CoordenadoresPageState extends State<CoordenadoresPage> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final EquipeOperacionalService _service = EquipeOperacionalService();
+  bool _sincronizando = false;
 
-  Future<void> abrirFormulario() async {
-    final nomeController = TextEditingController();
-    final matriculaController = TextEditingController();
-    final cargoController = TextEditingController();
-    final telefoneController = TextEditingController();
-    final emailController = TextEditingController();
-    final setorController = TextEditingController();
+  Future<void> _sincronizar() async {
+    setState(() => _sincronizando = true);
+    try {
+      final resultado = await _service.sincronizarFundacao();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${resultado.usuariosSincronizados} usuário(s) sincronizado(s) e '
+            '${resultado.coordenadoresImportados} coordenador(es) '
+            'compatibilizado(s).',
+          ),
+        ),
+      );
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível sincronizar: $erro')),
+      );
+    } finally {
+      if (mounted) setState(() => _sincronizando = false);
+    }
+  }
 
-    await showDialog(
+  Future<void> _editar(MembroEquipeModel membro) async {
+    var vinculo = membro.vinculo;
+    var podeCoordenar = membro.podeCoordenar;
+    var ativo = membro.ativo;
+
+    final salvar = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Novo Coordenador'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(membro.nome),
           content: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome')),
-                TextField(controller: matriculaController, decoration: const InputDecoration(labelText: 'Matrícula')),
-                TextField(controller: cargoController, decoration: const InputDecoration(labelText: 'Cargo')),
-                TextField(controller: telefoneController, decoration: const InputDecoration(labelText: 'Telefone')),
-                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'E-mail')),
-                TextField(controller: setorController, decoration: const InputDecoration(labelText: 'Setor')),
+                const Text(
+                  'Vínculo operacional',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<VinculoOperacional>(
+                  initialValue: vinculo,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  items: VinculoOperacional.values
+                      .map(
+                        (item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(item.rotulo),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (valor) {
+                    if (valor != null) {
+                      setDialogState(() => vinculo = valor);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: podeCoordenar,
+                  title: const Text('Pode coordenar ações'),
+                  subtitle: const Text(
+                    'Disponibiliza esta pessoa na escolha de coordenador.',
+                  ),
+                  onChanged: (valor) =>
+                      setDialogState(() => podeCoordenar = valor),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: ativo,
+                  title: const Text('Membro ativo'),
+                  onChanged: (valor) => setDialogState(() => ativo = valor),
+                ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-            ElevatedButton(
-              onPressed: () async {
-                final id = const Uuid().v4();
-
-                await firestore.collection('coordenadores').doc(id).set({
-                  'id': id,
-                  'nome': nomeController.text.trim(),
-                  'matricula': matriculaController.text.trim(),
-                  'cargo': cargoController.text.trim(),
-                  'telefone': telefoneController.text.trim(),
-                  'email': emailController.text.trim(),
-                  'setor': setorController.text.trim(),
-                  'ativo': true,
-                  'criadoEm': Timestamp.now(),
-                });
-
-                if (context.mounted) Navigator.pop(context);
-              },
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('CANCELAR'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('SALVAR'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
-  }
 
-  Future<void> alterarStatus(String id, bool ativo) async {
-    await firestore.collection('coordenadores').doc(id).update({'ativo': ativo});
+    if (salvar != true) return;
+    try {
+      await _service.atualizarClassificacao(
+        id: membro.id,
+        vinculo: vinculo,
+        podeCoordenar: podeCoordenar,
+        ativo: ativo,
+      );
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível salvar: $erro')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Coordenadores'),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: abrirFormulario,
-        child: const Icon(Icons.add),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: firestore.collection('coordenadores').orderBy('nome').snapshots(),
+      appBar: AppBar(title: const Text('Equipe Operacional')),
+      body: StreamBuilder<List<MembroEquipeModel>>(
+        stream: _service.observarMembros(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Nenhum coordenador cadastrado.'));
+          if (snapshot.hasError) {
+            return _EstadoInicial(
+              sincronizando: _sincronizando,
+              onSincronizar: _sincronizar,
+              mensagem: 'O catálogo ainda não está disponível.',
+            );
           }
 
-          final docs = snapshot.data!.docs;
+          final membros = snapshot.data ?? const <MembroEquipeModel>[];
+          if (membros.isEmpty) {
+            return _EstadoInicial(
+              sincronizando: _sincronizando,
+              onSincronizar: _sincronizar,
+              mensagem: 'Prepare o catálogo com os usuários atuais.',
+            );
+          }
+
+          final agentes = membros
+              .where((item) => item.vinculo == VinculoOperacional.agente)
+              .length;
+          final terceirizados = membros.length - agentes;
+          final coordenadores =
+              membros.where((item) => item.podeCoordenar).length;
 
           return ListView(
             padding: const EdgeInsets.all(16),
-            children: docs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-
-              final nome = data['nome'] ?? '';
-              final cargo = data['cargo'] ?? '';
-              final setor = data['setor'] ?? '';
-              final ativo = data['ativo'] ?? true;
-
-              return Card(
-                child: ListTile(
-                  leading: Icon(
-                    ativo ? Icons.person : Icons.person_off,
-                    color: ativo ? Colors.green : Colors.red,
-                  ),
-                  title: Text(nome),
-                  subtitle: Text('$cargo\nSetor: $setor'),
-                  isThreeLine: true,
-                  trailing: Switch(
-                    value: ativo,
-                    onChanged: (value) => alterarStatus(doc.id, value),
+            children: [
+              _ResumoEquipe(
+                agentes: agentes,
+                terceirizados: terceirizados,
+                coordenadores: coordenadores,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _sincronizando ? null : _sincronizar,
+                icon: _sincronizando
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.sync),
+                label: const Text('SINCRONIZAR USUÁRIOS E COORDENADORES'),
+              ),
+              const SizedBox(height: 12),
+              ...membros.map(
+                (membro) => Card(
+                  child: ListTile(
+                    onTap: () => _editar(membro),
+                    leading: CircleAvatar(
+                      child: Icon(
+                        membro.vinculo == VinculoOperacional.agente
+                            ? Icons.badge_outlined
+                            : Icons.groups_outlined,
+                      ),
+                    ),
+                    title: Text(membro.nome),
+                    subtitle: Text(
+                      '${membro.vinculo.rotulo} • '
+                      '${membro.podeCoordenar ? 'Pode coordenar' : 'Participante'}'
+                      '${membro.ativo ? '' : ' • Inativo'}',
+                    ),
+                    trailing: const Icon(Icons.edit_outlined),
                   ),
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _EstadoInicial extends StatelessWidget {
+  const _EstadoInicial({
+    required this.sincronizando,
+    required this.onSincronizar,
+    required this.mensagem,
+  });
+
+  final bool sincronizando;
+  final VoidCallback onSincronizar;
+  final String mensagem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.groups_2_outlined, size: 64),
+            const SizedBox(height: 16),
+            Text(mensagem, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: sincronizando ? null : onSincronizar,
+              icon: const Icon(Icons.sync),
+              label: const Text('PREPARAR EQUIPE OPERACIONAL'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumoEquipe extends StatelessWidget {
+  const _ResumoEquipe({
+    required this.agentes,
+    required this.terceirizados,
+    required this.coordenadores,
+  });
+
+  final int agentes;
+  final int terceirizados;
+  final int coordenadores;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 12,
+          children: [
+            Text('$agentes agente(s)'),
+            Text('$terceirizados terceirizado(s)'),
+            Text('$coordenadores habilitado(s) para coordenar'),
+          ],
+        ),
       ),
     );
   }

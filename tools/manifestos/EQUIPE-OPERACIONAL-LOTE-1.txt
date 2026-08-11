@@ -1,0 +1,45 @@
+EQUIPE OPERACIONAL - LOTE 1
+Data: 2026-08-10
+Branch: feature/equipe-operacional-lote-1
+
+ESCOPO
+- Modelo de membro da equipe operacional.
+- Vinculos Agente e Terceirizado.
+- Habilitacao para coordenar acoes.
+- Sincronizacao de usuarios ativos.
+- Compatibilidade com coordenadores legados.
+- Nova interface administrativa Equipe Operacional.
+- Regras Firestore com leitura operacional e escrita administrativa.
+
+FORA DO ESCOPO
+- Selecao de pessoas no RAE.
+- Alteracao da tela Recursos Operacionais.
+- Alteracao do PDF.
+- Publicacao das regras no Firebase.
+
+VALIDACOES
+- flutter analyze --no-pub: aprovado.
+- testes Flutter completos: 531 aprovados.
+- testes Firestore: 19 aprovados.
+
+CORRECAO R1
+- Sincronizacao preserva ativo/inativo configurado.
+- Sincronizacao preserva vinculo Agente/Terceirizado.
+- Sincronizacao preserva habilitacao para coordenar.
+- Valores padrao sao aplicados somente a membros novos.
+
+METODOLOGIA DE TESTE
+- Contas novas sao criadas no Firebase Authentication.
+- O documento de usuario utiliza o mesmo UID na colecao usuarios.
+- A Equipe Operacional e atualizada pelo comando de sincronizacao.
+- A tela Usuarios permanece somente para consulta nesta fase.
+
+ESTADO EXTERNO
+- Regras Firestore publicadas em geduc-rae-mobile em 2026-08-11.
+- APK R1: FENIX_EQUIPE_OPERACIONAL_LOTE1_R1_20260811_DEBUG.apk
+- SHA-256: A75C6269C99BAEE8E2FDDF0D1058880DFC76BEFF0D1766BCB5D117B0CB6DF7B8
+
+PUBLICACAO DE CODIGO
+- Commit: nao realizado.
+- Push: nao realizado.
+- PR: nao aberto.

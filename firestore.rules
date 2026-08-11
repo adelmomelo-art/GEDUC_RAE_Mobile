@@ -84,6 +84,28 @@ service cloud.firestore {
         );
     }
 
+    function membroEquipeValido() {
+      return request.resource.data.keys().hasAll([
+          'usuarioId',
+          'nome',
+          'vinculo',
+          'podeCoordenar',
+          'ativo',
+          'origem',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.usuarioId is string
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.vinculo in ['agente', 'terceirizado']
+        && request.resource.data.podeCoordenar is bool
+        && request.resource.data.ativo is bool
+        && request.resource.data.origem is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+    }
+
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
@@ -114,6 +136,15 @@ service cloud.firestore {
     match /coordenadores/{coordenadorId} {
       allow get, list: if usuarioAtivo();
       allow create, update: if administrador();
+      allow delete: if false;
+    }
+
+    match /equipe_operacional/{membroId} {
+      allow get, list: if usuarioAtivo();
+      allow create: if administrador() && membroEquipeValido();
+      allow update: if administrador()
+        && membroEquipeValido()
+        && createdAtPreservadoOuRegularizado();
       allow delete: if false;
     }
 

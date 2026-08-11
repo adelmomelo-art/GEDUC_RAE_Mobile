@@ -57,6 +57,16 @@ async function semear() {
     await db.collection('domains').doc('foco_legado').set(dominioLegado);
     await db.collection('tipos_acoes').doc('tipo-1').set({ nomeAcao: 'Teste' });
     await db.collection('coordenadores').doc('coord-1').set({ nome: 'Teste' });
+    await db.collection('equipe_operacional').doc('membro-1').set({
+      usuarioId: 'agente',
+      nome: 'Agente Teste',
+      vinculo: 'agente',
+      podeCoordenar: false,
+      ativo: true,
+      origem: 'usuario',
+      createdAt: new Date('2026-08-10T12:00:00.000Z'),
+      updatedAt: new Date('2026-08-10T12:00:00.000Z'),
+    });
     await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste' });
     await db.collection('materiais').doc('material-1').set({ nomeMaterial: 'Teste' });
     await db.collection('acoes').doc('acao-1').set({ status: 'rascunho' });
@@ -130,6 +140,53 @@ test('todos os perfis ativos leem catálogos operacionais', async () => {
     await assertSucceeds(banco(uid).collection('regionais').get());
     await assertSucceeds(banco(uid).collection('materiais').get());
   }
+});
+
+test('todos os perfis ativos leem a equipe operacional', async () => {
+  for (const uid of ['admin', 'gestor', 'coordenador', 'agente']) {
+    await assertSucceeds(banco(uid).collection('equipe_operacional').get());
+  }
+  await assertFails(banco('inativo').collection('equipe_operacional').get());
+});
+
+test('somente administrador mantém a equipe operacional', async () => {
+  const dados = {
+    usuarioId: 'novo-agente',
+    nome: 'Novo Agente',
+    vinculo: 'agente',
+    podeCoordenar: true,
+    ativo: true,
+    origem: 'usuario',
+    createdAt: new Date('2026-08-10T12:00:00.000Z'),
+    updatedAt: new Date('2026-08-10T12:00:00.000Z'),
+  };
+
+  await assertSucceeds(
+    banco('admin').collection('equipe_operacional').doc('novo-agente').set(dados),
+  );
+  await assertFails(
+    banco('gestor').collection('equipe_operacional').doc('gestor-teste').set(dados),
+  );
+  await assertFails(
+    banco('coordenador').collection('equipe_operacional').doc('coord-teste').set(dados),
+  );
+});
+
+test('equipe operacional rejeita vínculo inválido e exclusão', async () => {
+  const ref = banco('admin').collection('equipe_operacional').doc('invalido');
+  await assertFails(ref.set({
+    usuarioId: 'x',
+    nome: 'Inválido',
+    vinculo: 'voluntario',
+    podeCoordenar: false,
+    ativo: true,
+    origem: 'usuario',
+    createdAt: new Date('2026-08-10T12:00:00.000Z'),
+    updatedAt: new Date('2026-08-10T12:00:00.000Z'),
+  }));
+  await assertFails(
+    banco('admin').collection('equipe_operacional').doc('membro-1').delete(),
+  );
 });
 
 test('administrador e gestor gerenciam domínios e tipos de ações', async () => {

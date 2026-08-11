@@ -274,6 +274,8 @@ class AcaoController extends ChangeNotifier {
     required String endereco,
     required String bairro,
     required String regional,
+    String regionalId = '',
+    String tipoRegional = '',
     required String equipamentoReferencia,
     required double latitude,
     required double longitude,
@@ -299,6 +301,8 @@ class AcaoController extends ChangeNotifier {
       endereco: endereco.trim(),
       bairro: bairro.trim(),
       regional: regional.trim(),
+      regionalId: regionalId.trim(),
+      tipoRegional: tipoRegional.trim(),
       equipamentoReferencia: referenciaNormalizada,
       nomeLocal: nomeLocal.trim(),
       pontoReferencia: referenciaNormalizada,
@@ -510,8 +514,7 @@ class AcaoController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      historicoComparacao =
-          await acaoRepository.listarAcoesOnlineFuture();
+      historicoComparacao = await acaoRepository.listarAcoesOnlineFuture();
     } catch (e) {
       historicoComparacao = [];
       erroHistoricoComparacao =
@@ -547,8 +550,7 @@ class AcaoController extends ChangeNotifier {
       return false;
     }
 
-    if (acao.pontoReferencia.isEmpty &&
-        acao.equipamentoReferencia.isEmpty) {
+    if (acao.pontoReferencia.isEmpty && acao.equipamentoReferencia.isEmpty) {
       erro = 'Informe o ponto de referência.';
       return false;
     }

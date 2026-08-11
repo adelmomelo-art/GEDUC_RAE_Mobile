@@ -73,6 +73,8 @@ class AcaoModel {
   final String endereco;
   final String bairro;
   final String regional;
+  final String regionalId;
+  final String tipoRegional;
 
   /// Campo legado preservado para compatibilidade com registros anteriores.
   final String equipamentoReferencia;
@@ -173,6 +175,8 @@ class AcaoModel {
     required this.endereco,
     required this.bairro,
     required this.regional,
+    this.regionalId = '',
+    this.tipoRegional = '',
     this.equipamentoReferencia = '',
     this.nomeLocal = '',
     this.pontoReferencia = '',
@@ -232,6 +236,8 @@ class AcaoModel {
     String? endereco,
     String? bairro,
     String? regional,
+    String? regionalId,
+    String? tipoRegional,
     String? equipamentoReferencia,
     String? nomeLocal,
     String? pontoReferencia,
@@ -291,6 +297,8 @@ class AcaoModel {
       endereco: endereco ?? this.endereco,
       bairro: bairro ?? this.bairro,
       regional: regional ?? this.regional,
+      regionalId: regionalId ?? this.regionalId,
+      tipoRegional: tipoRegional ?? this.tipoRegional,
       equipamentoReferencia:
           equipamentoReferencia ?? this.equipamentoReferencia,
       nomeLocal: nomeLocal ?? this.nomeLocal,
@@ -300,44 +308,36 @@ class AcaoModel {
       origemLocalizacao: origemLocalizacao ?? this.origemLocalizacao,
       precisaoGps: precisaoGps ?? this.precisaoGps,
       dataHoraCaptura: dataHoraCaptura ?? this.dataHoraCaptura,
-      localizacaoValidada:
-          localizacaoValidada ?? this.localizacaoValidada,
-      localizacaoEditadaManualmente: localizacaoEditadaManualmente ??
-          this.localizacaoEditadaManualmente,
+      localizacaoValidada: localizacaoValidada ?? this.localizacaoValidada,
+      localizacaoEditadaManualmente:
+          localizacaoEditadaManualmente ?? this.localizacaoEditadaManualmente,
       fatorRiscoIds: fatorRiscoIds ?? this.fatorRiscoIds,
       mudancaComportamentoId:
           mudancaComportamentoId ?? this.mudancaComportamentoId,
       formacaoId: formacaoId ?? this.formacaoId,
       tipoPublicoId: tipoPublicoId ?? this.tipoPublicoId,
       publicoId: publicoId ?? this.publicoId,
-      tipoParticipacaoIds:
-          tipoParticipacaoIds ?? this.tipoParticipacaoIds,
+      tipoParticipacaoIds: tipoParticipacaoIds ?? this.tipoParticipacaoIds,
       focoTematicoIds: focoTematicoIds ?? this.focoTematicoIds,
       perfilUsuarioIds: perfilUsuarioIds ?? this.perfilUsuarioIds,
-      sexoPredominanteId:
-          sexoPredominanteId ?? this.sexoPredominanteId,
-      instituicaoParceira:
-          instituicaoParceira ?? this.instituicaoParceira,
+      sexoPredominanteId: sexoPredominanteId ?? this.sexoPredominanteId,
+      instituicaoParceira: instituicaoParceira ?? this.instituicaoParceira,
       coordenadorId: coordenadorId ?? this.coordenadorId,
       coordenadorNome: coordenadorNome ?? this.coordenadorNome,
       agentesTransito: agentesTransito ?? this.agentesTransito,
-      equipeTerceirizada:
-          equipeTerceirizada ?? this.equipeTerceirizada,
-      materialUtilizadoIds:
-          materialUtilizadoIds ?? this.materialUtilizadoIds,
+      equipeTerceirizada: equipeTerceirizada ?? this.equipeTerceirizada,
+      materialUtilizadoIds: materialUtilizadoIds ?? this.materialUtilizadoIds,
       coberturaMidia: coberturaMidia ?? this.coberturaMidia,
       houveParticipacaoOutroOrgao:
           houveParticipacaoOutroOrgao ?? this.houveParticipacaoOutroOrgao,
-      orgaoParticipanteId:
-          orgaoParticipanteId ?? this.orgaoParticipanteId,
+      orgaoParticipanteId: orgaoParticipanteId ?? this.orgaoParticipanteId,
       notaAvaliacao: notaAvaliacao ?? this.notaAvaliacao,
       pontosPositivos: pontosPositivos ?? this.pontosPositivos,
       dificuldadesEncontradas:
           dificuldadesEncontradas ?? this.dificuldadesEncontradas,
       recomendacoes: recomendacoes ?? this.recomendacoes,
       fotosUrls: fotosUrls ?? this.fotosUrls,
-      descricaoEvidencias:
-          descricaoEvidencias ?? this.descricaoEvidencias,
+      descricaoEvidencias: descricaoEvidencias ?? this.descricaoEvidencias,
       status: status ?? this.status,
       sincronizado: sincronizado ?? this.sincronizado,
     );
@@ -364,6 +364,8 @@ class AcaoModel {
         'endereco': endereco,
         'bairro': bairro,
         'regional': regional,
+        'regionalId': regionalId,
+        'tipoRegional': tipoRegional,
         'equipamentoReferencia': equipamentoReferencia,
         'nomeLocal': nomeLocal,
         'pontoReferencia': pontoReferencia,
@@ -431,6 +433,8 @@ class AcaoModel {
       endereco: _texto(map['endereco']),
       bairro: _texto(map['bairro']),
       regional: _texto(map['regional']),
+      regionalId: _texto(map['regionalId']),
+      tipoRegional: _texto(map['tipoRegional']),
       equipamentoReferencia: _texto(map['equipamentoReferencia']),
       nomeLocal: _texto(map['nomeLocal']),
       pontoReferencia: pontoReferencia,

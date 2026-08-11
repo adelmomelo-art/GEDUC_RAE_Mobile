@@ -7,6 +7,7 @@ import '../../../core/services/localizacao/location_exception.dart';
 import '../../../core/services/localizacao/regional_service.dart';
 import '../../../core/services/localizacao/reverse_geocoding_service.dart';
 import '../../../data/models/acao_model.dart';
+import '../../../data/models/regional_model.dart';
 import '../../acoes/controllers/acao_controller.dart';
 
 /// Controller responsável por coordenar todo o fluxo operacional
@@ -53,6 +54,9 @@ class LocalizacaoController extends ChangeNotifier {
   OrigemLocalizacao? _origemLocalizacao;
   bool _localizacaoEditadaManualmente = false;
   bool _regionalEditadaManualmente = false;
+  List<RegionalModel> _regionaisAtivas = const <RegionalModel>[];
+  String _regionalId = '';
+  String _tipoRegional = TipoRegional.administrativa.codigo;
 
   int _identificadorConsultaRegional = 0;
 
@@ -75,6 +79,9 @@ class LocalizacaoController extends ChangeNotifier {
   }
 
   bool get regionalEditadaManualmente => _regionalEditadaManualmente;
+  List<RegionalModel> get regionaisAtivas => _regionaisAtivas;
+  String get regionalId => _regionalId;
+  String get tipoRegional => _tipoRegional;
 
   bool get possuiLocalizacao {
     return _coordenadasValidas(
@@ -166,6 +173,10 @@ class LocalizacaoController extends ChangeNotifier {
       enderecoController.text = acao.endereco;
       bairroController.text = acao.bairro;
       regionalController.text = acao.regional;
+      _regionalId = acao.regionalId;
+      _tipoRegional = acao.tipoRegional.isEmpty
+          ? TipoRegional.administrativa.codigo
+          : acao.tipoRegional;
       _regionalEditadaManualmente = false;
 
       pontoReferenciaController.text = acao.pontoReferencia.isNotEmpty
@@ -187,6 +198,36 @@ class LocalizacaoController extends ChangeNotifier {
     }
 
     _dadosIniciaisCarregados = true;
+    notifyListeners();
+  }
+
+  Future<void> carregarRegionaisAtivas() async {
+    _regionaisAtivas = await _regionalService.listarAtivas();
+
+    if (_regionalId.isEmpty && regionalController.text.trim().isNotEmpty) {
+      final nomeAtual = regionalController.text.trim().toLowerCase();
+      final correspondencias = _regionaisAtivas
+          .where((item) => item.nome.trim().toLowerCase() == nomeAtual)
+          .toList();
+      if (correspondencias.length == 1) {
+        _regionalId = correspondencias.single.id;
+        _tipoRegional = correspondencias.single.tipo.codigo;
+      }
+    }
+    notifyListeners();
+  }
+
+  void selecionarRegional(String? id) {
+    final correspondencias =
+        _regionaisAtivas.where((item) => item.id == id).toList(growable: false);
+    if (correspondencias.length != 1) return;
+
+    final regional = correspondencias.single;
+    _regionalId = regional.id;
+    _tipoRegional = regional.tipo.codigo;
+    regionalController.text = regional.nome;
+    _regionalEditadaManualmente = false;
+    _identificadorConsultaRegional++;
     notifyListeners();
   }
 
@@ -246,7 +287,6 @@ class LocalizacaoController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   /// Pesquisa coordenadas a partir de um endereço informado pelo usuário.
   ///
@@ -365,6 +405,7 @@ class LocalizacaoController extends ChangeNotifier {
     _regionalEditadaManualmente = false;
 
     if (bairroInformado.isEmpty) {
+      _regionalId = '';
       regionalController.clear();
       notifyListeners();
 
@@ -386,10 +427,12 @@ class LocalizacaoController extends ChangeNotifier {
       }
 
       if (resultado.encontrada && resultado.nome.trim().isNotEmpty) {
+        _regionalId = resultado.id;
+        _tipoRegional = TipoRegional.administrativa.codigo;
         regionalController.text = resultado.nome.trim();
         _regionalEditadaManualmente = false;
-      } else if (limparQuandoNaoEncontrada &&
-          !_regionalEditadaManualmente) {
+      } else if (limparQuandoNaoEncontrada && !_regionalEditadaManualmente) {
+        _regionalId = '';
         regionalController.clear();
       }
 
@@ -438,6 +481,8 @@ class LocalizacaoController extends ChangeNotifier {
       endereco: enderecoController.text.trim(),
       bairro: bairroController.text.trim(),
       regional: regionalController.text.trim(),
+      regionalId: _regionalId,
+      tipoRegional: _tipoRegional,
       equipamentoReferencia: pontoReferenciaController.text.trim(),
       latitude: _latitude,
       longitude: _longitude,
@@ -468,8 +513,7 @@ class LocalizacaoController extends ChangeNotifier {
     }
 
     if (!possuiRegional) {
-      return 'Informe a Regional. Caso ela não seja identificada '
-          'automaticamente, preencha o campo manualmente.';
+      return 'Selecione uma Regional Administrativa cadastrada.';
     }
 
     if (!possuiPontoReferencia) {

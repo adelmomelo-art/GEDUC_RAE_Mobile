@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../data/models/regional_model.dart';
+
 /// Resultado da identificação territorial de uma Regional.
 class RegionalResult {
   const RegionalResult({
@@ -7,12 +9,16 @@ class RegionalResult {
     this.id = '',
     this.nome = '',
     this.bairroConsultado = '',
+    this.ambigua = false,
+    this.correspondencias = const <RegionalModel>[],
   });
 
   final bool encontrada;
   final String id;
   final String nome;
   final String bairroConsultado;
+  final bool ambigua;
+  final List<RegionalModel> correspondencias;
 
   factory RegionalResult.naoEncontrada({
     required String bairroConsultado,
@@ -45,7 +51,31 @@ class RegionalService {
 
   final FirebaseFirestore _firestore;
 
+  Future<List<RegionalModel>> listarAtivas({
+    TipoRegional tipo = TipoRegional.administrativa,
+  }) async {
+    final snapshot = await _firestore
+        .collection('regionais')
+        .where('ativo', isEqualTo: true)
+        .get();
+
+    final regionais = snapshot.docs
+        .map((doc) => RegionalModel.fromMap(doc.id, doc.data()))
+        .where((regional) => regional.tipo == tipo && regional.nome.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.nome.compareTo(b.nome));
+    return regionais;
+  }
+
   Future<RegionalResult> buscarPorBairro(String bairro) async {
+    final regionais = await listarAtivas();
+    return resolverPorBairro(bairro, regionais);
+  }
+
+  static RegionalResult resolverPorBairro(
+    String bairro,
+    List<RegionalModel> regionais,
+  ) {
     final bairroNormalizado = _normalizarTexto(bairro);
 
     if (bairroNormalizado.isEmpty) {
@@ -54,31 +84,29 @@ class RegionalService {
       );
     }
 
-    final snapshot = await _firestore
-        .collection('regionais')
-        .where('ativo', isEqualTo: true)
-        .get();
-
-    for (final documento in snapshot.docs) {
-      final dados = documento.data();
-
-      final bairrosVinculados = _converterListaDeBairros(
-        dados['bairrosVinculados'],
-      );
-
-      final possuiBairro = bairrosVinculados.any(
+    final correspondencias = regionais.where((regional) {
+      return regional.bairros.any(
         (item) => _normalizarTexto(item) == bairroNormalizado,
       );
+    }).toList(growable: false);
 
-      if (!possuiBairro) {
-        continue;
-      }
-
+    if (correspondencias.length == 1) {
+      final regional = correspondencias.single;
       return RegionalResult(
         encontrada: true,
-        id: documento.id,
-        nome: _obterNomeRegional(dados),
+        id: regional.id,
+        nome: regional.nome,
         bairroConsultado: bairro.trim(),
+        correspondencias: correspondencias,
+      );
+    }
+
+    if (correspondencias.length > 1) {
+      return RegionalResult(
+        encontrada: false,
+        ambigua: true,
+        bairroConsultado: bairro.trim(),
+        correspondencias: correspondencias,
       );
     }
 
@@ -87,36 +115,7 @@ class RegionalService {
     );
   }
 
-  List<String> _converterListaDeBairros(dynamic valor) {
-    if (valor is! Iterable) {
-      return const <String>[];
-    }
-
-    return valor
-        .map((item) => item?.toString().trim() ?? '')
-        .where((item) => item.isNotEmpty)
-        .toList(growable: false);
-  }
-
-  String _obterNomeRegional(Map<String, dynamic> dados) {
-    final valoresPossiveis = <dynamic>[
-      dados['nomeRegional'],
-      dados['nome'],
-      dados['descricao'],
-    ];
-
-    for (final valor in valoresPossiveis) {
-      final texto = valor?.toString().trim() ?? '';
-
-      if (texto.isNotEmpty) {
-        return texto;
-      }
-    }
-
-    return '';
-  }
-
-  String _normalizarTexto(String valor) {
+  static String _normalizarTexto(String valor) {
     var texto = valor.trim().toLowerCase();
 
     const substituicoes = <String, String>{

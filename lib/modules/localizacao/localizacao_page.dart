@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -32,6 +34,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
   void initState() {
     super.initState();
     _localizacaoController = LocalizacaoController();
+    unawaited(_localizacaoController.carregarRegionaisAtivas());
   }
 
   @override
@@ -102,15 +105,19 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       }
 
       if (!resultado.encontrada) {
-        final mensagem = 'Identifiquei o bairro “${bairro.trim()}”, mas não '
-            'encontrei uma Regional correspondente na base territorial. '
-            'Preencha a Regional manualmente e depois revise o cadastro '
-            'de bairros no Firebase.';
+        final mensagem = resultado.ambigua
+            ? 'O bairro “${bairro.trim()}” aparece em mais de uma Regional '
+                'Administrativa ativa. Corrija o cadastro em Administração > '
+                'Regionais e selecione a Regional correta.'
+            : 'Identifiquei o bairro “${bairro.trim()}”, mas não encontrei uma '
+                'Regional Administrativa correspondente. Selecione uma '
+                'Regional oficial e revise o cadastro de bairros.';
 
         _registrarErroFaxita(mensagem);
         _mostrarMensagem(
-          'Regional não identificada. O campo foi liberado para '
-          'preenchimento manual.',
+          resultado.ambigua
+              ? 'Cadastro territorial inconsistente: selecione a Regional correta.'
+              : 'Regional não identificada: selecione uma opção oficial.',
         );
       }
     } catch (_) {
@@ -119,7 +126,7 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
       }
 
       const mensagem = 'Não foi possível identificar a Regional neste momento. '
-          'Preencha o campo manualmente.';
+          'Selecione uma opção oficial cadastrada.';
       _registrarErroFaxita(mensagem);
       _mostrarMensagem(mensagem);
     }
@@ -376,9 +383,9 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
     _localizacaoController.notificarEdicaoDeDados();
   }
 
-  void _regionalFoiEditada(String valor) {
+  void _regionalFoiSelecionada(String? id) {
     _limparFeedbackFaxita();
-    _localizacaoController.registrarEdicaoManualDaRegional(valor);
+    _localizacaoController.selecionarRegional(id);
   }
 
   void _registrarErroFaxita(String mensagem) {
@@ -544,10 +551,12 @@ class _LocalizacaoPageState extends State<LocalizacaoPage> {
                                   bairroController: controller.bairroController,
                                   regionalController:
                                       controller.regionalController,
+                                  regionais: controller.regionaisAtivas,
+                                  regionalId: controller.regionalId,
                                   pontoReferenciaController:
                                       controller.pontoReferenciaController,
                                   onBairroChanged: _buscarRegionalPorBairro,
-                                  onRegionalChanged: _regionalFoiEditada,
+                                  onRegionalSelected: _regionalFoiSelecionada,
                                   onDadosChanged: _dadosForamEditados,
                                 ),
                                 const SizedBox(height: 12),

@@ -11,16 +11,24 @@ class ExecutiveKpiGrid extends StatelessWidget {
     required this.larguraDisponivel,
     required this.totalAcoes,
     required this.totalPessoas,
-    required this.totalVeiculos,
-    required this.totalCredenciais,
+    required this.metasAtingidas,
+    required this.profissionaisMobilizados,
+    this.comparacaoAcoes,
+    this.comparacaoPessoas,
+    this.comparacaoMetas,
+    this.comparacaoProfissionais,
     super.key,
   });
 
   final double larguraDisponivel;
   final int totalAcoes;
   final int totalPessoas;
-  final int totalVeiculos;
-  final int totalCredenciais;
+  final int metasAtingidas;
+  final int profissionaisMobilizados;
+  final int? comparacaoAcoes;
+  final int? comparacaoPessoas;
+  final int? comparacaoMetas;
+  final int? comparacaoProfissionais;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +45,7 @@ class ExecutiveKpiGrid extends StatelessWidget {
         legenda: 'RAEs consolidados',
         icone: Icons.assignment_turned_in_outlined,
         cor: DashboardColors.blue,
+        comparacao: comparacaoAcoes,
       ),
       _IndicadorExecutivo(
         titulo: 'Pessoas alcançadas',
@@ -44,20 +53,23 @@ class ExecutiveKpiGrid extends StatelessWidget {
         legenda: 'Público total',
         icone: Icons.groups_2_outlined,
         cor: DashboardColors.primary,
+        comparacao: comparacaoPessoas,
       ),
       _IndicadorExecutivo(
-        titulo: 'Veículos abordados',
-        valor: totalVeiculos,
-        legenda: 'Abordagens educativas',
-        icone: Icons.directions_car_filled_outlined,
+        titulo: 'Metas atingidas',
+        valor: metasAtingidas,
+        legenda: 'Ações com meta alcançada',
+        icone: Icons.flag_outlined,
         cor: DashboardColors.orange,
+        comparacao: comparacaoMetas,
       ),
       _IndicadorExecutivo(
-        titulo: 'Credenciais emitidas',
-        valor: totalCredenciais,
-        legenda: 'Emissões registradas',
+        titulo: 'Profissionais mobilizados',
+        valor: profissionaisMobilizados,
+        legenda: 'Agentes e terceirizados',
         icone: Icons.badge_outlined,
         cor: DashboardColors.purple,
+        comparacao: comparacaoProfissionais,
       ),
     ];
 
@@ -69,7 +81,7 @@ class ExecutiveKpiGrid extends StatelessWidget {
         crossAxisCount: colunas,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        childAspectRatio: colunas == 1 ? 2.9 : 1.7,
+        childAspectRatio: colunas == 1 ? 2.45 : 1.45,
       ),
       itemBuilder: (context, index) {
         return _ExecutiveKpiCard(indicador: indicadores[index]);
@@ -137,6 +149,17 @@ class _ExecutiveKpiCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.black54, fontSize: 10),
                 ),
+                if (indicador.comparacao != null)
+                  Text(
+                    _variacao(indicador.valor, indicador.comparacao!),
+                    style: TextStyle(
+                      color: indicador.valor >= indicador.comparacao!
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -160,6 +183,12 @@ class _ExecutiveKpiCard extends StatelessWidget {
 
     return buffer.toString();
   }
+
+  String _variacao(int atual, int anterior) {
+    if (anterior == 0) return atual == 0 ? 'Sem variação' : 'Novo no período';
+    final percentual = ((atual - anterior) / anterior * 100).round();
+    return '${percentual >= 0 ? '+' : ''}$percentual% na comparação';
+  }
 }
 
 class _IndicadorExecutivo {
@@ -169,6 +198,7 @@ class _IndicadorExecutivo {
     required this.legenda,
     required this.icone,
     required this.cor,
+    this.comparacao,
   });
 
   final String titulo;
@@ -176,4 +206,5 @@ class _IndicadorExecutivo {
   final String legenda;
   final IconData icone;
   final Color cor;
+  final int? comparacao;
 }

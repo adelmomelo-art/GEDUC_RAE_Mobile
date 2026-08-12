@@ -4,6 +4,8 @@ import '../../../core/services/dashboard_service.dart';
 import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/offline_service.dart';
 import '../../../core/services/sync_service.dart';
+import '../../../data/models/acao_model.dart';
+import '../models/cio_dashboard_filters.dart';
 
 class DashboardController extends ChangeNotifier {
   DashboardController({
@@ -28,7 +30,10 @@ class DashboardController extends ChangeNotifier {
   late final SyncService _syncService;
 
   DashboardIndicadores _indicadores = DashboardIndicadores.vazio();
+  DashboardIndicadores? _indicadoresComparacao;
   DashboardPeriodo _periodoSelecionado = DashboardPeriodo.geral;
+  List<AcaoModel> _todasAsAcoes = const <AcaoModel>[];
+  CioDashboardFilters _filtros = const CioDashboardFilters();
 
   bool _carregando = false;
   bool _online = false;
@@ -39,7 +44,10 @@ class DashboardController extends ChangeNotifier {
   bool _disposed = false;
 
   DashboardIndicadores get indicadores => _indicadores;
+  DashboardIndicadores? get indicadoresComparacao => _indicadoresComparacao;
   DashboardPeriodo get periodoSelecionado => _periodoSelecionado;
+  CioDashboardFilters get filtros => _filtros;
+  List<AcaoModel> get todasAsAcoes => _todasAsAcoes;
 
   bool get carregando => _carregando;
   bool get sincronizando => _syncService.sincronizando;
@@ -72,10 +80,8 @@ class DashboardController extends ChangeNotifier {
       final pendentes = resultados[1];
       final conectado = resultados[2];
 
-      _indicadores = _dashboardService.calcularIndicadores(
-        acoes,
-        periodo: _periodoSelecionado,
-      );
+      _todasAsAcoes = List<AcaoModel>.from(acoes);
+      _recalcularIndicadores();
 
       _totalPendentes = pendentes.length;
       _online = conectado;
@@ -87,6 +93,39 @@ class DashboardController extends ChangeNotifier {
       _carregando = false;
       _notificar();
     }
+  }
+
+  void aplicarFiltros(CioDashboardFilters filtros) {
+    _filtros = filtros;
+    _recalcularIndicadores();
+    _notificar();
+  }
+
+  void limparFiltrosSecundarios() {
+    _filtros = _filtros.copyWith(
+      regional: '',
+      tipoAcao: '',
+      status: '',
+      coordenador: '',
+    );
+    _recalcularIndicadores();
+    _notificar();
+  }
+
+  void _recalcularIndicadores() {
+    final agora = DateTime.now();
+    final filtradas = _filtros.aplicar(_todasAsAcoes, agora);
+    _indicadores = _dashboardService.calcularIndicadores(
+      filtradas,
+      periodo: DashboardPeriodo.geral,
+    );
+    final faixaComparacao = _filtros.intervaloComparacao(agora);
+    _indicadoresComparacao = faixaComparacao == null
+        ? null
+        : _dashboardService.calcularIndicadores(
+            _filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao),
+            periodo: DashboardPeriodo.geral,
+          );
   }
 
   Future<void> alterarPeriodo(

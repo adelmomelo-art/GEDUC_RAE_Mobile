@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/acao_model.dart';
 import 'controllers/dashboard_controller.dart';
 import 'widgets/executive/executive_filters.dart';
 import 'widgets/executive/executive_header.dart';
@@ -23,8 +24,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   int get totalAcoes => controller.indicadores.totalAcoes;
   int get totalPessoas => controller.indicadores.pessoasAlcancadas;
-  int get totalVeiculos => controller.indicadores.veiculosAbordados;
-  int get totalCredenciais => controller.indicadores.credenciaisEmitidas;
+  int get metasAtingidas => controller.indicadores.metasAtingidas;
+  int get profissionaisMobilizados =>
+      controller.indicadores.totalAgentes +
+      controller.indicadores.totalEquipeTerceirizada;
 
   int get totalPendentes => controller.totalPendentes;
   int get totalSincronizadas => controller.totalSincronizadas;
@@ -32,7 +35,6 @@ class _DashboardPageState extends State<DashboardPage> {
   DateTime? get ultimaSincronizacao => controller.ultimaSincronizacao;
 
   bool get carregando => controller.carregando;
-  String get periodoSelecionado => controller.periodoSelecionadoLabel;
 
   @override
   void initState() {
@@ -116,9 +118,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       DashboardSection(
                         child: ExecutiveFilters(
-                          periodoSelecionado: periodoSelecionado,
-                          onPeriodoSelecionado:
-                              controller.alterarPeriodoPorLabel,
+                          filtros: controller.filtros,
+                          regionais: _opcoes((acao) => acao.regional),
+                          tiposAcao: _opcoes((acao) => acao.tipoAcao),
+                          statusDisponiveis: _opcoes((acao) => acao.status),
+                          coordenadores:
+                              _opcoes((acao) => acao.coordenadorNome),
+                          onAplicar: controller.aplicarFiltros,
                         ),
                       ),
                       DashboardSection(
@@ -126,8 +132,21 @@ class _DashboardPageState extends State<DashboardPage> {
                           larguraDisponivel: largura,
                           totalAcoes: totalAcoes,
                           totalPessoas: totalPessoas,
-                          totalVeiculos: totalVeiculos,
-                          totalCredenciais: totalCredenciais,
+                          metasAtingidas: metasAtingidas,
+                          profissionaisMobilizados: profissionaisMobilizados,
+                          comparacaoAcoes:
+                              controller.indicadoresComparacao?.totalAcoes,
+                          comparacaoPessoas: controller
+                              .indicadoresComparacao?.pessoasAlcancadas,
+                          comparacaoMetas:
+                              controller.indicadoresComparacao?.metasAtingidas,
+                          comparacaoProfissionais:
+                              controller.indicadoresComparacao == null
+                                  ? null
+                                  : controller
+                                          .indicadoresComparacao!.totalAgentes +
+                                      controller.indicadoresComparacao!
+                                          .totalEquipeTerceirizada,
                         ),
                       ),
                       DashboardSection(
@@ -140,8 +159,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       DashboardSection(
                         child: DashboardCharts(
                           totalPessoas: totalPessoas,
-                          totalVeiculos: totalVeiculos,
-                          totalCredenciais: totalCredenciais,
+                          totalVeiculos:
+                              controller.indicadores.veiculosAbordados,
+                          totalCredenciais:
+                              controller.indicadores.credenciaisEmitidas,
                         ),
                       ),
                       OperationalStatusPanel(
@@ -159,5 +180,16 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
     );
+  }
+
+  List<String> _opcoes(String Function(AcaoModel acao) valor) {
+    final itens = controller.todasAsAcoes
+        .map(valor)
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return itens;
   }
 }

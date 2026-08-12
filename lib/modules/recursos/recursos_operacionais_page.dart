@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/services/equipe_operacional_service.dart';
+import '../../data/models/membro_equipe_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
@@ -16,13 +17,19 @@ class RecursosOperacionaisPage extends StatefulWidget {
 }
 
 class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
-  final TextEditingController agentesController =
-      TextEditingController(text: '0');
-  final TextEditingController terceirizadosController =
-      TextEditingController(text: '0');
+  final EquipeOperacionalService _equipeService = EquipeOperacionalService();
+  final Set<String> _agenteIds = <String>{};
+  final Set<String> _terceirizadoIds = <String>{};
+  final Map<String, String> _nomesPersistidos = <String, String>{};
+  List<MembroEquipeModel> _membros = const <MembroEquipeModel>[];
+  String? _coordenadorMembroId;
+  bool _carregandoEquipe = true;
+  String? _erroEquipe;
+  bool _registroLegadoSemNomes = false;
+  int _agentesLegado = 0;
+  int _terceirizadosLegado = 0;
 
   bool coberturaMidia = false;
-  bool _dadosCarregados = false;
 
   final Set<String> materialUtilizadoIds = <String>{};
 
@@ -61,49 +68,109 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
     final acao = context.read<AcaoController>().acaoAtual;
 
     if (acao != null) {
-      agentesController.text = acao.agentesTransito.toString();
-      terceirizadosController.text = acao.equipeTerceirizada.toString();
+      _agenteIds.addAll(acao.agenteEquipeIds);
+      _terceirizadoIds.addAll(acao.terceirizadoEquipeIds);
+      for (var i = 0;
+          i < acao.agenteEquipeIds.length && i < acao.agenteEquipeNomes.length;
+          i++) {
+        _nomesPersistidos[acao.agenteEquipeIds[i]] = acao.agenteEquipeNomes[i];
+      }
+      for (var i = 0;
+          i < acao.terceirizadoEquipeIds.length &&
+              i < acao.terceirizadoEquipeNomes.length;
+          i++) {
+        _nomesPersistidos[acao.terceirizadoEquipeIds[i]] =
+            acao.terceirizadoEquipeNomes[i];
+      }
+      _agentesLegado = acao.agentesTransito;
+      _terceirizadosLegado = acao.equipeTerceirizada;
+      _registroLegadoSemNomes = _agenteIds.isEmpty &&
+          _terceirizadoIds.isEmpty &&
+          (_agentesLegado + _terceirizadosLegado) > 0;
       coberturaMidia = acao.coberturaMidia;
       materialUtilizadoIds.addAll(acao.materialUtilizadoIds);
     }
-
-    agentesController.addListener(_atualizarInterface);
-    terceirizadosController.addListener(_atualizarInterface);
-    _dadosCarregados = true;
+    _carregarEquipe();
   }
 
-  @override
-  void dispose() {
-    agentesController
-      ..removeListener(_atualizarInterface)
-      ..dispose();
+  Future<void> _carregarEquipe() async {
+    final acao = context.read<AcaoController>().acaoAtual;
+    try {
+      final membros = await _equipeService.listarMembros();
+      MembroEquipeModel? coordenador;
+      if (acao != null) {
+        final candidatos = membros.where(
+          (membro) =>
+              membro.id == acao.coordenadorId ||
+              membro.usuarioId == acao.coordenadorId,
+        );
+        if (candidatos.isNotEmpty) {
+          coordenador = candidatos.first;
+        } else {
+          final porNome = membros.where(
+            (membro) =>
+                membro.nome.trim().toLowerCase() ==
+                acao.coordenadorNome.trim().toLowerCase(),
+          );
+          if (porNome.length == 1) coordenador = porNome.first;
+        }
+      }
 
-    terceirizadosController
-      ..removeListener(_atualizarInterface)
-      ..dispose();
-
-    super.dispose();
+      if (!mounted) return;
+      setState(() {
+        _membros = membros;
+        _coordenadorMembroId = coordenador?.id;
+        _carregandoEquipe = false;
+        _erroEquipe = null;
+        if (!_registroLegadoSemNomes && coordenador != null) {
+          _selecionarObrigatorio(coordenador);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _carregandoEquipe = false;
+        _erroEquipe = 'Não foi possível carregar a Equipe Operacional.';
+      });
+    }
   }
 
-  void _atualizarInterface() {
-    if (!mounted || !_dadosCarregados) return;
-    setState(() {});
+  void _selecionarObrigatorio(MembroEquipeModel membro) {
+    _agenteIds.remove(membro.id);
+    _terceirizadoIds.remove(membro.id);
+    if (membro.vinculo == VinculoOperacional.agente) {
+      _agenteIds.add(membro.id);
+    } else {
+      _terceirizadoIds.add(membro.id);
+    }
+    _nomesPersistidos[membro.id] = membro.nome;
   }
 
-  int _valorInteiro(TextEditingController controller) {
-    return int.tryParse(controller.text.trim()) ?? 0;
+  MembroEquipeModel? _membro(String id) {
+    final encontrados = _membros.where((item) => item.id == id);
+    return encontrados.isEmpty ? null : encontrados.first;
   }
 
-  int get _agentes => _valorInteiro(agentesController);
+  String _nomeDo(String id) =>
+      _membro(id)?.nome ?? _nomesPersistidos[id] ?? 'Membro $id';
 
-  int get _terceirizados => _valorInteiro(terceirizadosController);
+  List<String> _nomesDos(Set<String> ids) =>
+      ids.map(_nomeDo).toList(growable: false)..sort();
+
+  int get _agentes =>
+      _registroLegadoSemNomes ? _agentesLegado : _agenteIds.length;
+
+  int get _terceirizados =>
+      _registroLegadoSemNomes ? _terceirizadosLegado : _terceirizadoIds.length;
 
   int get _efetivoTotal => _agentes + _terceirizados;
 
-  bool get _quantidadesValidas => _agentes >= 0 && _terceirizados >= 0;
+  bool get _coordenadorVinculado => _coordenadorMembroId != null;
 
   bool get _recursosCompletos =>
-      _quantidadesValidas && materialUtilizadoIds.isNotEmpty;
+      _coordenadorVinculado &&
+      _efetivoTotal > 0 &&
+      materialUtilizadoIds.isNotEmpty;
 
   _StatusPreenchimento get _statusPreenchimento {
     final semEquipe = _efetivoTotal == 0;
@@ -121,8 +188,9 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
   }
 
   String get _mensagemFaxita {
-    if (!_quantidadesValidas) {
-      return 'As quantidades informadas precisam ser iguais ou superiores a zero.';
+    if (!_carregandoEquipe && !_coordenadorVinculado) {
+      return 'O coordenador não está vinculado à Equipe Operacional. '
+          'Atualize a fundação administrativa antes de avançar.';
     }
 
     if (_efetivoTotal == 0 && materialUtilizadoIds.isEmpty) {
@@ -141,9 +209,23 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
   }
 
   void _persistirNoController() {
+    final agentesIds = _agenteIds.toList(growable: false)
+      ..sort((a, b) => _nomeDo(a).compareTo(_nomeDo(b)));
+    final terceirizadosIds = _terceirizadoIds.toList(growable: false)
+      ..sort((a, b) => _nomeDo(a).compareTo(_nomeDo(b)));
     context.read<AcaoController>().preencherRecursosOperacionais(
           agentesTransito: _agentes,
           equipeTerceirizada: _terceirizados,
+          agenteEquipeIds:
+              _registroLegadoSemNomes ? const <String>[] : agentesIds,
+          agenteEquipeNomes: _registroLegadoSemNomes
+              ? const <String>[]
+              : agentesIds.map(_nomeDo).toList(growable: false),
+          terceirizadoEquipeIds:
+              _registroLegadoSemNomes ? const <String>[] : terceirizadosIds,
+          terceirizadoEquipeNomes: _registroLegadoSemNomes
+              ? const <String>[]
+              : terceirizadosIds.map(_nomeDo).toList(growable: false),
           materialUtilizadoIds: materialUtilizadoIds.toList(),
           coberturaMidia: coberturaMidia,
         );
@@ -158,8 +240,15 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
   void _salvarEAvancar() {
     FocusScope.of(context).unfocus();
 
-    if (!_quantidadesValidas) {
-      _mostrarErro('As quantidades não podem ser negativas.');
+    if (!_coordenadorVinculado) {
+      _mostrarErro(
+        'Vincule o coordenador à Equipe Operacional antes de avançar.',
+      );
+      return;
+    }
+
+    if (_efetivoTotal == 0) {
+      _mostrarErro('Selecione ao menos uma pessoa da Equipe Operacional.');
       return;
     }
 
@@ -243,31 +332,159 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
     );
   }
 
-  Widget _campoNumero({
-    required String label,
-    required TextEditingController controller,
+  Future<void> _abrirSeletor(VinculoOperacional vinculo) async {
+    final selecionados = Set<String>.from(
+      vinculo == VinculoOperacional.agente ? _agenteIds : _terceirizadoIds,
+    );
+    final pesquisaController = TextEditingController();
+    final resultado = await showDialog<Set<String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final termo = pesquisaController.text.trim().toLowerCase();
+          final disponiveis = _membros.where((membro) {
+            return membro.vinculo == vinculo &&
+                (membro.ativo || selecionados.contains(membro.id)) &&
+                (termo.isEmpty || membro.nome.toLowerCase().contains(termo));
+          }).toList(growable: false);
+          return AlertDialog(
+            title: Text('Selecionar ${vinculo.rotulo.toLowerCase()}s'),
+            content: SizedBox(
+              width: 520,
+              height: 480,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: pesquisaController,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Pesquisar por nome',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: disponiveis.isEmpty
+                        ? const Center(child: Text('Nenhum membro disponível.'))
+                        : ListView.builder(
+                            itemCount: disponiveis.length,
+                            itemBuilder: (context, index) {
+                              final membro = disponiveis[index];
+                              final coordenador =
+                                  membro.id == _coordenadorMembroId;
+                              return CheckboxListTile(
+                                value: selecionados.contains(membro.id),
+                                onChanged: coordenador
+                                    ? null
+                                    : (marcado) => setDialogState(() {
+                                          if (marcado == true) {
+                                            selecionados.add(membro.id);
+                                          } else {
+                                            selecionados.remove(membro.id);
+                                          }
+                                        }),
+                                title: Text(membro.nome),
+                                subtitle: Text([
+                                  membro.vinculo.rotulo,
+                                  if (coordenador) 'Coordenador',
+                                  if (!membro.ativo) 'Inativo',
+                                ].join(' • ')),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('CANCELAR'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, selecionados),
+                child: const Text('CONFIRMAR'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    pesquisaController.dispose();
+    if (resultado == null || !mounted) return;
+    setState(() {
+      _registroLegadoSemNomes = false;
+      final destino =
+          vinculo == VinculoOperacional.agente ? _agenteIds : _terceirizadoIds;
+      destino
+        ..clear()
+        ..addAll(resultado);
+      for (final id in resultado) {
+        final membro = _membro(id);
+        if (membro != null) _nomesPersistidos[id] = membro.nome;
+      }
+      final coordenador =
+          _coordenadorMembroId == null ? null : _membro(_coordenadorMembroId!);
+      if (coordenador != null) _selecionarObrigatorio(coordenador);
+    });
+  }
+
+  Widget _seletorEquipe({
+    required VinculoOperacional vinculo,
     required IconData icone,
   }) {
-    return TextField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.next,
-      inputFormatters: <TextInputFormatter>[
-        FilteringTextInputFormatter.digitsOnly,
-      ],
-      onTap: () {
-        if (controller.text == '0') {
-          controller.selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: controller.text.length,
-          );
-        }
-      },
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icone),
-        border: const OutlineInputBorder(),
-        helperText: 'Informe um número inteiro igual ou superior a zero.',
+    final ids =
+        vinculo == VinculoOperacional.agente ? _agenteIds : _terceirizadoIds;
+    final nomes = _nomesDos(ids);
+    final quantidade =
+        vinculo == VinculoOperacional.agente ? _agentes : _terceirizados;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icone),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${vinculo.rotulo}s ($quantidade)',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _carregandoEquipe || _erroEquipe != null
+                    ? null
+                    : () => _abrirSeletor(vinculo),
+                icon: const Icon(Icons.person_add_alt_1),
+                label: const Text('Selecionar'),
+              ),
+            ],
+          ),
+          if (_registroLegadoSemNomes && quantidade > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$quantidade participante(s) sem identificação nominal '
+              '(registro anterior).',
+            ),
+          ] else if (nomes.isEmpty) ...[
+            const SizedBox(height: 8),
+            const Text('Nenhuma pessoa selecionada.'),
+          ] else ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: nomes.map((nome) => Chip(label: Text(nome))).toList(),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -502,17 +719,54 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
               titulo: 'Equipe envolvida',
               icone: Icons.groups_2_outlined,
               subtitulo:
-                  'Informe o efetivo diretamente mobilizado para a realização da ação.',
+                  'Selecione nominalmente agentes e terceirizados mobilizados.',
               children: [
-                _campoNumero(
-                  label: 'Quantidade de agentes de trânsito',
-                  controller: agentesController,
+                if (_carregandoEquipe)
+                  const LinearProgressIndicator()
+                else if (_erroEquipe != null)
+                  ListTile(
+                    leading: const Icon(Icons.error_outline),
+                    title: Text(_erroEquipe!),
+                    trailing: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _carregandoEquipe = true;
+                          _erroEquipe = null;
+                        });
+                        _carregarEquipe();
+                      },
+                      child: const Text('TENTAR NOVAMENTE'),
+                    ),
+                  ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.supervisor_account_outlined),
+                  ),
+                  title: const Text('Coordenador da ação'),
+                  subtitle: Text(
+                    context.read<AcaoController>().acaoAtual?.coordenadorNome ??
+                        'Não informado',
+                  ),
+                  trailing: const Chip(label: Text('Obrigatório')),
+                ),
+                if (!_carregandoEquipe && !_coordenadorVinculado)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      'Coordenador não encontrado na Equipe Operacional. '
+                      'Use Administração > Equipe Operacional para sincronizar.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                _seletorEquipe(
+                  vinculo: VinculoOperacional.agente,
                   icone: Icons.badge_outlined,
                 ),
                 const SizedBox(height: 16),
-                _campoNumero(
-                  label: 'Quantidade da equipe terceirizada',
-                  controller: terceirizadosController,
+                _seletorEquipe(
+                  vinculo: VinculoOperacional.terceirizado,
                   icone: Icons.groups_outlined,
                 ),
                 const SizedBox(height: 16),

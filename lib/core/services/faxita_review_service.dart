@@ -47,7 +47,8 @@ class FaxitaReviewService {
       pontosFortes.add('Caracterização da ação preenchida.');
     } else {
       alertas.add('Caracterização incompleta.');
-      recomendacoes.add('Revise formação, público, perfil, foco temático e fatores de risco.');
+      recomendacoes.add(
+          'Revise formação, público, perfil, foco temático e fatores de risco.');
     }
 
     if (_recursosPreenchidos(acao)) {
@@ -59,7 +60,7 @@ class FaxitaReviewService {
     }
 
     if (acao.houveParticipacaoOutroOrgao &&
-        acao.orgaoParticipanteId.isNotEmpty) {
+        acao.orgaosParticipantesEfetivos.isNotEmpty) {
       pontos += 10;
       pontosFortes.add('Integração institucional registrada.');
     } else if (!acao.houveParticipacaoOutroOrgao) {
@@ -67,7 +68,8 @@ class FaxitaReviewService {
       alertas.add('Não houve participação de outro órgão.');
       recomendacoes.add('Quando possível, registre parcerias institucionais.');
     } else {
-      alertas.add('Foi marcada participação de outro órgão, mas o órgão não foi informado.');
+      alertas.add(
+          'Foi marcada participação de outro órgão, mas o órgão não foi informado.');
       recomendacoes.add('Informe qual órgão participou da ação.');
     }
 
@@ -89,7 +91,8 @@ class FaxitaReviewService {
     } else if (acao.fotosUrls.isNotEmpty) {
       pontos += 8;
       alertas.add('Foram anexadas poucas fotos.');
-      recomendacoes.add('Sempre que possível, anexe fotos da equipe, do público e do contexto.');
+      recomendacoes.add(
+          'Sempre que possível, anexe fotos da equipe, do público e do contexto.');
     } else {
       alertas.add('Nenhuma evidência fotográfica anexada.');
       recomendacoes.add('Inclua evidências fotográficas da ação.');
@@ -108,7 +111,8 @@ class FaxitaReviewService {
       pontosFortes.add('Indicadores básicos consistentes.');
     } else {
       alertas.add('Indicadores operacionais exigem atenção.');
-      recomendacoes.add('Revise público estimado, público mínimo e pessoas alcançadas.');
+      recomendacoes
+          .add('Revise público estimado, público mínimo e pessoas alcançadas.');
     }
 
     if (pontos > 100) {

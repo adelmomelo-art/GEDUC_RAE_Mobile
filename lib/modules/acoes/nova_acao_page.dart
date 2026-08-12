@@ -206,6 +206,9 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     }
 
     final dataFormatada = DateFormat('dd/MM/yyyy').format(dataSelecionada);
+    final acaoAtual = context.read<AcaoController>().acaoAtual;
+    final efetivoAtual = (acaoAtual?.agentesTransito ?? 0) +
+        (acaoAtual?.equipeTerceirizada ?? 0);
 
     return Scaffold(
       appBar: FenixAppBar(
@@ -369,6 +372,31 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                           coordenadorNome = selecionado['nome'];
                         });
                       },
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .secondaryContainer
+                            .withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.groups_2_outlined),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              efetivoAtual == 0
+                                  ? 'A equipe operacional será definida na etapa Recursos Operacionais.'
+                                  : 'Equipe operacional: ${acaoAtual!.agentesTransito} agente(s) e ${acaoAtual.equipeTerceirizada} terceirizado(s).',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -610,6 +638,25 @@ class _ResumoCard extends StatelessWidget {
         ),
         if (tipo.materiaisSugeridos.isNotEmpty) ...[
           const Divider(height: 24),
+          Row(
+            children: [
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Material recomendado para a ação',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,

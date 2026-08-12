@@ -16,7 +16,7 @@ class IntegracaoObservacoesPage extends StatefulWidget {
 
 class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
   bool houveParticipacaoOutroOrgao = false;
-  String? orgaoParticipanteId;
+  final Set<String> orgaoParticipanteIds = <String>{};
 
   final pontosPositivosController = TextEditingController();
   final dificuldadesController = TextEditingController();
@@ -29,6 +29,9 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
     'orgao_agefis': 'AGEFIS',
     'orgao_sesec': 'SESEC',
     'orgao_gmf': 'Guarda Municipal',
+    'orgao_samu': 'SAMU',
+    'orgao_prf': 'PRF',
+    'orgao_pre': 'PRE',
     'orgao_outro': 'Outro órgão',
   };
 
@@ -40,8 +43,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
 
     if (acao != null) {
       houveParticipacaoOutroOrgao = acao.houveParticipacaoOutroOrgao;
-      orgaoParticipanteId =
-          acao.orgaoParticipanteId.isEmpty ? null : acao.orgaoParticipanteId;
+      orgaoParticipanteIds.addAll(acao.orgaosParticipantesEfetivos);
       pontosPositivosController.text = acao.pontosPositivos;
       dificuldadesController.text = acao.dificuldadesEncontradas;
       recomendacoesController.text = acao.recomendacoes;
@@ -82,7 +84,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
   bool get _temRecomendacoes => recomendacoesController.text.trim().isNotEmpty;
 
   bool get _integracaoValida =>
-      !houveParticipacaoOutroOrgao || orgaoParticipanteId != null;
+      !houveParticipacaoOutroOrgao || orgaoParticipanteIds.isNotEmpty;
 
   _StatusPreenchimento get _statusPreenchimento {
     final semIntegracao = !houveParticipacaoOutroOrgao;
@@ -101,8 +103,8 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
   }
 
   String get _mensagemFaxita {
-    if (houveParticipacaoOutroOrgao && orgaoParticipanteId == null) {
-      return 'Informe qual órgão participou da ação para concluir esta etapa.';
+    if (houveParticipacaoOutroOrgao && orgaoParticipanteIds.isEmpty) {
+      return 'Selecione ao menos um órgão participante para concluir esta etapa.';
     }
 
     if (!houveParticipacaoOutroOrgao &&
@@ -130,19 +132,25 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
     return 'As informações de integração e observações foram preenchidas. Revise o resumo antes de avançar.';
   }
 
-  String get _nomeOrgaoSelecionado {
+  String get _nomesOrgaosSelecionados {
     if (!houveParticipacaoOutroOrgao) {
       return 'Não se aplica';
     }
 
-    return orgaos[orgaoParticipanteId] ?? 'Não informado';
+    if (orgaoParticipanteIds.isEmpty) return 'Não informado';
+    final nomes = orgaoParticipanteIds
+        .map((id) => orgaos[id] ?? id)
+        .toList(growable: false)
+      ..sort();
+    return nomes.join(', ');
   }
 
   void _persistirRascunho() {
     context.read<AcaoController>().preencherIntegracaoObservacoes(
           houveParticipacaoOutroOrgao: houveParticipacaoOutroOrgao,
-          orgaoParticipanteId:
-              houveParticipacaoOutroOrgao ? orgaoParticipanteId ?? '' : '',
+          orgaoParticipanteIds: houveParticipacaoOutroOrgao
+              ? orgaoParticipanteIds.toList(growable: false)
+              : const <String>[],
           pontosPositivos: pontosPositivosController.text.trim(),
           dificuldadesEncontradas: dificuldadesController.text.trim(),
           recomendacoes: recomendacoesController.text.trim(),
@@ -159,7 +167,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
     FocusScope.of(context).unfocus();
 
     if (!_integracaoValida) {
-      _mostrarErro('Informe qual órgão participou da ação.');
+      _mostrarErro('Selecione ao menos um órgão participante.');
       return;
     }
 
@@ -374,7 +382,7 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
         ),
         _linhaResumo(
           titulo: 'Órgão participante',
-          valor: _nomeOrgaoSelecionado,
+          valor: _nomesOrgaosSelecionados,
           icone: Icons.apartment_outlined,
         ),
         _linhaResumo(
@@ -483,31 +491,51 @@ class _IntegracaoObservacoesPageState extends State<IntegracaoObservacoesPage> {
                       houveParticipacaoOutroOrgao = value;
 
                       if (!value) {
-                        orgaoParticipanteId = null;
+                        orgaoParticipanteIds.clear();
                       }
                     });
                   },
                 ),
                 if (houveParticipacaoOutroOrgao) ...[
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: orgaoParticipanteId,
-                    decoration: const InputDecoration(
-                      labelText: 'Qual órgão participou?',
-                      prefixIcon: Icon(Icons.apartment_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: orgaos.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(entry.value),
+                  Text(
+                    'Quais órgãos participaram? *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: orgaos.entries.map((entry) {
+                      final selecionado =
+                          orgaoParticipanteIds.contains(entry.key);
+                      return FilterChip(
+                        selected: selecionado,
+                        showCheckmark: true,
+                        avatar: const Icon(
+                          Icons.account_balance_outlined,
+                          size: 18,
+                        ),
+                        label: Text(entry.value),
+                        onSelected: (_) {
+                          setState(() {
+                            if (selecionado) {
+                              orgaoParticipanteIds.remove(entry.key);
+                            } else {
+                              orgaoParticipanteIds.add(entry.key);
+                            }
+                          });
+                        },
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        orgaoParticipanteId = value;
-                      });
-                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${orgaoParticipanteIds.length} '
+                    '${orgaoParticipanteIds.length == 1 ? 'órgão selecionado' : 'órgãos selecionados'}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
               ],

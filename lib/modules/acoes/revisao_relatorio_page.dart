@@ -108,7 +108,27 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
     if (id.trim().isEmpty) {
       return 'Não informado';
     }
-    return provider.opcoesDoGrupo(grupo)[id] ?? id;
+    final opcoes = provider.opcoesDoGrupo(grupo);
+    if (grupo == 'orgao') {
+      const nomesOficiais = <String, String>{
+        'orgao_amc': 'AMC',
+        'orgao_detran': 'DETRAN',
+        'orgao_sefin': 'SEFIN',
+        'orgao_agefis': 'AGEFIS',
+        'orgao_sesec': 'SESEC',
+        'orgao_gmf': 'Guarda Municipal',
+        'orgao_samu': 'SAMU',
+        'orgao_prf': 'PRF',
+        'orgao_pre': 'PRE',
+        'orgao_outro': 'Outro órgão',
+      };
+      final idSemPrefixo = id.startsWith('orgao_') ? id.substring(6) : id;
+      return opcoes[id] ??
+          opcoes[idSemPrefixo] ??
+          nomesOficiais[id] ??
+          idSemPrefixo.toUpperCase();
+    }
+    return opcoes[id] ?? id;
   }
 
   String _nomesDominios(
@@ -342,14 +362,16 @@ Fatores de risco: ${_nomesDominios(domainProvider, 'fator_risco', acao.fatorRisc
             icone: Icons.handshake_rounded,
             conteudo: '''
 Agentes de trânsito: ${acao.agentesTransito}
+${acao.agenteEquipeNomes.isEmpty ? '' : acao.agenteEquipeNomes.join(', ')}
 
 Equipe terceirizada: ${acao.equipeTerceirizada}
+${acao.terceirizadoEquipeNomes.isEmpty ? '' : acao.terceirizadoEquipeNomes.join(', ')}
 
 Materiais: ${_nomesDominios(domainProvider, 'material', acao.materialUtilizadoIds)}
 
 Cobertura de mídia: ${acao.coberturaMidia ? 'Sim' : 'Não'}
 
-Outro órgão participante: ${acao.houveParticipacaoOutroOrgao ? _nomeDominio(domainProvider, 'orgao', acao.orgaoParticipanteId) : 'Não'}
+Outros órgãos participantes: ${acao.houveParticipacaoOutroOrgao ? _nomesDominios(domainProvider, 'orgao', acao.orgaosParticipantesEfetivos) : 'Não'}
 ''',
           ),
           const SizedBox(height: 10),

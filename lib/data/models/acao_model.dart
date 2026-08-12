@@ -116,6 +116,10 @@ class AcaoModel {
   final String coordenadorNome;
   final int agentesTransito;
   final int equipeTerceirizada;
+  final List<String> agenteEquipeIds;
+  final List<String> agenteEquipeNomes;
+  final List<String> terceirizadoEquipeIds;
+  final List<String> terceirizadoEquipeNomes;
   final List<String> materialUtilizadoIds;
   final bool coberturaMidia;
 
@@ -125,6 +129,14 @@ class AcaoModel {
 
   final bool houveParticipacaoOutroOrgao;
   final String orgaoParticipanteId;
+  final List<String> orgaoParticipanteIds;
+
+  List<String> get orgaosParticipantesEfetivos =>
+      orgaoParticipanteIds.isNotEmpty
+          ? orgaoParticipanteIds
+          : orgaoParticipanteId.isEmpty
+              ? const <String>[]
+              : <String>[orgaoParticipanteId];
 
   // ============================================================
   // AVALIAÇÃO DA AÇÃO
@@ -201,10 +213,15 @@ class AcaoModel {
     required this.coordenadorNome,
     this.agentesTransito = 0,
     this.equipeTerceirizada = 0,
+    this.agenteEquipeIds = const [],
+    this.agenteEquipeNomes = const [],
+    this.terceirizadoEquipeIds = const [],
+    this.terceirizadoEquipeNomes = const [],
     this.materialUtilizadoIds = const [],
     this.coberturaMidia = false,
     this.houveParticipacaoOutroOrgao = false,
     this.orgaoParticipanteId = '',
+    this.orgaoParticipanteIds = const [],
     this.notaAvaliacao = 0,
     this.pontosPositivos = '',
     this.dificuldadesEncontradas = '',
@@ -262,10 +279,15 @@ class AcaoModel {
     String? coordenadorNome,
     int? agentesTransito,
     int? equipeTerceirizada,
+    List<String>? agenteEquipeIds,
+    List<String>? agenteEquipeNomes,
+    List<String>? terceirizadoEquipeIds,
+    List<String>? terceirizadoEquipeNomes,
     List<String>? materialUtilizadoIds,
     bool? coberturaMidia,
     bool? houveParticipacaoOutroOrgao,
     String? orgaoParticipanteId,
+    List<String>? orgaoParticipanteIds,
     int? notaAvaliacao,
     String? pontosPositivos,
     String? dificuldadesEncontradas,
@@ -326,11 +348,18 @@ class AcaoModel {
       coordenadorNome: coordenadorNome ?? this.coordenadorNome,
       agentesTransito: agentesTransito ?? this.agentesTransito,
       equipeTerceirizada: equipeTerceirizada ?? this.equipeTerceirizada,
+      agenteEquipeIds: agenteEquipeIds ?? this.agenteEquipeIds,
+      agenteEquipeNomes: agenteEquipeNomes ?? this.agenteEquipeNomes,
+      terceirizadoEquipeIds:
+          terceirizadoEquipeIds ?? this.terceirizadoEquipeIds,
+      terceirizadoEquipeNomes:
+          terceirizadoEquipeNomes ?? this.terceirizadoEquipeNomes,
       materialUtilizadoIds: materialUtilizadoIds ?? this.materialUtilizadoIds,
       coberturaMidia: coberturaMidia ?? this.coberturaMidia,
       houveParticipacaoOutroOrgao:
           houveParticipacaoOutroOrgao ?? this.houveParticipacaoOutroOrgao,
       orgaoParticipanteId: orgaoParticipanteId ?? this.orgaoParticipanteId,
+      orgaoParticipanteIds: orgaoParticipanteIds ?? this.orgaoParticipanteIds,
       notaAvaliacao: notaAvaliacao ?? this.notaAvaliacao,
       pontosPositivos: pontosPositivos ?? this.pontosPositivos,
       dificuldadesEncontradas:
@@ -390,10 +419,15 @@ class AcaoModel {
         'coordenadorNome': coordenadorNome,
         'agentesTransito': agentesTransito,
         'equipeTerceirizada': equipeTerceirizada,
+        'agenteEquipeIds': agenteEquipeIds,
+        'agenteEquipeNomes': agenteEquipeNomes,
+        'terceirizadoEquipeIds': terceirizadoEquipeIds,
+        'terceirizadoEquipeNomes': terceirizadoEquipeNomes,
         'materialUtilizadoIds': materialUtilizadoIds,
         'coberturaMidia': coberturaMidia,
         'houveParticipacaoOutroOrgao': houveParticipacaoOutroOrgao,
         'orgaoParticipanteId': orgaoParticipanteId,
+        'orgaoParticipanteIds': orgaosParticipantesEfetivos,
         'notaAvaliacao': notaAvaliacao,
         'pontosPositivos': pontosPositivos,
         'dificuldadesEncontradas': dificuldadesEncontradas,
@@ -461,11 +495,20 @@ class AcaoModel {
       coordenadorNome: _texto(map['coordenadorNome']),
       agentesTransito: _inteiro(map['agentesTransito']),
       equipeTerceirizada: _inteiro(map['equipeTerceirizada']),
+      agenteEquipeIds: _listaTexto(map['agenteEquipeIds']),
+      agenteEquipeNomes: _listaTexto(map['agenteEquipeNomes']),
+      terceirizadoEquipeIds: _listaTexto(map['terceirizadoEquipeIds']),
+      terceirizadoEquipeNomes: _listaTexto(map['terceirizadoEquipeNomes']),
       materialUtilizadoIds: _listaTexto(map['materialUtilizadoIds']),
       coberturaMidia: _booleano(map['coberturaMidia']),
       houveParticipacaoOutroOrgao:
           _booleano(map['houveParticipacaoOutroOrgao']),
       orgaoParticipanteId: _texto(map['orgaoParticipanteId']),
+      orgaoParticipanteIds: _listaTexto(map['orgaoParticipanteIds']).isNotEmpty
+          ? _listaTexto(map['orgaoParticipanteIds'])
+          : _texto(map['orgaoParticipanteId']).isEmpty
+              ? const <String>[]
+              : <String>[_texto(map['orgaoParticipanteId'])],
       notaAvaliacao: _inteiro(map['notaAvaliacao']),
       pontosPositivos: _texto(map['pontosPositivos']),
       dificuldadesEncontradas: _texto(map['dificuldadesEncontradas']),

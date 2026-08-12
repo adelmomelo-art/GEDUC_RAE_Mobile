@@ -165,7 +165,13 @@ AcaoModel _acaoCompleta() {
     materialUtilizadoIds: const ['cones', 'folhetos'],
     coberturaMidia: true,
     houveParticipacaoOutroOrgao: true,
-    orgaoParticipanteId: 'amc',
+    orgaoParticipanteId: 'orgao_amc',
+    orgaoParticipanteIds: const [
+      'orgao_amc',
+      'orgao_samu',
+      'orgao_prf',
+      'orgao_pre',
+    ],
     notaAvaliacao: 5,
     pontosPositivos:
         'Boa participação do público e integração entre as equipes.',
@@ -202,5 +208,10 @@ const RaeCatalogos _catalogos = {
     'cones': 'Cones',
     'folhetos': 'Folhetos educativos',
   },
-  'orgao': {'amc': 'AMC'},
+  'orgao': {
+    'amc': 'AMC',
+    'samu': 'SAMU',
+    'prf': 'PRF',
+    'pre': 'PRE',
+  },
 };

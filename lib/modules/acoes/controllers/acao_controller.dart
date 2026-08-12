@@ -365,6 +365,10 @@ class AcaoController extends ChangeNotifier {
   void preencherRecursosOperacionais({
     required int agentesTransito,
     required int equipeTerceirizada,
+    required List<String> agenteEquipeIds,
+    required List<String> agenteEquipeNomes,
+    required List<String> terceirizadoEquipeIds,
+    required List<String> terceirizadoEquipeNomes,
     required List<String> materialUtilizadoIds,
     required bool coberturaMidia,
   }) {
@@ -373,6 +377,10 @@ class AcaoController extends ChangeNotifier {
     acaoAtual = acaoAtual!.copyWith(
       agentesTransito: agentesTransito,
       equipeTerceirizada: equipeTerceirizada,
+      agenteEquipeIds: agenteEquipeIds,
+      agenteEquipeNomes: agenteEquipeNomes,
+      terceirizadoEquipeIds: terceirizadoEquipeIds,
+      terceirizadoEquipeNomes: terceirizadoEquipeNomes,
       materialUtilizadoIds: materialUtilizadoIds,
       coberturaMidia: coberturaMidia,
     );
@@ -383,7 +391,7 @@ class AcaoController extends ChangeNotifier {
 
   void preencherIntegracaoObservacoes({
     required bool houveParticipacaoOutroOrgao,
-    required String orgaoParticipanteId,
+    required List<String> orgaoParticipanteIds,
     required String pontosPositivos,
     required String dificuldadesEncontradas,
     required String recomendacoes,
@@ -392,7 +400,9 @@ class AcaoController extends ChangeNotifier {
 
     acaoAtual = acaoAtual!.copyWith(
       houveParticipacaoOutroOrgao: houveParticipacaoOutroOrgao,
-      orgaoParticipanteId: orgaoParticipanteId,
+      orgaoParticipanteId:
+          orgaoParticipanteIds.isEmpty ? '' : orgaoParticipanteIds.first,
+      orgaoParticipanteIds: orgaoParticipanteIds,
       pontosPositivos: pontosPositivos,
       dificuldadesEncontradas: dificuldadesEncontradas,
       recomendacoes: recomendacoes,

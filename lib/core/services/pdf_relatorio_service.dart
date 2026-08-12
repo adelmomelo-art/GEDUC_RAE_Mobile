@@ -82,7 +82,7 @@ class PdfRelatorioService {
     final pdf = pw.Document(
       title: 'Relatório de Ação Educativa - RAE ${acao.numeroRAE}',
       author: 'Plataforma Fênix - GEDUC',
-      subject: 'Relatório timbrado da Gerência de Educação',
+      subject: 'Gerência de Educação para o Trânsito',
     );
     final assinaturaConjunta = pw.MemoryImage(
       (await rootBundle.load(
@@ -203,7 +203,7 @@ class PdfRelatorioService {
       ),
       pw.SizedBox(height: 3),
       pw.Text(
-        'Relatório timbrado da Gerência de Educação para o Trânsito',
+        'Gerência de Educação para o Trânsito',
         textAlign: pw.TextAlign.center,
         style: const pw.TextStyle(fontSize: 7.3, color: _cinza),
       ),
@@ -298,8 +298,18 @@ class PdfRelatorioService {
           ]),
           _cabecalhoSecao('04', 'Recursos e integração institucional'),
           _grade3([
-            _campo('Agentes de trânsito', '${acao.agentesTransito}'),
-            _campo('Equipe terceirizada', '${acao.equipeTerceirizada}'),
+            _campo(
+              'Agentes de trânsito',
+              acao.agenteEquipeNomes.isEmpty
+                  ? '${acao.agentesTransito}'
+                  : '${acao.agentesTransito} - ${acao.agenteEquipeNomes.join(', ')}',
+            ),
+            _campo(
+              'Equipe terceirizada',
+              acao.terceirizadoEquipeNomes.isEmpty
+                  ? '${acao.equipeTerceirizada}'
+                  : '${acao.equipeTerceirizada} - ${acao.terceirizadoEquipeNomes.join(', ')}',
+            ),
             _campo(
               'Materiais',
               _nomes(catalogos, 'material', acao.materialUtilizadoIds),
@@ -312,7 +322,11 @@ class PdfRelatorioService {
             _campo(
               'Órgão participante',
               acao.houveParticipacaoOutroOrgao
-                  ? _nome(catalogos, 'orgao', acao.orgaoParticipanteId)
+                  ? _nomes(
+                      catalogos,
+                      'orgao',
+                      acao.orgaosParticipantesEfetivos,
+                    )
                   : 'Não se aplica',
             ),
           ]),
@@ -852,7 +866,31 @@ class PdfRelatorioService {
 
   String _nome(RaeCatalogos catalogos, String grupo, String id) {
     if (id.trim().isEmpty) return 'Não informado';
+    if (grupo == DomainGroups.orgao) {
+      return _nomeOrgao(catalogos, id);
+    }
     return catalogos[grupo]?[id] ?? id;
+  }
+
+  String _nomeOrgao(RaeCatalogos catalogos, String id) {
+    const nomesOficiais = <String, String>{
+      'orgao_amc': 'AMC',
+      'orgao_detran': 'DETRAN',
+      'orgao_sefin': 'SEFIN',
+      'orgao_agefis': 'AGEFIS',
+      'orgao_sesec': 'SESEC',
+      'orgao_gmf': 'Guarda Municipal',
+      'orgao_samu': 'SAMU',
+      'orgao_prf': 'PRF',
+      'orgao_pre': 'PRE',
+      'orgao_outro': 'Outro órgão',
+    };
+    final catalogo = catalogos[DomainGroups.orgao] ?? const <String, String>{};
+    final idSemPrefixo = id.startsWith('orgao_') ? id.substring(6) : id;
+    return catalogo[id] ??
+        catalogo[idSemPrefixo] ??
+        nomesOficiais[id] ??
+        idSemPrefixo.toUpperCase();
   }
 
   String _nomes(RaeCatalogos catalogos, String grupo, List<String> ids) {

@@ -24,6 +24,18 @@ class EquipeOperacionalService {
         );
   }
 
+  Future<List<MembroEquipeModel>> listarMembros() async {
+    final snapshot = await _membros.orderBy('nome').get();
+    return snapshot.docs
+        .map(
+          (doc) => MembroEquipeModel.fromMap(
+            doc.data(),
+            documentId: doc.id,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   Future<void> atualizarClassificacao({
     required String id,
     required VinculoOperacional vinculo,

@@ -12,6 +12,7 @@ import '../models/analytics/indicador_estrategico.dart';
 import '../models/analytics/insight_operacional.dart';
 import '../models/analytics/ranking_item.dart';
 import '../services/dashboard_cio_bridge.dart';
+import '../services/cio_historical_territorial_service.dart';
 
 class DashboardController extends ChangeNotifier {
   DashboardController({
@@ -47,6 +48,20 @@ class DashboardController extends ChangeNotifier {
   List<InsightOperacional> _insights = const [];
   List<AlertaOperacional> _alertasCio = const [];
   List<String> _recomendacoesCio = const [];
+  CioTemporalAnalysis? _serieHistorica;
+  CioTrendComparison? _comparacaoHistorica;
+  CioDataQualityReport _qualidadeDados = const CioDataQualityReport(
+    totalRecords: 0,
+    recordsWithRegionalId: 0,
+    recordsWithNeighborhood: 0,
+    recordsWithValidCoordinates: 0,
+    recordsWithValidatedLocation: 0,
+    legacyTerritorialRecords: 0,
+    unresolvedTerritorialRecords: 0,
+    firstOccurrence: null,
+    lastOccurrence: null,
+  );
+  List<CioTerritorialGroup> _territorios = const [];
 
   bool _carregando = false;
   bool _online = false;
@@ -69,6 +84,10 @@ class DashboardController extends ChangeNotifier {
   List<InsightOperacional> get insights => _insights;
   List<AlertaOperacional> get alertasCio => _alertasCio;
   List<String> get recomendacoesCio => _recomendacoesCio;
+  CioTemporalAnalysis? get serieHistorica => _serieHistorica;
+  CioTrendComparison? get comparacaoHistorica => _comparacaoHistorica;
+  CioDataQualityReport get qualidadeDados => _qualidadeDados;
+  List<CioTerritorialGroup> get territorios => _territorios;
 
   bool get carregando => _carregando;
   bool get sincronizando => _syncService.sincronizando;
@@ -136,7 +155,11 @@ class DashboardController extends ChangeNotifier {
   void _recalcularIndicadores() {
     final agora = DateTime.now();
     final filtradas = _filtros.aplicar(_todasAsAcoes, agora);
-    final resultado = _cioBridge.processar(filtradas);
+    final faixaAtual = _filtros.intervalo(agora);
+    final resultado = _cioBridge.processar(
+      filtradas,
+      intervalo: faixaAtual,
+    );
     _indicadores = resultado.indicadores;
     _metricasOficiais = resultado.metricasOficiais;
     _indicadoresEstrategicos = resultado.indicadoresEstrategicos;
@@ -144,16 +167,26 @@ class DashboardController extends ChangeNotifier {
     _insights = resultado.insights;
     _alertasCio = resultado.alertas;
     _recomendacoesCio = resultado.recomendacoes;
+    _serieHistorica = resultado.serieHistorica;
+    _qualidadeDados = resultado.qualidadeDados;
+    _territorios = resultado.territorios;
     final faixaComparacao = _filtros.intervaloComparacao(agora);
     if (faixaComparacao == null) {
       _indicadoresComparacao = null;
       _metricasComparacao = null;
+      _comparacaoHistorica = null;
     } else {
       final comparacao = _cioBridge.processar(
         _filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao),
+        intervalo: faixaComparacao,
       );
       _indicadoresComparacao = comparacao.indicadores;
       _metricasComparacao = comparacao.metricasOficiais;
+      final serieAtual = resultado.serieHistorica;
+      final serieAnterior = comparacao.serieHistorica;
+      _comparacaoHistorica = serieAtual == null || serieAnterior == null
+          ? null
+          : _cioBridge.compararSeries(serieAtual, serieAnterior);
     }
   }
 

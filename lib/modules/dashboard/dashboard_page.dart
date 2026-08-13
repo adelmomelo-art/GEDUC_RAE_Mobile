@@ -9,6 +9,7 @@ import 'widgets/faxita/faxita_summary_card.dart';
 import 'widgets/operational/operational_status_panel.dart';
 import 'widgets/charts/dashboard_charts.dart';
 import 'widgets/cio_intelligence_panel.dart';
+import 'widgets/cio_historical_territorial_panel.dart';
 import 'widgets/common/dashboard_colors.dart';
 import 'widgets/common/dashboard_section.dart';
 import 'widgets/common/dashboard_theme.dart';
@@ -158,6 +159,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           insights: controller.insights,
                           alertas: controller.alertasCio,
                           recomendacoes: controller.recomendacoesCio,
+                        ),
+                      ),
+                      DashboardSection(
+                        child: CioHistoricalTerritorialPanel(
+                          timeline: controller.serieHistorica,
+                          comparison: controller.comparacaoHistorica,
+                          quality: controller.qualidadeDados,
+                          territories: controller.territorios,
                         ),
                       ),
                       DashboardSection(

@@ -8,7 +8,9 @@ import '../models/analytics/analytics_enums.dart';
 import '../models/analytics/indicador_estrategico.dart';
 import '../models/analytics/insight_operacional.dart';
 import '../models/analytics/ranking_item.dart';
+import '../models/cio_dashboard_filters.dart';
 import 'cio_analytics_service.dart';
+import 'cio_historical_territorial_service.dart';
 import 'performance_score_engine.dart';
 
 /// Fachada única entre os dados filtrados do CIO e os motores analíticos.
@@ -18,14 +20,19 @@ class DashboardCIOBridge {
     this.analyticsService = const CIOAnalyticsService(),
     this.analyticsEngine = const AnalyticsEngine(),
     this.educacaoAdapter = const EducacaoAnalyticsAdapter(),
+    this.historicalTerritorialService = const CioHistoricalTerritorialService(),
   });
 
   final DashboardService dashboardService;
   final CIOAnalyticsService analyticsService;
   final AnalyticsEngine analyticsEngine;
   final EducacaoAnalyticsAdapter educacaoAdapter;
+  final CioHistoricalTerritorialService historicalTerritorialService;
 
-  DashboardCIOResult processar(List<AcaoModel> acoes) {
+  DashboardCIOResult processar(
+    List<AcaoModel> acoes, {
+    DateTimeRangeCio? intervalo,
+  }) {
     final indicadores = dashboardService.calcularIndicadores(
       acoes,
       periodo: DashboardPeriodo.geral,
@@ -33,11 +40,10 @@ class DashboardCIOBridge {
     final resultadoOficial = analyticsEngine.process(
       records: educacaoAdapter.toAnalyticsRecords(acoes),
     );
-    final resumo = _criarResumo(
-      resultadoOficial.metrics,
-      indicadores,
-    );
-    final agregados = _criarAgregados(acoes);
+    final resumo = _criarResumo(resultadoOficial.metrics, indicadores);
+    final gruposTerritoriais =
+        historicalTerritorialService.groupTerritories(acoes);
+    final agregados = _criarAgregados(gruposTerritoriais);
     final referencia = _criarReferencia(agregados);
     final ranking = analyticsService.gerarRanking(
       agregados: agregados,
@@ -51,20 +57,24 @@ class DashboardCIOBridge {
       indicadoresEstrategicos:
           analyticsService.gerarIndicadores(resumo: resumo),
       rankingRegionais: ranking,
-      insights: analyticsService.gerarInsights(
-        resumo: resumo,
-        ranking: ranking,
-      ),
-      alertas: analyticsService.gerarAlertas(
-        resumo: resumo,
-        ranking: ranking,
-      ),
-      recomendacoes: analyticsService.gerarRecomendacoes(
-        resumo: resumo,
-        ranking: ranking,
-      ),
+      insights:
+          analyticsService.gerarInsights(resumo: resumo, ranking: ranking),
+      alertas: analyticsService.gerarAlertas(resumo: resumo, ranking: ranking),
+      recomendacoes:
+          analyticsService.gerarRecomendacoes(resumo: resumo, ranking: ranking),
+      serieHistorica: intervalo == null
+          ? null
+          : historicalTerritorialService.buildTimeline(acoes, intervalo),
+      qualidadeDados: historicalTerritorialService.assessQuality(acoes),
+      territorios: gruposTerritoriais,
     );
   }
+
+  CioTrendComparison compararSeries(
+    CioTemporalAnalysis atual,
+    CioTemporalAnalysis anterior,
+  ) =>
+      historicalTerritorialService.compareTimelines(atual, anterior);
 
   CIOAnalyticsSummary _criarResumo(
     AnalyticsMetrics metricas,
@@ -79,25 +89,18 @@ class DashboardCIOBridge {
     );
   }
 
-  List<CIOAnalyticsAggregate> _criarAgregados(List<AcaoModel> acoes) {
-    final grupos = <String, List<AcaoModel>>{};
-    for (final acao in acoes) {
-      final regional =
-          acao.regional.trim().isEmpty ? 'Não informado' : acao.regional.trim();
-      grupos.putIfAbsent(regional, () => <AcaoModel>[]).add(acao);
-    }
-
-    return grupos.entries.map((entry) {
-      final acoesRegionais = entry.value;
+  List<CIOAnalyticsAggregate> _criarAgregados(
+    List<CioTerritorialGroup> grupos,
+  ) {
+    return grupos.map((grupo) {
+      final acoesRegionais = grupo.actions;
       final metricas = analyticsEngine
-          .process(
-            records: educacaoAdapter.toAnalyticsRecords(acoesRegionais),
-          )
+          .process(records: educacaoAdapter.toAnalyticsRecords(acoesRegionais))
           .metrics;
 
       return CIOAnalyticsAggregate(
-        id: _normalizarId(entry.key),
-        nome: entry.key,
+        id: grupo.id,
+        nome: grupo.name,
         acoes: metricas.totalRecords,
         pessoasAlcancadas: metricas.totalPeople,
         veiculosAbordados: metricas.totalVehicles,
@@ -127,14 +130,6 @@ class DashboardCIOBridge {
       credentialsIssued: maximo((item) => item.credenciaisEmitidas),
     );
   }
-
-  String _normalizarId(String valor) {
-    return valor
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-  }
 }
 
 class DashboardCIOResult {
@@ -146,6 +141,9 @@ class DashboardCIOResult {
     required this.insights,
     required this.alertas,
     required this.recomendacoes,
+    required this.serieHistorica,
+    required this.qualidadeDados,
+    required this.territorios,
   });
 
   final DashboardIndicadores indicadores;
@@ -155,4 +153,7 @@ class DashboardCIOResult {
   final List<InsightOperacional> insights;
   final List<AlertaOperacional> alertas;
   final List<String> recomendacoes;
+  final CioTemporalAnalysis? serieHistorica;
+  final CioDataQualityReport qualidadeDados;
+  final List<CioTerritorialGroup> territorios;
 }

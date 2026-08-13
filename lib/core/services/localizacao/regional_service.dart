@@ -51,6 +51,16 @@ class RegionalService {
 
   final FirebaseFirestore _firestore;
 
+  Future<List<RegionalModel>> listarTodas() async {
+    final snapshot = await _firestore.collection('regionais').get();
+    final regionais = snapshot.docs
+        .map((doc) => RegionalModel.fromMap(doc.id, doc.data()))
+        .where((regional) => regional.nome.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.nome.compareTo(b.nome));
+    return regionais;
+  }
+
   Future<List<RegionalModel>> listarAtivas({
     TipoRegional tipo = TipoRegional.administrativa,
   }) async {
@@ -58,7 +68,6 @@ class RegionalService {
         .collection('regionais')
         .where('ativo', isEqualTo: true)
         .get();
-
     final regionais = snapshot.docs
         .map((doc) => RegionalModel.fromMap(doc.id, doc.data()))
         .where((regional) => regional.tipo == tipo && regional.nome.isNotEmpty)

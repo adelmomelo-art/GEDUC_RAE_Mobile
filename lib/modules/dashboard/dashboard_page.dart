@@ -10,6 +10,7 @@ import 'widgets/operational/operational_status_panel.dart';
 import 'widgets/charts/dashboard_charts.dart';
 import 'widgets/cio_intelligence_panel.dart';
 import 'widgets/cio_historical_territorial_panel.dart';
+import 'widgets/cio_territorial_governance_panel.dart';
 import 'widgets/common/dashboard_colors.dart';
 import 'widgets/common/dashboard_section.dart';
 import 'widgets/common/dashboard_theme.dart';
@@ -167,6 +168,15 @@ class _DashboardPageState extends State<DashboardPage> {
                           comparison: controller.comparacaoHistorica,
                           quality: controller.qualidadeDados,
                           territories: controller.territorios,
+                        ),
+                      ),
+                      DashboardSection(
+                        child: CioTerritorialGovernancePanel(
+                          report: controller.governancaTerritorial,
+                          diagnostic:
+                              controller.diagnosticoTerritorialDozeMeses,
+                          catalogUnavailable:
+                              controller.catalogoTerritorialIndisponivel,
                         ),
                       ),
                       DashboardSection(

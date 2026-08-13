@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/data/models/acao_model.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/services/dashboard_cio_bridge.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/models/cio_dashboard_filters.dart';
+import 'package:geduc_rae_mobile/data/models/regional_model.dart';
+import 'package:geduc_rae_mobile/modules/dashboard/services/cio_territorial_governance_service.dart';
 
 void main() {
   const bridge = DashboardCIOBridge();
@@ -52,6 +54,39 @@ void main() {
     );
     expect(resultado.qualidadeDados.totalRecords, 1);
     expect(resultado.territorios, hasLength(1));
+  });
+
+  test('valida o mesmo conjunto contra snapshot do catálogo', () {
+    final resultado = bridge.processar(
+      [
+        _acao('1', 'Regional Norte', pessoas: 100, metaAtingida: true)
+            .copyWith(regionalId: 'norte', bairro: 'Centro'),
+        _acao('2', 'Regional órfã', pessoas: 20, metaAtingida: false)
+            .copyWith(regionalId: 'nao-existe'),
+      ],
+      catalogoTerritorial: CioTerritorialCatalogSnapshot(
+        capturedAt: DateTime(2026, 8, 13),
+        regionals: const [
+          RegionalModel(
+            id: 'norte',
+            nome: 'Regional Norte',
+            bairros: ['Centro'],
+          ),
+        ],
+      ),
+    );
+
+    expect(resultado.governancaTerritorial, isNotNull);
+    expect(
+      resultado.governancaTerritorial!
+          .count(CioTerritorialClassification.valid),
+      1,
+    );
+    expect(
+      resultado.governancaTerritorial!
+          .count(CioTerritorialClassification.orphan),
+      1,
+    );
   });
 }
 

@@ -4,8 +4,10 @@ import '../../../core/analytics/analytics_metrics.dart';
 import '../../../core/services/dashboard_service.dart';
 import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/offline_service.dart';
+import '../../../core/services/localizacao/regional_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/models/acao_model.dart';
+import '../../../data/models/regional_model.dart';
 import '../models/cio_dashboard_filters.dart';
 import '../models/analytics/alerta_operacional.dart';
 import '../models/analytics/indicador_estrategico.dart';
@@ -13,15 +15,19 @@ import '../models/analytics/insight_operacional.dart';
 import '../models/analytics/ranking_item.dart';
 import '../services/dashboard_cio_bridge.dart';
 import '../services/cio_historical_territorial_service.dart';
+import '../services/cio_territorial_governance_service.dart';
 
 class DashboardController extends ChangeNotifier {
   DashboardController({
     FirebaseAcaoService? firebaseService,
     OfflineService? offlineService,
     DashboardCIOBridge? cioBridge,
+    Future<List<RegionalModel>> Function()? regionalCatalogLoader,
   })  : _firebaseService = firebaseService ?? FirebaseAcaoService(),
         _offlineService = offlineService ?? OfflineService(),
-        _cioBridge = cioBridge ?? const DashboardCIOBridge() {
+        _cioBridge = cioBridge ?? const DashboardCIOBridge(),
+        _regionalCatalogLoader =
+            regionalCatalogLoader ?? RegionalService().listarTodas {
     _syncService = SyncService(
       offlineService: _offlineService,
       firebaseService: _firebaseService,
@@ -33,6 +39,7 @@ class DashboardController extends ChangeNotifier {
   final FirebaseAcaoService _firebaseService;
   final OfflineService _offlineService;
   final DashboardCIOBridge _cioBridge;
+  final Future<List<RegionalModel>> Function() _regionalCatalogLoader;
 
   late final SyncService _syncService;
 
@@ -62,6 +69,10 @@ class DashboardController extends ChangeNotifier {
     lastOccurrence: null,
   );
   List<CioTerritorialGroup> _territorios = const [];
+  CioTerritorialCatalogSnapshot? _catalogoTerritorial;
+  CioTerritorialGovernanceReport? _governancaTerritorial;
+  CioTerritorialDiagnostic? _diagnosticoTerritorialDozeMeses;
+  bool _catalogoTerritorialIndisponivel = false;
 
   bool _carregando = false;
   bool _online = false;
@@ -88,6 +99,11 @@ class DashboardController extends ChangeNotifier {
   CioTrendComparison? get comparacaoHistorica => _comparacaoHistorica;
   CioDataQualityReport get qualidadeDados => _qualidadeDados;
   List<CioTerritorialGroup> get territorios => _territorios;
+  CioTerritorialGovernanceReport? get governancaTerritorial =>
+      _governancaTerritorial;
+  bool get catalogoTerritorialIndisponivel => _catalogoTerritorialIndisponivel;
+  CioTerritorialDiagnostic? get diagnosticoTerritorialDozeMeses =>
+      _diagnosticoTerritorialDozeMeses;
 
   bool get carregando => _carregando;
   bool get sincronizando => _syncService.sincronizando;
@@ -114,13 +130,21 @@ class DashboardController extends ChangeNotifier {
         _firebaseService.listarAcoesFuture(),
         _offlineService.listarAcoesPendentes(),
         _syncService.temInternet(),
+        _carregarCatalogoTerritorialSeguro(),
       ]);
 
       final acoes = resultados[0];
       final pendentes = resultados[1];
       final conectado = resultados[2];
+      final regionais = resultados[3] as List<RegionalModel>?;
 
       _todasAsAcoes = List<AcaoModel>.from(acoes);
+      _catalogoTerritorial = regionais == null
+          ? null
+          : CioTerritorialCatalogSnapshot(
+              capturedAt: DateTime.now(),
+              regionals: regionais,
+            );
       _recalcularIndicadores();
 
       _totalPendentes = pendentes.length;
@@ -156,9 +180,18 @@ class DashboardController extends ChangeNotifier {
     final agora = DateTime.now();
     final filtradas = _filtros.aplicar(_todasAsAcoes, agora);
     final faixaAtual = _filtros.intervalo(agora);
+    final catalogo = _catalogoTerritorial;
+    _diagnosticoTerritorialDozeMeses = catalogo == null
+        ? null
+        : _cioBridge.diagnosticarUltimosDozeMeses(
+            _todasAsAcoes,
+            catalogo,
+            referencia: agora,
+          );
     final resultado = _cioBridge.processar(
       filtradas,
       intervalo: faixaAtual,
+      catalogoTerritorial: _catalogoTerritorial,
     );
     _indicadores = resultado.indicadores;
     _metricasOficiais = resultado.metricasOficiais;
@@ -170,6 +203,7 @@ class DashboardController extends ChangeNotifier {
     _serieHistorica = resultado.serieHistorica;
     _qualidadeDados = resultado.qualidadeDados;
     _territorios = resultado.territorios;
+    _governancaTerritorial = resultado.governancaTerritorial;
     final faixaComparacao = _filtros.intervaloComparacao(agora);
     if (faixaComparacao == null) {
       _indicadoresComparacao = null;
@@ -179,6 +213,7 @@ class DashboardController extends ChangeNotifier {
       final comparacao = _cioBridge.processar(
         _filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao),
         intervalo: faixaComparacao,
+        catalogoTerritorial: _catalogoTerritorial,
       );
       _indicadoresComparacao = comparacao.indicadores;
       _metricasComparacao = comparacao.metricasOficiais;
@@ -187,6 +222,17 @@ class DashboardController extends ChangeNotifier {
       _comparacaoHistorica = serieAtual == null || serieAnterior == null
           ? null
           : _cioBridge.compararSeries(serieAtual, serieAnterior);
+    }
+  }
+
+  Future<List<RegionalModel>?> _carregarCatalogoTerritorialSeguro() async {
+    try {
+      final regionais = await _regionalCatalogLoader();
+      _catalogoTerritorialIndisponivel = false;
+      return regionais;
+    } catch (_) {
+      _catalogoTerritorialIndisponivel = true;
+      return null;
     }
   }
 

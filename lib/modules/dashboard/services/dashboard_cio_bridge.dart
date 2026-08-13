@@ -11,6 +11,7 @@ import '../models/analytics/ranking_item.dart';
 import '../models/cio_dashboard_filters.dart';
 import 'cio_analytics_service.dart';
 import 'cio_historical_territorial_service.dart';
+import 'cio_territorial_governance_service.dart';
 import 'performance_score_engine.dart';
 
 /// Fachada única entre os dados filtrados do CIO e os motores analíticos.
@@ -21,6 +22,7 @@ class DashboardCIOBridge {
     this.analyticsEngine = const AnalyticsEngine(),
     this.educacaoAdapter = const EducacaoAnalyticsAdapter(),
     this.historicalTerritorialService = const CioHistoricalTerritorialService(),
+    this.territorialGovernanceService = const CioTerritorialGovernanceService(),
   });
 
   final DashboardService dashboardService;
@@ -28,10 +30,12 @@ class DashboardCIOBridge {
   final AnalyticsEngine analyticsEngine;
   final EducacaoAnalyticsAdapter educacaoAdapter;
   final CioHistoricalTerritorialService historicalTerritorialService;
+  final CioTerritorialGovernanceService territorialGovernanceService;
 
   DashboardCIOResult processar(
     List<AcaoModel> acoes, {
     DateTimeRangeCio? intervalo,
+    CioTerritorialCatalogSnapshot? catalogoTerritorial,
   }) {
     final indicadores = dashboardService.calcularIndicadores(
       acoes,
@@ -67,6 +71,9 @@ class DashboardCIOBridge {
           : historicalTerritorialService.buildTimeline(acoes, intervalo),
       qualidadeDados: historicalTerritorialService.assessQuality(acoes),
       territorios: gruposTerritoriais,
+      governancaTerritorial: catalogoTerritorial == null
+          ? null
+          : territorialGovernanceService.validate(acoes, catalogoTerritorial),
     );
   }
 
@@ -75,6 +82,17 @@ class DashboardCIOBridge {
     CioTemporalAnalysis anterior,
   ) =>
       historicalTerritorialService.compareTimelines(atual, anterior);
+
+  CioTerritorialDiagnostic diagnosticarUltimosDozeMeses(
+    List<AcaoModel> acoes,
+    CioTerritorialCatalogSnapshot catalogo, {
+    required DateTime referencia,
+  }) =>
+      territorialGovernanceService.buildTwelveMonthDiagnostic(
+        acoes,
+        catalogo,
+        reference: referencia,
+      );
 
   CIOAnalyticsSummary _criarResumo(
     AnalyticsMetrics metricas,
@@ -144,6 +162,7 @@ class DashboardCIOResult {
     required this.serieHistorica,
     required this.qualidadeDados,
     required this.territorios,
+    required this.governancaTerritorial,
   });
 
   final DashboardIndicadores indicadores;
@@ -156,4 +175,5 @@ class DashboardCIOResult {
   final CioTemporalAnalysis? serieHistorica;
   final CioDataQualityReport qualidadeDados;
   final List<CioTerritorialGroup> territorios;
+  final CioTerritorialGovernanceReport? governancaTerritorial;
 }

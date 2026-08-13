@@ -149,6 +149,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           indicadores: controller.indicadores,
                           periodoSelecionado:
                               controller.periodoSelecionadoLabel,
+                          totalPendentes: controller.totalPendentes,
                         ),
                       ),
                       DashboardSection(

@@ -9,20 +9,25 @@ class FaxitaSummaryCard extends StatelessWidget {
   const FaxitaSummaryCard({
     required this.indicadores,
     required this.periodoSelecionado,
+    required this.totalPendentes,
     super.key,
   });
 
-  
-  
-  
-  
-
   final DashboardIndicadores indicadores;
   final String periodoSelecionado;
+  final int totalPendentes;
 
   @override
   Widget build(BuildContext context) {
     final temInteligencia = indicadores.totalAcoes > 0;
+    final resumoExecutivo = FaxitaSyncPresentation.resumo(
+      indicadores.resumoExecutivo,
+      totalPendentes,
+    );
+    final alertasSincronizados = FaxitaSyncPresentation.alertas(
+      indicadores.alertas,
+      totalPendentes,
+    );
 
     return DashboardPanel(
       gradient: LinearGradient(
@@ -109,7 +114,7 @@ class FaxitaSummaryCard extends StatelessWidget {
               ),
             ),
             child: Text(
-              indicadores.resumoExecutivo,
+              resumoExecutivo,
               style: const TextStyle(
                 color: Color(0xFF37474F),
                 fontSize: 12,
@@ -136,7 +141,7 @@ class FaxitaSummaryCard extends StatelessWidget {
                   titulo: 'Alertas',
                   icone: Icons.warning_amber_rounded,
                   cor: DashboardColors.orange,
-                  itens: indicadores.alertas,
+                  itens: alertasSincronizados,
                   vazio: 'Nenhum alerta operacional identificado.',
                 );
 
@@ -176,6 +181,35 @@ class FaxitaSummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class FaxitaSyncPresentation {
+  const FaxitaSyncPresentation._();
+
+  static final RegExp _trechoSincronizacao = RegExp(
+    r'(?:Existem \d+ registro\(s\) pendente\(s\) de sincronização\.|Todos os registros do período estão sincronizados\.)',
+  );
+
+  static List<String> alertas(List<String> alertas, int totalPendentes) {
+    final coerentes = alertas
+        .where((alerta) => !alerta.contains('aguardam sincronização'))
+        .toList();
+
+    if (totalPendentes > 0) {
+      coerentes.add('$totalPendentes registro(s) aguardam sincronização.');
+    }
+
+    return List<String>.unmodifiable(coerentes);
+  }
+
+  static String resumo(String resumo, int totalPendentes) {
+    final base = resumo.replaceAll(_trechoSincronizacao, '').trim();
+    final situacao = totalPendentes > 0
+        ? 'Existem $totalPendentes registro(s) pendente(s) de sincronização.'
+        : 'Todos os registros do período estão sincronizados.';
+
+    return '$base $situacao'.trim();
   }
 }
 

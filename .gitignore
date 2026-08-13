@@ -99,3 +99,10 @@ tools/output/*
 node_modules/
 firebase-debug.log
 
+# ===========================
+# Evidências operacionais locais
+# ===========================
+
+# Backups do Firestore, coordenadas, scripts de execução e APKs de homologação.
+/work/
+

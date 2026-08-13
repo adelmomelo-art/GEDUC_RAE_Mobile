@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/data/models/acao_model.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/services/dashboard_cio_bridge.dart';
+import 'package:geduc_rae_mobile/modules/dashboard/models/cio_dashboard_filters.dart';
 
 void main() {
   const bridge = DashboardCIOBridge();
@@ -31,6 +32,26 @@ void main() {
     expect(resultado.rankingRegionais, isEmpty);
     expect(resultado.indicadoresEstrategicos, hasLength(5));
     expect(resultado.alertas, isNotEmpty);
+    expect(resultado.qualidadeDados.totalRecords, 0);
+  });
+
+  test('expõe série contínua e qualidade pelo mesmo resultado', () {
+    final resultado = bridge.processar(
+      [_acao('1', 'Regional Norte', pessoas: 100, metaAtingida: true)],
+      intervalo: DateTimeRangeCio(
+        DateTime(2026, 8, 11),
+        DateTime(2026, 8, 13),
+      ),
+    );
+
+    expect(resultado.serieHistorica, isNotNull);
+    expect(resultado.serieHistorica!.buckets, hasLength(3));
+    expect(
+      resultado.serieHistorica!.buckets.map((item) => item.actions),
+      [0, 1, 0],
+    );
+    expect(resultado.qualidadeDados.totalRecords, 1);
+    expect(resultado.territorios, hasLength(1));
   });
 }
 

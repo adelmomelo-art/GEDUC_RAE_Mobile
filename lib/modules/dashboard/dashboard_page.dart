@@ -8,6 +8,7 @@ import 'widgets/executive/executive_kpi_grid.dart';
 import 'widgets/faxita/faxita_summary_card.dart';
 import 'widgets/operational/operational_status_panel.dart';
 import 'widgets/charts/dashboard_charts.dart';
+import 'widgets/cio_intelligence_panel.dart';
 import 'widgets/common/dashboard_colors.dart';
 import 'widgets/common/dashboard_section.dart';
 import 'widgets/common/dashboard_theme.dart';
@@ -22,12 +23,11 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardController controller;
 
-  int get totalAcoes => controller.indicadores.totalAcoes;
-  int get totalPessoas => controller.indicadores.pessoasAlcancadas;
-  int get metasAtingidas => controller.indicadores.metasAtingidas;
+  int get totalAcoes => controller.metricasOficiais.totalRecords;
+  int get totalPessoas => controller.metricasOficiais.totalPeople;
+  int get metasAtingidas => controller.metricasOficiais.recordsTargetAchieved;
   int get profissionaisMobilizados =>
-      controller.indicadores.totalAgentes +
-      controller.indicadores.totalEquipeTerceirizada;
+      controller.metricasOficiais.totalHumanResources;
 
   int get totalPendentes => controller.totalPendentes;
   int get totalSincronizadas => controller.totalSincronizadas;
@@ -135,18 +135,13 @@ class _DashboardPageState extends State<DashboardPage> {
                           metasAtingidas: metasAtingidas,
                           profissionaisMobilizados: profissionaisMobilizados,
                           comparacaoAcoes:
-                              controller.indicadoresComparacao?.totalAcoes,
-                          comparacaoPessoas: controller
-                              .indicadoresComparacao?.pessoasAlcancadas,
-                          comparacaoMetas:
-                              controller.indicadoresComparacao?.metasAtingidas,
-                          comparacaoProfissionais:
-                              controller.indicadoresComparacao == null
-                                  ? null
-                                  : controller
-                                          .indicadoresComparacao!.totalAgentes +
-                                      controller.indicadoresComparacao!
-                                          .totalEquipeTerceirizada,
+                              controller.metricasComparacao?.totalRecords,
+                          comparacaoPessoas:
+                              controller.metricasComparacao?.totalPeople,
+                          comparacaoMetas: controller
+                              .metricasComparacao?.recordsTargetAchieved,
+                          comparacaoProfissionais: controller
+                              .metricasComparacao?.totalHumanResources,
                         ),
                       ),
                       DashboardSection(
@@ -154,6 +149,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           indicadores: controller.indicadores,
                           periodoSelecionado:
                               controller.periodoSelecionadoLabel,
+                        ),
+                      ),
+                      DashboardSection(
+                        child: CIOIntelligencePanel(
+                          ranking: controller.rankingRegionais,
+                          insights: controller.insights,
+                          alertas: controller.alertasCio,
+                          recomendacoes: controller.recomendacoesCio,
                         ),
                       ),
                       DashboardSection(

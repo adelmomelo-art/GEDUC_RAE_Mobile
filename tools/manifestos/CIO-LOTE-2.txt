@@ -1,0 +1,11 @@
+PACOTE=CIO-LOTE-2-INTELIGENCIA-OPERACIONAL
+BASELINE=6e8da998166ab2041dbe661c3ccca2dfb26fac20
+BRANCH=feature/cio-inteligencia-operacional-lote2
+OBJETIVO=integrar Dashboard CIO ao motor analitico existente
+PROVIDERS_GLOBAIS=inalterados
+ROTAS=inalteradas
+FIRESTORE=inalterado
+DEPENDENCIAS=inalteradas
+FLUTTER_ANALYZE=sem_erros
+FLUTTER_TEST=560_aprovados
+REVISAO_TECNICA=achados_P1_e_P2_corrigidos

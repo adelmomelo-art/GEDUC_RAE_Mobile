@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/models/cio_dashboard_filters.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/widgets/executive/executive_filters.dart';
 import 'package:geduc_rae_mobile/modules/dashboard/widgets/executive/executive_kpi_grid.dart';
+import 'package:geduc_rae_mobile/modules/dashboard/widgets/cio_intelligence_panel.dart';
 
 void main() {
   for (final largura in [320.0, 360.0, 412.0, 800.0]) {
@@ -70,6 +71,48 @@ void main() {
       expect(find.text('Profissionais mobilizados'), findsOneWidget);
     }
     addTearDown(() => tester.binding.setSurfaceSize(null));
+  });
+
+  for (final largura in [320.0, 360.0, 412.0, 800.0]) {
+    testWidgets('painel de inteligência sem overflow em ${largura.toInt()} px',
+        (tester) async {
+      await tester.binding.setSurfaceSize(Size(largura, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_app(const SingleChildScrollView(
+        child: CIOIntelligencePanel(
+          ranking: [],
+          insights: [],
+          alertas: [],
+          recomendacoes: [],
+        ),
+      )));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Inteligência operacional'), findsOneWidget);
+      expect(find.text('Ranking regional'), findsOneWidget);
+    });
+  }
+
+  testWidgets('painel de inteligência suporta escala ampliada', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
+      child: _app(const SingleChildScrollView(
+        child: CIOIntelligencePanel(
+          ranking: [],
+          insights: [],
+          alertas: [],
+          recomendacoes: ['Manter acompanhamento operacional.'],
+        ),
+      )),
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.textContaining('Manter acompanhamento operacional.'),
+      findsOneWidget,
+    );
   });
 }
 

@@ -6,15 +6,20 @@ import '../../../core/services/offline_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/models/acao_model.dart';
 import '../models/cio_dashboard_filters.dart';
+import '../models/analytics/alerta_operacional.dart';
+import '../models/analytics/indicador_estrategico.dart';
+import '../models/analytics/insight_operacional.dart';
+import '../models/analytics/ranking_item.dart';
+import '../services/dashboard_cio_bridge.dart';
 
 class DashboardController extends ChangeNotifier {
   DashboardController({
     FirebaseAcaoService? firebaseService,
     OfflineService? offlineService,
-    DashboardService? dashboardService,
+    DashboardCIOBridge? cioBridge,
   })  : _firebaseService = firebaseService ?? FirebaseAcaoService(),
         _offlineService = offlineService ?? OfflineService(),
-        _dashboardService = dashboardService ?? const DashboardService() {
+        _cioBridge = cioBridge ?? const DashboardCIOBridge() {
     _syncService = SyncService(
       offlineService: _offlineService,
       firebaseService: _firebaseService,
@@ -25,7 +30,7 @@ class DashboardController extends ChangeNotifier {
 
   final FirebaseAcaoService _firebaseService;
   final OfflineService _offlineService;
-  final DashboardService _dashboardService;
+  final DashboardCIOBridge _cioBridge;
 
   late final SyncService _syncService;
 
@@ -34,6 +39,11 @@ class DashboardController extends ChangeNotifier {
   DashboardPeriodo _periodoSelecionado = DashboardPeriodo.geral;
   List<AcaoModel> _todasAsAcoes = const <AcaoModel>[];
   CioDashboardFilters _filtros = const CioDashboardFilters();
+  List<IndicadorEstrategico> _indicadoresEstrategicos = const [];
+  List<RankingItem> _rankingRegionais = const [];
+  List<InsightOperacional> _insights = const [];
+  List<AlertaOperacional> _alertasCio = const [];
+  List<String> _recomendacoesCio = const [];
 
   bool _carregando = false;
   bool _online = false;
@@ -48,6 +58,12 @@ class DashboardController extends ChangeNotifier {
   DashboardPeriodo get periodoSelecionado => _periodoSelecionado;
   CioDashboardFilters get filtros => _filtros;
   List<AcaoModel> get todasAsAcoes => _todasAsAcoes;
+  List<IndicadorEstrategico> get indicadoresEstrategicos =>
+      _indicadoresEstrategicos;
+  List<RankingItem> get rankingRegionais => _rankingRegionais;
+  List<InsightOperacional> get insights => _insights;
+  List<AlertaOperacional> get alertasCio => _alertasCio;
+  List<String> get recomendacoesCio => _recomendacoesCio;
 
   bool get carregando => _carregando;
   bool get sincronizando => _syncService.sincronizando;
@@ -115,17 +131,19 @@ class DashboardController extends ChangeNotifier {
   void _recalcularIndicadores() {
     final agora = DateTime.now();
     final filtradas = _filtros.aplicar(_todasAsAcoes, agora);
-    _indicadores = _dashboardService.calcularIndicadores(
-      filtradas,
-      periodo: DashboardPeriodo.geral,
-    );
+    final resultado = _cioBridge.processar(filtradas);
+    _indicadores = resultado.indicadores;
+    _indicadoresEstrategicos = resultado.indicadoresEstrategicos;
+    _rankingRegionais = resultado.rankingRegionais;
+    _insights = resultado.insights;
+    _alertasCio = resultado.alertas;
+    _recomendacoesCio = resultado.recomendacoes;
     final faixaComparacao = _filtros.intervaloComparacao(agora);
     _indicadoresComparacao = faixaComparacao == null
         ? null
-        : _dashboardService.calcularIndicadores(
-            _filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao),
-            periodo: DashboardPeriodo.geral,
-          );
+        : _cioBridge
+            .processar(_filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao))
+            .indicadores;
   }
 
   Future<void> alterarPeriodo(

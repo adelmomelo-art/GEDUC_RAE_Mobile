@@ -8,6 +8,7 @@ import 'widgets/executive/executive_kpi_grid.dart';
 import 'widgets/faxita/faxita_summary_card.dart';
 import 'widgets/operational/operational_status_panel.dart';
 import 'widgets/charts/dashboard_charts.dart';
+import 'widgets/cio_intelligence_panel.dart';
 import 'widgets/common/dashboard_colors.dart';
 import 'widgets/common/dashboard_section.dart';
 import 'widgets/common/dashboard_theme.dart';
@@ -154,6 +155,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           indicadores: controller.indicadores,
                           periodoSelecionado:
                               controller.periodoSelecionadoLabel,
+                        ),
+                      ),
+                      DashboardSection(
+                        child: CIOIntelligencePanel(
+                          ranking: controller.rankingRegionais,
+                          insights: controller.insights,
+                          alertas: controller.alertasCio,
+                          recomendacoes: controller.recomendacoesCio,
                         ),
                       ),
                       DashboardSection(

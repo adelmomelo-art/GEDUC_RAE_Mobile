@@ -13,10 +13,13 @@ void main() {
     ]);
 
     expect(resultado.indicadores.totalAcoes, 3);
+    expect(resultado.metricasOficiais.totalRecords, 3);
     expect(resultado.indicadoresEstrategicos, hasLength(5));
     expect(resultado.rankingRegionais, hasLength(2));
     expect(resultado.rankingRegionais.first.nome, 'Regional Norte');
     expect(resultado.rankingRegionais.first.posicao, 1);
+    expect(resultado.rankingRegionais.first.percentualMetasAtingidas, 100);
+    expect(resultado.rankingRegionais.last.percentualMetasAtingidas, 0);
     expect(resultado.insights, isNotEmpty);
     expect(resultado.recomendacoes, isNotEmpty);
   });
@@ -45,6 +48,7 @@ AcaoModel _acao(
     'status': 'concluido',
     'coordenadorNome': 'Maria',
     'pessoasAlcancadas': pessoas,
+    'publicoMinimo': 50,
     'veiculosAbordados': pessoas ~/ 2,
     'credenciaisEmitidas': pessoas ~/ 4,
     'metaAtingida': metaAtingida,

@@ -23,12 +23,11 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardController controller;
 
-  int get totalAcoes => controller.indicadores.totalAcoes;
-  int get totalPessoas => controller.indicadores.pessoasAlcancadas;
-  int get metasAtingidas => controller.indicadores.metasAtingidas;
+  int get totalAcoes => controller.metricasOficiais.totalRecords;
+  int get totalPessoas => controller.metricasOficiais.totalPeople;
+  int get metasAtingidas => controller.metricasOficiais.recordsTargetAchieved;
   int get profissionaisMobilizados =>
-      controller.indicadores.totalAgentes +
-      controller.indicadores.totalEquipeTerceirizada;
+      controller.metricasOficiais.totalHumanResources;
 
   int get totalPendentes => controller.totalPendentes;
   int get totalSincronizadas => controller.totalSincronizadas;
@@ -136,18 +135,13 @@ class _DashboardPageState extends State<DashboardPage> {
                           metasAtingidas: metasAtingidas,
                           profissionaisMobilizados: profissionaisMobilizados,
                           comparacaoAcoes:
-                              controller.indicadoresComparacao?.totalAcoes,
-                          comparacaoPessoas: controller
-                              .indicadoresComparacao?.pessoasAlcancadas,
-                          comparacaoMetas:
-                              controller.indicadoresComparacao?.metasAtingidas,
-                          comparacaoProfissionais:
-                              controller.indicadoresComparacao == null
-                                  ? null
-                                  : controller
-                                          .indicadoresComparacao!.totalAgentes +
-                                      controller.indicadoresComparacao!
-                                          .totalEquipeTerceirizada,
+                              controller.metricasComparacao?.totalRecords,
+                          comparacaoPessoas:
+                              controller.metricasComparacao?.totalPeople,
+                          comparacaoMetas: controller
+                              .metricasComparacao?.recordsTargetAchieved,
+                          comparacaoProfissionais: controller
+                              .metricasComparacao?.totalHumanResources,
                         ),
                       ),
                       DashboardSection(

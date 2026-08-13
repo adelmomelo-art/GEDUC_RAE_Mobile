@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/analytics/analytics_metrics.dart';
 import '../../../core/services/dashboard_service.dart';
 import '../../../core/services/firebase_acao_service.dart';
 import '../../../core/services/offline_service.dart';
@@ -36,6 +37,8 @@ class DashboardController extends ChangeNotifier {
 
   DashboardIndicadores _indicadores = DashboardIndicadores.vazio();
   DashboardIndicadores? _indicadoresComparacao;
+  AnalyticsMetrics _metricasOficiais = const AnalyticsMetrics();
+  AnalyticsMetrics? _metricasComparacao;
   DashboardPeriodo _periodoSelecionado = DashboardPeriodo.geral;
   List<AcaoModel> _todasAsAcoes = const <AcaoModel>[];
   CioDashboardFilters _filtros = const CioDashboardFilters();
@@ -55,6 +58,8 @@ class DashboardController extends ChangeNotifier {
 
   DashboardIndicadores get indicadores => _indicadores;
   DashboardIndicadores? get indicadoresComparacao => _indicadoresComparacao;
+  AnalyticsMetrics get metricasOficiais => _metricasOficiais;
+  AnalyticsMetrics? get metricasComparacao => _metricasComparacao;
   DashboardPeriodo get periodoSelecionado => _periodoSelecionado;
   CioDashboardFilters get filtros => _filtros;
   List<AcaoModel> get todasAsAcoes => _todasAsAcoes;
@@ -133,17 +138,23 @@ class DashboardController extends ChangeNotifier {
     final filtradas = _filtros.aplicar(_todasAsAcoes, agora);
     final resultado = _cioBridge.processar(filtradas);
     _indicadores = resultado.indicadores;
+    _metricasOficiais = resultado.metricasOficiais;
     _indicadoresEstrategicos = resultado.indicadoresEstrategicos;
     _rankingRegionais = resultado.rankingRegionais;
     _insights = resultado.insights;
     _alertasCio = resultado.alertas;
     _recomendacoesCio = resultado.recomendacoes;
     final faixaComparacao = _filtros.intervaloComparacao(agora);
-    _indicadoresComparacao = faixaComparacao == null
-        ? null
-        : _cioBridge
-            .processar(_filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao))
-            .indicadores;
+    if (faixaComparacao == null) {
+      _indicadoresComparacao = null;
+      _metricasComparacao = null;
+    } else {
+      final comparacao = _cioBridge.processar(
+        _filtros.aplicarFaixa(_todasAsAcoes, faixaComparacao),
+      );
+      _indicadoresComparacao = comparacao.indicadores;
+      _metricasComparacao = comparacao.metricasOficiais;
+    }
   }
 
   Future<void> alterarPeriodo(

@@ -7,4 +7,5 @@ ROTAS=inalteradas
 FIRESTORE=inalterado
 DEPENDENCIAS=inalteradas
 FLUTTER_ANALYZE=sem_erros
-FLUTTER_TEST=555_aprovados
+FLUTTER_TEST=560_aprovados
+REVISAO_TECNICA=achados_P1_e_P2_corrigidos

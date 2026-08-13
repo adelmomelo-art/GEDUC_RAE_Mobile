@@ -1,5 +1,8 @@
+import '../../../core/analytics/analytics_engine.dart';
+import '../../../core/analytics/analytics_metrics.dart';
 import '../../../core/services/dashboard_service.dart';
 import '../../../data/models/acao_model.dart';
+import '../../educacao/analytics/educacao_analytics_adapter.dart';
 import '../models/analytics/alerta_operacional.dart';
 import '../models/analytics/analytics_enums.dart';
 import '../models/analytics/indicador_estrategico.dart';
@@ -13,18 +16,28 @@ class DashboardCIOBridge {
   const DashboardCIOBridge({
     this.dashboardService = const DashboardService(),
     this.analyticsService = const CIOAnalyticsService(),
+    this.analyticsEngine = const AnalyticsEngine(),
+    this.educacaoAdapter = const EducacaoAnalyticsAdapter(),
   });
 
   final DashboardService dashboardService;
   final CIOAnalyticsService analyticsService;
+  final AnalyticsEngine analyticsEngine;
+  final EducacaoAnalyticsAdapter educacaoAdapter;
 
   DashboardCIOResult processar(List<AcaoModel> acoes) {
     final indicadores = dashboardService.calcularIndicadores(
       acoes,
       periodo: DashboardPeriodo.geral,
     );
-    final resumo = _criarResumo(indicadores);
-    final agregados = _criarAgregados(indicadores);
+    final resultadoOficial = analyticsEngine.process(
+      records: educacaoAdapter.toAnalyticsRecords(acoes),
+    );
+    final resumo = _criarResumo(
+      resultadoOficial.metrics,
+      indicadores,
+    );
+    final agregados = _criarAgregados(acoes);
     final referencia = _criarReferencia(agregados);
     final ranking = analyticsService.gerarRanking(
       agregados: agregados,
@@ -34,6 +47,7 @@ class DashboardCIOBridge {
 
     return DashboardCIOResult(
       indicadores: indicadores,
+      metricasOficiais: resultadoOficial.metrics,
       indicadoresEstrategicos:
           analyticsService.gerarIndicadores(resumo: resumo),
       rankingRegionais: ranking,
@@ -52,32 +66,48 @@ class DashboardCIOBridge {
     );
   }
 
-  CIOAnalyticsSummary _criarResumo(DashboardIndicadores indicadores) {
+  CIOAnalyticsSummary _criarResumo(
+    AnalyticsMetrics metricas,
+    DashboardIndicadores indicadores,
+  ) {
     return CIOAnalyticsSummary(
-      totalAcoes: indicadores.totalAcoes,
-      pessoasAlcancadas: indicadores.pessoasAlcancadas,
-      veiculosAbordados: indicadores.veiculosAbordados,
+      totalAcoes: metricas.totalRecords,
+      pessoasAlcancadas: metricas.totalPeople,
+      veiculosAbordados: metricas.totalVehicles,
       credenciaisEmitidas: indicadores.credenciaisEmitidas,
-      percentualMetasAtingidas: indicadores.percentualMetasAtingidas,
+      percentualMetasAtingidas: metricas.targetAchievementRate * 100,
     );
   }
 
-  List<CIOAnalyticsAggregate> _criarAgregados(
-    DashboardIndicadores indicadores,
-  ) {
-    return indicadores.rankingRegionais
-        .map(
-          (item) => CIOAnalyticsAggregate(
-            id: _normalizarId(item.nome),
-            nome: item.nome,
-            acoes: item.quantidade,
-            pessoasAlcancadas: item.pessoasAlcancadas,
-            veiculosAbordados: item.veiculosAbordados,
-            credenciaisEmitidas: item.credenciaisEmitidas,
-            percentualMetasAtingidas: indicadores.percentualMetasAtingidas,
-          ),
-        )
-        .toList(growable: false);
+  List<CIOAnalyticsAggregate> _criarAgregados(List<AcaoModel> acoes) {
+    final grupos = <String, List<AcaoModel>>{};
+    for (final acao in acoes) {
+      final regional =
+          acao.regional.trim().isEmpty ? 'Não informado' : acao.regional.trim();
+      grupos.putIfAbsent(regional, () => <AcaoModel>[]).add(acao);
+    }
+
+    return grupos.entries.map((entry) {
+      final acoesRegionais = entry.value;
+      final metricas = analyticsEngine
+          .process(
+            records: educacaoAdapter.toAnalyticsRecords(acoesRegionais),
+          )
+          .metrics;
+
+      return CIOAnalyticsAggregate(
+        id: _normalizarId(entry.key),
+        nome: entry.key,
+        acoes: metricas.totalRecords,
+        pessoasAlcancadas: metricas.totalPeople,
+        veiculosAbordados: metricas.totalVehicles,
+        credenciaisEmitidas: acoesRegionais.fold<int>(
+          0,
+          (total, acao) => total + acao.credenciaisEmitidas,
+        ),
+        percentualMetasAtingidas: metricas.targetAchievementRate * 100,
+      );
+    }).toList(growable: false);
   }
 
   PerformanceScoreReference _criarReferencia(
@@ -110,6 +140,7 @@ class DashboardCIOBridge {
 class DashboardCIOResult {
   const DashboardCIOResult({
     required this.indicadores,
+    required this.metricasOficiais,
     required this.indicadoresEstrategicos,
     required this.rankingRegionais,
     required this.insights,
@@ -118,6 +149,7 @@ class DashboardCIOResult {
   });
 
   final DashboardIndicadores indicadores;
+  final AnalyticsMetrics metricasOficiais;
   final List<IndicadorEstrategico> indicadoresEstrategicos;
   final List<RankingItem> rankingRegionais;
   final List<InsightOperacional> insights;

@@ -22,8 +22,10 @@ CioDashboardFilters
 DashboardController
         ↓
 DashboardCIOBridge
-        ├─ DashboardService (agregação operacional existente)
-        └─ CIOAnalyticsService (inteligência institucional)
+        ├─ EducacaoAnalyticsAdapter
+        ├─ AnalyticsEngine (métricas institucionais oficiais)
+        ├─ DashboardService (detalhamento operacional existente)
+        └─ CIOAnalyticsService (ranking e inteligência institucional)
         ↓
 DashboardCIOResult
         ↓
@@ -32,6 +34,11 @@ Dashboard CIO
 
 O `DashboardCIOBridge` é a fachada única da tela. Nenhum widget realiza
 cálculos próprios.
+
+Os quatro KPIs executivos e suas comparações consomem as métricas oficiais do
+`AnalyticsEngine`. O `DashboardService` permanece apenas para indicadores
+operacionais ainda não representados no contrato institucional, como
+credenciais e séries detalhadas.
 
 ## Decisões
 

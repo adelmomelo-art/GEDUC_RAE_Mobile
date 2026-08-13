@@ -2,8 +2,10 @@
 
 ## Inteligência operacional integrada
 
-**Baseline:** `6e8da998`  
-**Branch:** `feature/cio-inteligencia-operacional-lote2`  
+**Baseline:** `6e8da998`
+
+**Branch:** `feature/cio-inteligencia-operacional-lote2`
+
 **Status:** implementação técnica
 
 ## Objetivo

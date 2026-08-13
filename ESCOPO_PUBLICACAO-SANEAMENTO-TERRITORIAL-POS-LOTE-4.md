@@ -60,6 +60,9 @@ Esses arquivos não devem ser adicionados com opção de inclusão forçada.
 - nenhum padrão de credencial ou chave privada encontrado nos candidatos;
 - catálogo CSV com 121 linhas, 121 bairros únicos e 12 Regionais;
 - sintaxe do gerador JavaScript aprovada;
+- gerador JavaScript parametrizado para preservar o estado homologado;
+- gerador PowerShell exige a fonte oficial explicitamente e valida seu SHA-256
+  antes de produzir o catálogo;
 - integridade textual aprovada por `git diff --check`;
 - `work/` confirmado como ignorado pelo Git;
 - nenhum arquivo de aplicação, regra do Firestore ou dependência foi alterado.

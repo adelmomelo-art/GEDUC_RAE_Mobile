@@ -2,6 +2,7 @@ const fs = require('fs');
 
 const source = process.argv[2] || 'docs/catalogo_territorial_fortaleza_lc307.csv';
 const target = process.argv[3] || 'MATRIZ_CATALOGO-TERRITORIAL_FORTALEZA_LC307.md';
+const homologated = process.argv.includes('--homologado');
 
 function parseLine(line) {
   const result = [];
@@ -57,11 +58,16 @@ for (const regional of [...new Set(records.map((item) => item.regional))]) {
   output.push('');
 }
 
-output.push(
-  '## Estado',
-  '',
-  'Matriz gerada para revisão e homologação humana. Nenhuma alteração no Firestore é autorizada por este documento.',
-  '',
-);
+output.push('## Estado', '');
+if (homologated) {
+  output.push(
+    'Matriz homologada em 13/08/2026: 121 bairros, 12 Regionais e 39 territórios',
+    'aprovados. A homologação valida a fonte e o conteúdo cadastral; nenhuma alteração',
+    'no Firestore é autorizada por este documento isoladamente.',
+  );
+} else {
+  output.push('Matriz gerada para revisão e homologação humana. Nenhuma alteração no Firestore é autorizada por este documento.');
+}
+output.push('');
 fs.writeFileSync(target, output.join('\n'), 'utf8');
-console.log(JSON.stringify({source, target, records: records.length}, null, 2));
+console.log(JSON.stringify({source, target, records: records.length, homologated}, null, 2));

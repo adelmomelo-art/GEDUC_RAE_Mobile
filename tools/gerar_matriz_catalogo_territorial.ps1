@@ -1,10 +1,21 @@
 param(
-  [string]$Source = "work\bairros_fortaleza_oficial.csv",
+  [Parameter(Mandatory = $true)]
+  [string]$Source,
   [string]$OutputCsv = "docs\catalogo_territorial_fortaleza_lc307.csv",
   [string]$OutputMarkdown = "MATRIZ_CATALOGO-TERRITORIAL_FORTALEZA_LC307.md"
 )
 
 $ErrorActionPreference = 'Stop'
+$ExpectedSourceSha256 = '4AC3848EDAD45BF567A6D7513953B220D0BBD351360767EC04CDBDB19AAD08A3'
+$SourcePage = 'https://mapas.fortaleza.ce.gov.br/mapa/21/bairros-de-fortaleza'
+
+if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
+  throw "Fonte não encontrada: $Source. Obtenha o CSV em $SourcePage"
+}
+$actualSourceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $Source).Hash
+if ($actualSourceSha256 -ne $ExpectedSourceSha256) {
+  throw "SHA-256 da fonte divergiu. Esperado: $ExpectedSourceSha256; obtido: $actualSourceSha256. Fonte oficial: $SourcePage"
+}
 $rows = Import-Csv -LiteralPath $Source -Encoding UTF8
 
 $expectedTerritories = @{

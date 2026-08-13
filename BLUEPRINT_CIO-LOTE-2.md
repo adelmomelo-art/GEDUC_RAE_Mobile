@@ -6,7 +6,7 @@
 
 **Branch:** `feature/cio-inteligencia-operacional-lote2`
 
-**Status:** implementação técnica
+**Status:** homologado
 
 ## Objetivo
 
@@ -61,3 +61,9 @@ credenciais e séries detalhadas.
 
 Predição, novas coleções Firestore, novas dependências, exportação, mudanças no
 BI Executivo e alterações no formulário RAE.
+
+## Homologação
+
+Homologação funcional concluída em 13/08/2026 no Samsung Galaxy A05, após a
+correção da coerência entre a fila local de sincronização e a leitura exibida
+pela Faxita. O baseline homologado é `3cd6a12`.

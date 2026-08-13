@@ -368,11 +368,22 @@ class CioHistoricalTerritorialService {
     );
   }
 
-  String _normalize(String value) => value
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-      .replaceAll(RegExp(r'^_|_$'), '');
+  String _normalize(String value) {
+    final withoutDiacritics = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp('[áàâãäå]'), 'a')
+        .replaceAll(RegExp('[éèêë]'), 'e')
+        .replaceAll(RegExp('[íìîï]'), 'i')
+        .replaceAll(RegExp('[óòôõö]'), 'o')
+        .replaceAll(RegExp('[úùûü]'), 'u')
+        .replaceAll('ç', 'c')
+        .replaceAll('ñ', 'n');
+
+    return withoutDiacritics
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+  }
 
   bool _hasValidCoordinates(AcaoModel action) {
     final latitude = action.latitude;

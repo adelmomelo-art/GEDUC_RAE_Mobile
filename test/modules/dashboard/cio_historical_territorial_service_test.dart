@@ -122,6 +122,32 @@ void main() {
         ]),
       );
     });
+
+    test('agrupa nomes legados equivalentes com e sem diacríticos', () {
+      final groups = service.groupTerritories([
+        _action('1', DateTime(2026, 8, 1), regional: 'São José'),
+        _action('2', DateTime(2026, 8, 2), regional: 'Sao Jose'),
+        _action('3', DateTime(2026, 8, 3), regional: 'SÃO-JOSÉ'),
+      ]);
+
+      expect(groups, hasLength(1));
+      expect(groups.single.id, 'legacy_sao_jose');
+      expect(groups.single.actions, hasLength(3));
+      expect(groups.single.status, CioTerritorialIdentityStatus.legacy);
+    });
+
+    test('mantém nomes territoriais semanticamente diferentes separados', () {
+      final groups = service.groupTerritories([
+        _action('1', DateTime(2026, 8, 1), regional: 'São José'),
+        _action('2', DateTime(2026, 8, 2), regional: 'São João'),
+      ]);
+
+      expect(groups, hasLength(2));
+      expect(
+        groups.map((item) => item.id),
+        containsAll(['legacy_sao_jose', 'legacy_sao_joao']),
+      );
+    });
   });
 
   test('relatório de qualidade distingue cobertura, legado e não resolvido',

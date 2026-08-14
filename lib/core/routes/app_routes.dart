@@ -13,7 +13,6 @@ import '../../modules/auth/login_page.dart';
 import '../../modules/auth/account_access_page.dart';
 import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
-import '../../modules/dashboard/bi_geduc_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
 import '../../modules/evidencias/evidencias_page.dart';
 import '../../modules/home/home_page.dart';
@@ -235,7 +234,14 @@ class AppRoutes {
       ),
       GoRoute(
         path: biGeducPath,
-        builder: (context, state) => const BiGeducPage(),
+        redirect: (context, state) async {
+          final bloqueio = await RouteGuard.proteger(
+            permissao: Permission.acessarCioExecutivo,
+            loginPath: loginPath,
+            acessoNegadoPath: acessoNegadoPath,
+          );
+          return bloqueio ?? dashboardPath;
+        },
       ),
       GoRoute(
         path: sincronizacaoPath,

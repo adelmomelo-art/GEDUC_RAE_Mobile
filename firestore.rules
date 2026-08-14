@@ -110,7 +110,7 @@ service cloud.firestore {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
       allow get: if autenticado() && request.auth.uid == usuarioId;
-      allow list: if administradorOuGestor();
+      allow list: if administrador();
 
       // Não há fluxo cliente homologado para administrar identidade.
       // Perfil, situação ativa e UID permanecem imutáveis pelo aplicativo.

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/security/authorization_service.dart';
+import '../../core/security/permission.dart';
 import '../../data/models/acao_model.dart';
 import 'controllers/dashboard_controller.dart';
 import 'widgets/executive/executive_filters.dart';
@@ -9,6 +12,7 @@ import 'widgets/faxita/faxita_summary_card.dart';
 import 'widgets/operational/operational_status_panel.dart';
 import 'widgets/charts/dashboard_charts.dart';
 import 'widgets/cio_intelligence_panel.dart';
+import 'widgets/cio_bi_executive_panel.dart';
 import 'widgets/cio_historical_territorial_panel.dart';
 import 'widgets/cio_territorial_governance_panel.dart';
 import 'widgets/cio_territorial_map_panel.dart';
@@ -95,6 +99,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final podeAcessarVisaoExecutiva = context
+        .watch<AuthorizationService>()
+        .possuiPermissao(Permission.acessarCioExecutivo);
+
     return Scaffold(
       backgroundColor: DashboardColors.pageBackground,
       appBar: AppBar(
@@ -170,6 +178,12 @@ class _DashboardPageState extends State<DashboardPage> {
                           recomendacoes: controller.recomendacoesCio,
                         ),
                       ),
+                      if (podeAcessarVisaoExecutiva)
+                        DashboardSection(
+                          child: CioBiExecutivePanel(
+                            snapshot: controller.biExecutive,
+                          ),
+                        ),
                       DashboardSection(
                         child: CioHistoricalTerritorialPanel(
                           timeline: controller.serieHistorica,

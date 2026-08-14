@@ -5,6 +5,7 @@ class AuthorizationPolicy {
 
   static const Map<String, Set<Permission>> _permissoesPorPerfil = {
     'administrador': {
+      Permission.acessarCioExecutivo,
       Permission.acessarAdministracao,
       Permission.gerenciarDominios,
       Permission.gerenciarUsuarios,
@@ -14,12 +15,15 @@ class AuthorizationPolicy {
       Permission.gerenciarMateriais,
     },
     'gestor': {
+      Permission.acessarCioExecutivo,
       Permission.acessarAdministracao,
       Permission.gerenciarDominios,
-      Permission.gerenciarUsuarios,
       Permission.gerenciarTiposAcoes,
     },
-    'coordenador': <Permission>{},
+    'gerente': <Permission>{},
+    'coordenador': {
+      Permission.acessarCioExecutivo,
+    },
     'agente': <Permission>{},
   };
 

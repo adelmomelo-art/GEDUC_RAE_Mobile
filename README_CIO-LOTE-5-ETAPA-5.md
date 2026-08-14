@@ -4,9 +4,10 @@
 
 - dispositivo autorizado: Samsung Galaxy A05;
 - tipo: APK debug de homologação;
-- mapa territorial: habilitado exclusivamente pela chave de compilação
-  `CIO_MAPA_TERRITORIAL_LOTE5=true`;
-- builds sem essa chave permanecem protegidos por padrão;
+- mapa territorial: habilitado pela chave de compilação
+  `CIO_MAPA_TERRITORIAL_LOTE5=true` no candidato homologado;
+- após a homologação, builds oficiais mantêm o mapa ativo por padrão;
+- a chave pode receber `false` para bloqueio emergencial;
 - arquivo: `work/Fenix-CIO-Lote5-Mapa-Territorial-Homologacao-A05.apk`;
 - tamanho: 200.691.069 bytes;
 - SHA-256: `9EC6E593D355256D046ADCE442C2D44743F50B43071FDCAFC7A5AC9A45FA1575`.

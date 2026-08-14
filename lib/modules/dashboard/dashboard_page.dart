@@ -18,7 +18,7 @@ import 'widgets/common/dashboard_theme.dart';
 
 const bool _cioTerritorialMapEnabled = bool.fromEnvironment(
   'CIO_MAPA_TERRITORIAL_LOTE5',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 class DashboardPage extends StatefulWidget {

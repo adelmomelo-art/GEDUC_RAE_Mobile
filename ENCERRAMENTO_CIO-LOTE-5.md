@@ -12,7 +12,7 @@ em 13/08/2026 e está aprovado para publicação.
 - exclusão cartográfica controlada dos registros G1 e G2;
 - funcionamento online e offline com atribuições das fontes;
 - ausência de pinos, coordenadas e identificação individual de RAEs;
-- proteção por chave de compilação, desativada por padrão;
+- proteção por chave de compilação, com bloqueio emergencial por `false`;
 - testes técnicos e homologação humana no dispositivo autorizado.
 
 ## Limites preservados

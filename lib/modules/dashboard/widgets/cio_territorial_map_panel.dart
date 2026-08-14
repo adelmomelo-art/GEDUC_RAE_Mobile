@@ -35,8 +35,8 @@ class _CioTerritorialMapPanelState extends State<CioTerritorialMapPanel> {
         context,
         icon: Icons.lock_outline_rounded,
         title: 'Mapa territorial protegido',
-        message: 'Fundação oficial instalada. A ativação depende dos testes '
-            'completos e da homologação no Samsung A05.',
+        message: 'Visualização territorial desativada pela configuração de '
+            'segurança desta compilação.',
       );
     }
     if (widget.foundationUnavailable ||

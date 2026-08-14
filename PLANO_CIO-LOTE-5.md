@@ -62,9 +62,10 @@ mapa ainda desativado.
 
 **Saída:** decisão explícita de manter bloqueado ou ativar o mapa.
 
-**Estado:** concluída e homologada no Samsung Galaxy A05 em 13/08/2026;
-ativação restrita ao APK candidato pela chave de compilação
-`CIO_MAPA_TERRITORIAL_LOTE5`. Lote 5 aprovado para publicação.
+**Estado:** concluída e homologada no Samsung Galaxy A05 em 13/08/2026. Após a
+homologação, o mapa foi ativado por padrão para as compilações oficiais; a chave
+`CIO_MAPA_TERRITORIAL_LOTE5=false` permanece disponível para bloqueio
+emergencial. Lote 5 aprovado para publicação.
 
 ## Autorizações separadas
 

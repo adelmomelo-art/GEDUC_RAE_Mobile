@@ -11,9 +11,15 @@ import 'widgets/charts/dashboard_charts.dart';
 import 'widgets/cio_intelligence_panel.dart';
 import 'widgets/cio_historical_territorial_panel.dart';
 import 'widgets/cio_territorial_governance_panel.dart';
+import 'widgets/cio_territorial_map_panel.dart';
 import 'widgets/common/dashboard_colors.dart';
 import 'widgets/common/dashboard_section.dart';
 import 'widgets/common/dashboard_theme.dart';
+
+const bool _cioTerritorialMapEnabled = bool.fromEnvironment(
+  'CIO_MAPA_TERRITORIAL_LOTE5',
+  defaultValue: true,
+);
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -42,7 +48,9 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
 
-    controller = DashboardController();
+    controller = DashboardController(
+      cartographyEnabled: _cioTerritorialMapEnabled,
+    );
     controller.addListener(_atualizarTela);
     controller.carregarDashboard();
   }
@@ -177,6 +185,16 @@ class _DashboardPageState extends State<DashboardPage> {
                               controller.diagnosticoTerritorialDozeMeses,
                           catalogUnavailable:
                               controller.catalogoTerritorialIndisponivel,
+                        ),
+                      ),
+                      DashboardSection(
+                        child: CioTerritorialMapPanel(
+                          geometry: controller.cartographicGeometry,
+                          aggregation: controller.cartographicAggregation,
+                          online: controller.online,
+                          foundationUnavailable:
+                              controller.cartographicFoundationUnavailable,
+                          enabled: controller.cartographyEnabled,
                         ),
                       ),
                       DashboardSection(

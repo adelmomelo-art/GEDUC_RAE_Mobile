@@ -71,6 +71,9 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/geo/bairros_fortaleza_ipplanfor.geojson
+    - assets/geo/manifesto_bairros_fortaleza.json
+    - assets/geo/exclusoes_cartograficas_lote5.json
     - assets/images/header_timbrado.png
     - assets/images/footer_timbrado.png
     - assets/images/assinatura_conjunta_amc_pmf.png

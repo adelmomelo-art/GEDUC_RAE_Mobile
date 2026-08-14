@@ -9,12 +9,17 @@ import '../../../core/services/sync_service.dart';
 import '../../../data/models/acao_model.dart';
 import '../../../data/models/regional_model.dart';
 import '../models/cio_dashboard_filters.dart';
+import '../models/cartography/cio_cartographic_models.dart';
+import '../models/cartography/cio_geometry_models.dart';
 import '../models/analytics/alerta_operacional.dart';
 import '../models/analytics/indicador_estrategico.dart';
 import '../models/analytics/insight_operacional.dart';
 import '../models/analytics/ranking_item.dart';
 import '../services/dashboard_cio_bridge.dart';
 import '../services/cio_historical_territorial_service.dart';
+import '../services/cio_cartographic_exclusion_repository.dart';
+import '../services/cio_geometry_repository.dart';
+import '../services/cio_territorial_aggregation_service.dart';
 import '../services/cio_territorial_governance_service.dart';
 
 class DashboardController extends ChangeNotifier {
@@ -23,11 +28,20 @@ class DashboardController extends ChangeNotifier {
     OfflineService? offlineService,
     DashboardCIOBridge? cioBridge,
     Future<List<RegionalModel>> Function()? regionalCatalogLoader,
+    Future<CioGeometryDataset> Function()? geometryLoader,
+    Future<List<CioCartographicExclusion>> Function()? exclusionLoader,
+    CioTerritorialAggregationService? cartographicAggregationService,
+    this.cartographyEnabled = false,
   })  : _firebaseService = firebaseService ?? FirebaseAcaoService(),
         _offlineService = offlineService ?? OfflineService(),
         _cioBridge = cioBridge ?? const DashboardCIOBridge(),
         _regionalCatalogLoader =
-            regionalCatalogLoader ?? RegionalService().listarTodas {
+            regionalCatalogLoader ?? RegionalService().listarTodas,
+        _geometryLoader = geometryLoader ?? CioGeometryRepository().load,
+        _exclusionLoader =
+            exclusionLoader ?? CioCartographicExclusionRepository().load,
+        _cartographicAggregationService = cartographicAggregationService ??
+            const CioTerritorialAggregationService() {
     _syncService = SyncService(
       offlineService: _offlineService,
       firebaseService: _firebaseService,
@@ -40,6 +54,10 @@ class DashboardController extends ChangeNotifier {
   final OfflineService _offlineService;
   final DashboardCIOBridge _cioBridge;
   final Future<List<RegionalModel>> Function() _regionalCatalogLoader;
+  final Future<CioGeometryDataset> Function() _geometryLoader;
+  final Future<List<CioCartographicExclusion>> Function() _exclusionLoader;
+  final CioTerritorialAggregationService _cartographicAggregationService;
+  final bool cartographyEnabled;
 
   late final SyncService _syncService;
 
@@ -73,6 +91,10 @@ class DashboardController extends ChangeNotifier {
   CioTerritorialGovernanceReport? _governancaTerritorial;
   CioTerritorialDiagnostic? _diagnosticoTerritorialDozeMeses;
   bool _catalogoTerritorialIndisponivel = false;
+  CioGeometryDataset? _cartographicGeometry;
+  List<CioCartographicExclusion> _cartographicExclusions = const [];
+  CioCartographicAggregation? _cartographicAggregation;
+  bool _cartographicFoundationUnavailable = false;
 
   bool _carregando = false;
   bool _online = false;
@@ -104,6 +126,11 @@ class DashboardController extends ChangeNotifier {
   bool get catalogoTerritorialIndisponivel => _catalogoTerritorialIndisponivel;
   CioTerritorialDiagnostic? get diagnosticoTerritorialDozeMeses =>
       _diagnosticoTerritorialDozeMeses;
+  CioGeometryDataset? get cartographicGeometry => _cartographicGeometry;
+  CioCartographicAggregation? get cartographicAggregation =>
+      _cartographicAggregation;
+  bool get cartographicFoundationUnavailable =>
+      _cartographicFoundationUnavailable;
 
   bool get carregando => _carregando;
   bool get sincronizando => _syncService.sincronizando;
@@ -131,12 +158,16 @@ class DashboardController extends ChangeNotifier {
         _offlineService.listarAcoesPendentes(),
         _syncService.temInternet(),
         _carregarCatalogoTerritorialSeguro(),
+        cartographyEnabled
+            ? _carregarFundacaoCartograficaSegura()
+            : Future<_CioCartographicFoundation?>.value(),
       ]);
 
       final acoes = resultados[0];
       final pendentes = resultados[1];
       final conectado = resultados[2];
       final regionais = resultados[3] as List<RegionalModel>?;
+      final cartographic = resultados[4] as _CioCartographicFoundation?;
 
       _todasAsAcoes = List<AcaoModel>.from(acoes);
       _catalogoTerritorial = regionais == null
@@ -145,6 +176,8 @@ class DashboardController extends ChangeNotifier {
               capturedAt: DateTime.now(),
               regionals: regionais,
             );
+      _cartographicGeometry = cartographic?.geometry;
+      _cartographicExclusions = cartographic?.exclusions ?? const [];
       _recalcularIndicadores();
 
       _totalPendentes = pendentes.length;
@@ -204,6 +237,14 @@ class DashboardController extends ChangeNotifier {
     _qualidadeDados = resultado.qualidadeDados;
     _territorios = resultado.territorios;
     _governancaTerritorial = resultado.governancaTerritorial;
+    final geometry = _cartographicGeometry;
+    _cartographicAggregation = geometry == null
+        ? null
+        : _cartographicAggregationService.aggregate(
+            filtradas,
+            geometry,
+            _cartographicExclusions,
+          );
     final faixaComparacao = _filtros.intervaloComparacao(agora);
     if (faixaComparacao == null) {
       _indicadoresComparacao = null;
@@ -232,6 +273,24 @@ class DashboardController extends ChangeNotifier {
       return regionais;
     } catch (_) {
       _catalogoTerritorialIndisponivel = true;
+      return null;
+    }
+  }
+
+  Future<_CioCartographicFoundation?>
+      _carregarFundacaoCartograficaSegura() async {
+    try {
+      final results = await Future.wait<dynamic>([
+        _geometryLoader(),
+        _exclusionLoader(),
+      ]);
+      _cartographicFoundationUnavailable = false;
+      return _CioCartographicFoundation(
+        geometry: results[0] as CioGeometryDataset,
+        exclusions: List<CioCartographicExclusion>.from(results[1] as List),
+      );
+    } catch (_) {
+      _cartographicFoundationUnavailable = true;
       return null;
     }
   }
@@ -326,4 +385,14 @@ class DashboardController extends ChangeNotifier {
     _syncService.dispose();
     super.dispose();
   }
+}
+
+class _CioCartographicFoundation {
+  const _CioCartographicFoundation({
+    required this.geometry,
+    required this.exclusions,
+  });
+
+  final CioGeometryDataset geometry;
+  final List<CioCartographicExclusion> exclusions;
 }

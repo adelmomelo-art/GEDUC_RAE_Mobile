@@ -1,0 +1,13 @@
+{
+  "version": "2026-08-13",
+  "items": [
+    {"id": "d7e75f1c-cddb-4663-8c74-772dccf8d9b5", "group": "G1", "reason": "coordenada_nao_homologada"},
+    {"id": "0b8bb1dc-05d1-4d7b-ac04-f1b1e68fdb4c", "group": "G1", "reason": "coordenada_nao_homologada"},
+    {"id": "170bc40a-9691-40c4-b3d0-a3a04874b07f", "group": "G1", "reason": "coordenada_nao_homologada"},
+    {"id": "54d275ce-1512-4d71-b5de-55dfd8212012", "group": "G1", "reason": "coordenada_nao_homologada"},
+    {"id": "4366026c-b3bc-4817-bb80-7fd285830bc6", "group": "G2", "reason": "registro_de_teste_sem_evidencia_territorial"},
+    {"id": "573231d2-1054-448c-a059-2808904d0993", "group": "G2", "reason": "registro_de_teste_sem_evidencia_territorial"},
+    {"id": "851494d7-1a5b-4f4a-860e-64161e07814f", "group": "G2", "reason": "registro_de_teste_sem_evidencia_territorial"},
+    {"id": "9822204e-9c4c-45ea-a833-e35c41309cc2", "group": "G2", "reason": "registro_de_teste_sem_evidencia_territorial"}
+  ]
+}

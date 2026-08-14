@@ -95,7 +95,9 @@ class CioTerritorialGovernancePanel extends StatelessWidget {
     final coverageApproved = report.institutionalCoverage >= 0.95;
     final catalogApproved = !report.catalog.hasNeighborhoodConflicts;
     if (coverageApproved && catalogApproved) {
-      return 'Critérios de catálogo e ID aprovados. O mapa ainda depende de limite municipal, fonte e licença oficiais.';
+      return 'Dados territoriais, limite municipal e fonte oficial aprovados. '
+          'O mapa permanece protegido até os testes completos e a homologação '
+          'no Samsung A05.';
     }
     return 'Mapa bloqueado: cobertura mínima de 95% e zero conflitos de bairro ainda não foram comprovados.';
   }

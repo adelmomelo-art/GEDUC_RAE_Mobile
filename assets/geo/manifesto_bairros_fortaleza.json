@@ -1,0 +1,11 @@
+{
+    "dataset":  "Bairros de Fortaleza",
+    "provider":  "IPLANFOR - Prefeitura de Fortaleza",
+    "sourcePage":  "https://mapas.fortaleza.ce.gov.br/mapa/21/bairros-de-fortaleza",
+    "capturedAt":  "2026-08-13",
+    "crs":  "EPSG:4326",
+    "featureCount":  121,
+    "geoJsonAsset":  "assets/geo/bairros_fortaleza_ipplanfor.geojson",
+    "geoJsonSha256":  "D04B16BBAD3DD205AA19C616CD8CB4D4061917234E656AEF3DF18159CAEF0CCE",
+    "attribution":  "Fonte: IPLANFOR — Fortaleza em Mapas, Bairros de Fortaleza"
+}

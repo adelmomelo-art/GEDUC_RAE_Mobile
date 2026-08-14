@@ -123,6 +123,7 @@ class _UsuarioCard extends StatelessWidget {
     return switch (perfil.trim().toLowerCase()) {
       'administrador' => Colors.blue,
       'gestor' => Colors.green,
+      'gerente' => Colors.teal,
       'coordenador' => Colors.orange,
       'agente' => Colors.purple,
       _ => Colors.grey,

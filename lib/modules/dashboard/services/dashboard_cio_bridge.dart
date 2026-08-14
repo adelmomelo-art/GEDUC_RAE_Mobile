@@ -8,8 +8,10 @@ import '../models/analytics/analytics_enums.dart';
 import '../models/analytics/indicador_estrategico.dart';
 import '../models/analytics/insight_operacional.dart';
 import '../models/analytics/ranking_item.dart';
+import '../models/cio_bi_executive_snapshot.dart';
 import '../models/cio_dashboard_filters.dart';
 import 'cio_analytics_service.dart';
+import 'cio_bi_consolidation_service.dart';
 import 'cio_historical_territorial_service.dart';
 import 'cio_territorial_governance_service.dart';
 import 'performance_score_engine.dart';
@@ -21,6 +23,7 @@ class DashboardCIOBridge {
     this.analyticsService = const CIOAnalyticsService(),
     this.analyticsEngine = const AnalyticsEngine(),
     this.educacaoAdapter = const EducacaoAnalyticsAdapter(),
+    this.biConsolidationService = const CioBiConsolidationService(),
     this.historicalTerritorialService = const CioHistoricalTerritorialService(),
     this.territorialGovernanceService = const CioTerritorialGovernanceService(),
   });
@@ -29,6 +32,7 @@ class DashboardCIOBridge {
   final CIOAnalyticsService analyticsService;
   final AnalyticsEngine analyticsEngine;
   final EducacaoAnalyticsAdapter educacaoAdapter;
+  final CioBiConsolidationService biConsolidationService;
   final CioHistoricalTerritorialService historicalTerritorialService;
   final CioTerritorialGovernanceService territorialGovernanceService;
 
@@ -57,6 +61,7 @@ class DashboardCIOBridge {
 
     return DashboardCIOResult(
       indicadores: indicadores,
+      biExecutive: biConsolidationService.fromIndicators(indicadores),
       metricasOficiais: resultadoOficial.metrics,
       indicadoresEstrategicos:
           analyticsService.gerarIndicadores(resumo: resumo),
@@ -153,6 +158,7 @@ class DashboardCIOBridge {
 class DashboardCIOResult {
   const DashboardCIOResult({
     required this.indicadores,
+    required this.biExecutive,
     required this.metricasOficiais,
     required this.indicadoresEstrategicos,
     required this.rankingRegionais,
@@ -166,6 +172,7 @@ class DashboardCIOResult {
   });
 
   final DashboardIndicadores indicadores;
+  final CioBiExecutiveSnapshot biExecutive;
   final AnalyticsMetrics metricasOficiais;
   final List<IndicadorEstrategico> indicadoresEstrategicos;
   final List<RankingItem> rankingRegionais;

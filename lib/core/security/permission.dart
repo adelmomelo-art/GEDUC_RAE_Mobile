@@ -1,4 +1,5 @@
 enum Permission {
+  acessarCioExecutivo,
   acessarAdministracao,
   gerenciarDominios,
   gerenciarUsuarios,

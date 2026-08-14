@@ -13,6 +13,7 @@ let ambiente;
 const perfis = {
   admin: { perfilAcesso: 'administrador', ativo: true },
   gestor: { perfilAcesso: 'gestor', ativo: true },
+  gerente: { perfilAcesso: 'gerente', ativo: true },
   coordenador: { perfilAcesso: 'coordenador', ativo: true },
   agente: { perfilAcesso: 'agente', ativo: true },
   inativo: { perfilAcesso: 'agente', ativo: false },
@@ -104,9 +105,10 @@ test('nega dados a autenticado sem documento de usuário', async () => {
   await assertFails(banco('sem-documento').collection('domains').get());
 });
 
-test('nega dados a usuário inativo e perfil desconhecido', async () => {
+test('nega dados a usuário inativo, desconhecido e gerente sem recorte', async () => {
   await assertFails(banco('inativo').collection('acoes').get());
   await assertFails(banco('desconhecido').collection('acoes').get());
+  await assertFails(banco('gerente').collection('acoes').get());
 });
 
 test('permite leitura do próprio documento para validar identidade', async () => {
@@ -115,9 +117,10 @@ test('permite leitura do próprio documento para validar identidade', async () =
   await assertFails(banco('agente').collection('usuarios').doc('admin').get());
 });
 
-test('somente administrador e gestor listam usuários', async () => {
+test('somente administrador lista usuários', async () => {
   await assertSucceeds(banco('admin').collection('usuarios').get());
-  await assertSucceeds(banco('gestor').collection('usuarios').get());
+  await assertFails(banco('gestor').collection('usuarios').get());
+  await assertFails(banco('gerente').collection('usuarios').get());
   await assertFails(banco('coordenador').collection('usuarios').get());
   await assertFails(banco('agente').collection('usuarios').get());
 });

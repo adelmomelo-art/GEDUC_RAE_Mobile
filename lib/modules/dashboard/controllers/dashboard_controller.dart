@@ -9,6 +9,7 @@ import '../../../core/services/sync_service.dart';
 import '../../../data/models/acao_model.dart';
 import '../../../data/models/regional_model.dart';
 import '../models/cio_dashboard_filters.dart';
+import '../models/cio_bi_executive_snapshot.dart';
 import '../models/cartography/cio_cartographic_models.dart';
 import '../models/cartography/cio_geometry_models.dart';
 import '../models/analytics/alerta_operacional.dart';
@@ -62,6 +63,19 @@ class DashboardController extends ChangeNotifier {
   late final SyncService _syncService;
 
   DashboardIndicadores _indicadores = DashboardIndicadores.vazio();
+  CioBiExecutiveSnapshot _biExecutive = CioBiExecutiveSnapshot(
+    totalActions: 0,
+    totalPeople: 0,
+    totalVehicles: 0,
+    totalCredentials: 0,
+    actionsByRegional: const [],
+    actionsByType: const [],
+    goals: const CioBiGoalsSummary(
+      achieved: 0,
+      notAchieved: 0,
+      achievedPercentage: 0,
+    ),
+  );
   DashboardIndicadores? _indicadoresComparacao;
   AnalyticsMetrics _metricasOficiais = const AnalyticsMetrics();
   AnalyticsMetrics? _metricasComparacao;
@@ -105,6 +119,7 @@ class DashboardController extends ChangeNotifier {
   bool _disposed = false;
 
   DashboardIndicadores get indicadores => _indicadores;
+  CioBiExecutiveSnapshot get biExecutive => _biExecutive;
   DashboardIndicadores? get indicadoresComparacao => _indicadoresComparacao;
   AnalyticsMetrics get metricasOficiais => _metricasOficiais;
   AnalyticsMetrics? get metricasComparacao => _metricasComparacao;
@@ -227,6 +242,7 @@ class DashboardController extends ChangeNotifier {
       catalogoTerritorial: _catalogoTerritorial,
     );
     _indicadores = resultado.indicadores;
+    _biExecutive = resultado.biExecutive;
     _metricasOficiais = resultado.metricasOficiais;
     _indicadoresEstrategicos = resultado.indicadoresEstrategicos;
     _rankingRegionais = resultado.rankingRegionais;

@@ -85,12 +85,6 @@ class AtalhosWidget extends StatelessWidget {
         onTap: () => context.push('/dashboard'),
       ),
       _AtalhoItem(
-        icon: Icons.analytics_rounded,
-        title: 'BI GEDUC',
-        color: HomeVisualTokens.blue,
-        onTap: () => context.push('/bi-geduc'),
-      ),
-      _AtalhoItem(
         icon: Icons.cloud_sync_rounded,
         title: 'Offline',
         color: HomeVisualTokens.blue,

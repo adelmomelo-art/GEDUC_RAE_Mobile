@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/domains/domain_groups.dart';
 import '../../core/domains/domain_provider.dart';
+import '../../core/navigation/safe_route_transition.dart';
 import '../../shared/widgets/domain/domain_checkbox_group.dart';
 import '../../shared/widgets/domain/domain_dropdown.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
@@ -40,6 +41,7 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   final fatorRiscoIds = <String>{};
 
   bool _restaurandoDados = true;
+  final _routeTransition = SafeRouteTransition();
 
   DomainProvider get _domainProvider => context.read<DomainProvider>();
 
@@ -416,8 +418,11 @@ class _CaracterizacaoAcaoPageState extends State<CaracterizacaoAcaoPage> {
   }
 
   void _voltar() {
-    _persistirRascunho();
-    context.go('/localizacao');
+    _routeTransition.goAfterFrame(
+      context,
+      '/localizacao',
+      beforeNavigation: _persistirRascunho,
+    );
   }
 
   void _salvarEAvancar() {

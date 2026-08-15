@@ -4,7 +4,8 @@
   "scripts": {
     "audit:security": "npm audit --audit-level=high",
     "audit:scripts": "npm approve-scripts --allow-scripts-pending",
-    "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js\""
+    "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js\"",
+    "test:rules:acl-stage4a": "firebase emulators:exec --only firestore --project geduc-rae-acl001-stage4a-test \"node --test test/firestore_acl001_stage4a.rules.test.js\""
   },
   "allowScripts": {
     "@firebase/util@1.12.1": true,

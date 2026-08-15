@@ -1,0 +1,40 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "acoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aclClassificacaoCompleta", "order": "ASCENDING" },
+        { "fieldPath": "dataAcao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aclClassificacaoCompleta", "order": "ASCENDING" },
+        { "fieldPath": "aclScopeKey", "order": "ASCENDING" },
+        { "fieldPath": "dataAcao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aclClassificacaoCompleta", "order": "ASCENDING" },
+        { "fieldPath": "coordenadorUserId", "order": "ASCENDING" },
+        { "fieldPath": "dataAcao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aclClassificacaoCompleta", "order": "ASCENDING" },
+        { "fieldPath": "responsavelUserId", "order": "ASCENDING" },
+        { "fieldPath": "dataAcao", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

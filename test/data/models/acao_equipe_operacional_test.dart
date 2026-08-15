@@ -2,6 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/data/models/acao_model.dart';
 
 void main() {
+  test('preserva classificação ACL canônica quando presente', () {
+    final acao = AcaoModel.fromMap({
+      'responsavelUserId': 'agente-1',
+      'coordenadorUserId': 'coordenador-1',
+      'regionalId': 'regional-1',
+      'equipeId': 'equipe-1',
+      'projetoId': 'projeto-1',
+      'aclClassificacaoCompleta': true,
+      'aclScopeKey': 'r:regional-1|e:equipe-1|p:projeto-1',
+    });
+
+    expect(acao.responsavelUserId, 'agente-1');
+    expect(acao.coordenadorUserId, 'coordenador-1');
+    expect(acao.equipeId, 'equipe-1');
+    expect(acao.projetoId, 'projeto-1');
+    expect(acao.aclClassificacaoCompleta, isTrue);
+    expect(acao.toMap()['aclScopeKey'], 'r:regional-1|e:equipe-1|p:projeto-1');
+  });
+
   test('preserva participantes nominais no mapa do RAE', () {
     final acao = AcaoModel.fromMap({
       'id': 'rae-1',

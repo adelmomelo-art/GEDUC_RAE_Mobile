@@ -68,7 +68,9 @@ async function semear() {
       createdAt: new Date('2026-08-10T12:00:00.000Z'),
       updatedAt: new Date('2026-08-10T12:00:00.000Z'),
     });
-    await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste' });
+    await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste', ativo: true });
+    await db.collection('equipes').doc('equipe-1').set({ nome: 'Equipe Teste', ativo: true });
+    await db.collection('projetos').doc('projeto-1').set({ nome: 'Projeto Teste', ativo: true });
     await db.collection('materiais').doc('material-1').set({ nomeMaterial: 'Teste' });
     await db.collection('acoes').doc('acao-1').set({ status: 'rascunho' });
     await db.collection('contadores').doc('rae_2026').set({ ultimoNumero: 1 });
@@ -284,4 +286,62 @@ test('confirma pré-condições da matriz de testes', () => {
   assert.equal(perfis.admin.ativo, true);
   assert.equal(perfis.inativo.ativo, false);
   assert.equal(perfis.desconhecido.perfilAcesso, 'superusuario');
+});
+
+test('somente administrador atualiza escopo sem alterar identidade', async () => {
+  const escopo = {
+    escopoAcesso: {
+      regionalIds: ['regional-1'],
+      equipeIds: ['equipe-1'],
+      projetoIds: ['projeto-1'],
+      scopeVersion: 1,
+    },
+    scopeUpdatedAt: new Date(),
+    scopeUpdatedBy: 'admin',
+  };
+
+  await assertSucceeds(
+    banco('admin').collection('usuarios').doc('gerente').update(escopo),
+  );
+  await assertFails(
+    banco('gestor').collection('usuarios').doc('gerente').update({
+      ...escopo,
+      scopeUpdatedBy: 'gestor',
+    }),
+  );
+  await assertFails(
+    banco('admin').collection('usuarios').doc('gerente').update({
+      ...escopo,
+      perfilAcesso: 'administrador',
+    }),
+  );
+});
+
+test('catálogos de equipe e projeto são mantidos somente pelo admin', async () => {
+  for (const uid of ['admin', 'gestor', 'coordenador', 'agente']) {
+    await assertSucceeds(banco(uid).collection('equipes').get());
+    await assertSucceeds(banco(uid).collection('projetos').get());
+  }
+  await assertFails(
+    banco('gestor').collection('equipes').doc('equipe-2').set({
+      nome: 'Equipe 2', codigo: 'E2', regionalIds: [], membroIds: [],
+      coordenadorUserIds: [], ativo: true,
+    }),
+  );
+  await assertSucceeds(
+    banco('admin').collection('equipes').doc('equipe-2').set({
+      nome: 'Equipe 2', codigo: 'E2', regionalIds: [], membroIds: [],
+      coordenadorUserIds: [], ativo: true,
+    }),
+  );
+  await assertFails(
+    banco('admin').collection('equipes').doc('equipe-invalida').set({
+      nome: '', ativo: true,
+    }),
+  );
+  await assertFails(
+    banco('admin').collection('projetos').doc('projeto-invalido').set({
+      nome: 'Projeto sem vínculos', ativo: true,
+    }),
+  );
 });

@@ -5,10 +5,13 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/usuario_model.dart';
 import '../services/usuario_service.dart';
+import 'access_scope.dart';
 import 'authorization_policy.dart';
 import 'authorization_result.dart';
 import 'identity_status.dart';
 import 'permission.dart';
+import 'rae_access_policy.dart';
+import 'rae_access_record.dart';
 
 class AuthorizationService extends ChangeNotifier {
   AuthorizationService._({
@@ -39,6 +42,7 @@ class AuthorizationService extends ChangeNotifier {
   int _geracaoSessao = 0;
 
   UsuarioModel? get usuarioAtual => _usuarioAtual;
+  AccessScope get escopoAtual => _usuarioAtual?.escopoAcesso ?? AccessScope();
   IdentityStatus get status => _status;
   bool get carregando => _status == IdentityStatus.carregando;
   bool get identidadeValida => _status.identidadeValida;
@@ -98,6 +102,16 @@ class AuthorizationService extends ChangeNotifier {
       );
     }
 
+    if (perfilAtual == 'gerente' &&
+        AuthorizationPolicy.exigeEscopoCompletoDoGerente(permissao) &&
+        !_usuarioAtual!.escopoAcesso.completoParaGerente) {
+      return AuthorizationResult.negado(
+        permissao: permissao,
+        perfilAcesso: perfilAtual,
+        motivo: 'O escopo do Gerente está incompleto.',
+      );
+    }
+
     if (AuthorizationPolicy.possuiPermissao(
       perfilAcesso: _usuarioAtual!.perfilAcesso,
       permissao: permissao,
@@ -116,6 +130,30 @@ class AuthorizationService extends ChangeNotifier {
   }
 
   bool possuiPermissao(Permission permissao) => avaliar(permissao).autorizado;
+
+  bool possuiPermissaoNoRae({
+    required Permission permissao,
+    required RaeAccessRecord rae,
+  }) {
+    final usuario = _usuarioAtual;
+    if (!identidadeValida || usuario == null) return false;
+    return RaeAccessPolicy.autoriza(
+      perfilAcesso: usuario.perfilAcesso,
+      usuarioId: usuario.id,
+      permissao: permissao,
+      rae: rae,
+      escopo: usuario.escopoAcesso,
+    );
+  }
+
+  bool get podeCriarRae {
+    final usuario = _usuarioAtual;
+    if (!identidadeValida || usuario == null) return false;
+    return RaeAccessPolicy.autorizaCriacao(
+      perfilAcesso: usuario.perfilAcesso,
+      usuarioId: usuario.id,
+    );
+  }
 
   Future<AuthorizationResult> avaliarAtualizando(Permission permissao) async {
     await garantirUsuarioAtual();
@@ -203,8 +241,7 @@ class AuthorizationService extends ChangeNotifier {
   }
 
   bool _resultadoAindaPertenceASessao(String uid, int geracao) {
-    return geracao == _geracaoSessao &&
-        _firebaseAuth.currentUser?.uid == uid;
+    return geracao == _geracaoSessao && _firebaseAuth.currentUser?.uid == uid;
   }
 
   void _invalidarCarregamento() {

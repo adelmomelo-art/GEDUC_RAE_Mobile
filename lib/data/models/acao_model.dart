@@ -166,6 +166,17 @@ class AcaoModel {
   final String status;
   final bool sincronizado;
 
+  // ============================================================
+  // AUTORIZAÇÃO ACL-001 (compatível com registros legados)
+  // ============================================================
+
+  final String responsavelUserId;
+  final String coordenadorUserId;
+  final String equipeId;
+  final String projetoId;
+  final bool aclClassificacaoCompleta;
+  final String aclScopeKey;
+
   const AcaoModel({
     required this.id,
     this.numeroRAE = '',
@@ -230,6 +241,12 @@ class AcaoModel {
     this.descricaoEvidencias = '',
     required this.status,
     required this.sincronizado,
+    this.responsavelUserId = '',
+    this.coordenadorUserId = '',
+    this.equipeId = '',
+    this.projetoId = '',
+    this.aclClassificacaoCompleta = false,
+    this.aclScopeKey = '',
   });
 
   AcaoModel copyWith({
@@ -296,6 +313,12 @@ class AcaoModel {
     String? descricaoEvidencias,
     String? status,
     bool? sincronizado,
+    String? responsavelUserId,
+    String? coordenadorUserId,
+    String? equipeId,
+    String? projetoId,
+    bool? aclClassificacaoCompleta,
+    String? aclScopeKey,
   }) {
     return AcaoModel(
       id: id ?? this.id,
@@ -369,6 +392,13 @@ class AcaoModel {
       descricaoEvidencias: descricaoEvidencias ?? this.descricaoEvidencias,
       status: status ?? this.status,
       sincronizado: sincronizado ?? this.sincronizado,
+      responsavelUserId: responsavelUserId ?? this.responsavelUserId,
+      coordenadorUserId: coordenadorUserId ?? this.coordenadorUserId,
+      equipeId: equipeId ?? this.equipeId,
+      projetoId: projetoId ?? this.projetoId,
+      aclClassificacaoCompleta:
+          aclClassificacaoCompleta ?? this.aclClassificacaoCompleta,
+      aclScopeKey: aclScopeKey ?? this.aclScopeKey,
     );
   }
 
@@ -436,6 +466,12 @@ class AcaoModel {
         'descricaoEvidencias': descricaoEvidencias,
         'status': status,
         'sincronizado': sincronizado,
+        'responsavelUserId': responsavelUserId,
+        'coordenadorUserId': coordenadorUserId,
+        'equipeId': equipeId,
+        'projetoId': projetoId,
+        'aclClassificacaoCompleta': aclClassificacaoCompleta,
+        'aclScopeKey': aclScopeKey,
       };
 
   Map<String, dynamic> toJson() => toMap();
@@ -517,6 +553,12 @@ class AcaoModel {
       descricaoEvidencias: _texto(map['descricaoEvidencias']),
       status: _texto(map['status'], fallback: 'rascunho'),
       sincronizado: _booleano(map['sincronizado']),
+      responsavelUserId: _texto(map['responsavelUserId']),
+      coordenadorUserId: _texto(map['coordenadorUserId']),
+      equipeId: _texto(map['equipeId']),
+      projetoId: _texto(map['projetoId']),
+      aclClassificacaoCompleta: _booleano(map['aclClassificacaoCompleta']),
+      aclScopeKey: _texto(map['aclScopeKey']),
     );
   }
 

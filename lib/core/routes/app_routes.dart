@@ -25,6 +25,7 @@ import '../../modules/sincronizacao/sincronizacao_page.dart';
 import '../../modules/tipos_acoes/tipos_acoes_page.dart';
 import '../../modules/usuarios/usuarios_page.dart';
 import '../auth/auth_router_refresh.dart';
+import '../config/acl_feature_flags.dart';
 import '../security/authorization_service.dart';
 import '../security/permission.dart';
 import '../security/identity_status.dart';
@@ -69,6 +70,17 @@ class AppRoutes {
   static final AuthRouterRefresh _authRouterRefresh = AuthRouterRefresh();
   static final AuthorizationService _authorizationService =
       AuthorizationService.instance;
+
+  static Future<String?> _protegerAcl(Permission permissao) {
+    if (!AclFeatureFlags.scopedAccessEnabled) {
+      return Future<String?>.value();
+    }
+    return RouteGuard.proteger(
+      permissao: permissao,
+      loginPath: loginPath,
+      acessoNegadoPath: acessoNegadoPath,
+    );
+  }
 
   static final router = GoRouter(
     initialLocation: loginPath,
@@ -119,14 +131,17 @@ class AppRoutes {
       ),
       GoRoute(
         path: novaAcaoPath,
+        redirect: (context, state) => _protegerAcl(Permission.criarRae),
         builder: (context, state) => const NovaAcaoPage(),
       ),
       GoRoute(
         path: localizacaoPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const LocalizacaoPage(),
       ),
       GoRoute(
         path: caracterizacaoPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const CaracterizacaoAcaoPage(),
       ),
       GoRoute(
@@ -135,30 +150,37 @@ class AppRoutes {
       ),
       GoRoute(
         path: recursosOperacionaisPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const RecursosOperacionaisPage(),
       ),
       GoRoute(
         path: integracaoObservacoesPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const IntegracaoObservacoesPage(),
       ),
       GoRoute(
         path: resultadosPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const ResultadosPage(),
       ),
       GoRoute(
         path: evidenciasPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const EvidenciasPage(),
       ),
       GoRoute(
         path: avaliacaoPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const AvaliacaoPage(),
       ),
       GoRoute(
         path: revisaoPath,
+        redirect: (context, state) => _protegerAcl(Permission.editarRae),
         builder: (context, state) => const RevisaoRelatorioPage(),
       ),
       GoRoute(
         path: dashboardPath,
+        redirect: (context, state) => _protegerAcl(Permission.acessarCioEscopo),
         builder: (context, state) => const DashboardPage(),
       ),
       GoRoute(
@@ -230,6 +252,7 @@ class AppRoutes {
       ),
       GoRoute(
         path: consultaRaePath,
+        redirect: (context, state) => _protegerAcl(Permission.consultarRae),
         builder: (context, state) => const ConsultaRaePage(),
       ),
       GoRoute(

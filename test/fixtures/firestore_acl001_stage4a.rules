@@ -1,0 +1,162 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function usuario() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function ativo() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && usuario().data.ativo == true;
+    }
+
+    function perfil() {
+      return usuario().data.perfilAcesso;
+    }
+
+    function admin() {
+      return ativo() && perfil() == 'administrador';
+    }
+
+    function completo(dados) {
+      return dados.keys().hasAll([
+          'aclClassificacaoCompleta',
+          'aclScopeKey',
+          'responsavelUserId',
+          'coordenadorUserId',
+          'regionalId',
+          'equipeId',
+          'projetoId'
+        ])
+        && dados.aclClassificacaoCompleta == true
+        && dados.aclScopeKey is string
+        && dados.regionalId is string
+        && dados.regionalId.matches('^[A-Za-z0-9_-]+$')
+        && dados.equipeId is string
+        && dados.equipeId.matches('^[A-Za-z0-9_-]+$')
+        && dados.projetoId is string
+        && dados.projetoId.matches('^[A-Za-z0-9_-]+$')
+        && dados.aclScopeKey == 'r:' + dados.regionalId
+          + '|e:' + dados.equipeId
+          + '|p:' + dados.projetoId
+        && dados.responsavelUserId is string
+        && dados.responsavelUserId.size() > 0
+        && dados.coordenadorUserId is string
+        && dados.coordenadorUserId.size() > 0
+        && dados.regionalId.size() > 0
+        && dados.equipeId.size() > 0
+        && dados.projetoId.size() > 0;
+    }
+
+    function gerenteAbrange(dados) {
+      return perfil() == 'gerente'
+        && usuario().data.aclScopeKeys is list
+        && dados.keys().hasAll(['aclScopeKey'])
+        && dados.aclScopeKey in usuario().data.aclScopeKeys;
+    }
+
+    function podeLer(dados) {
+      return admin() || (ativo()
+        && dados.keys().hasAll(['aclClassificacaoCompleta'])
+        && dados.aclClassificacaoCompleta == true
+        && (
+        perfil() == 'gestor'
+        || gerenteAbrange(dados)
+        || (perfil() == 'coordenador'
+          && dados.keys().hasAll(['coordenadorUserId'])
+          && dados.coordenadorUserId == request.auth.uid)
+        || (perfil() == 'agente'
+          && dados.keys().hasAll(['responsavelUserId'])
+          && dados.responsavelUserId == request.auth.uid)
+      ));
+    }
+
+    function agentePodeAtualizar() {
+      return perfil() == 'agente'
+        && resource.data.responsavelUserId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'conteudoOperacional'
+        ]);
+    }
+
+    function coordenadorPodeAtualizar() {
+      let alterados = request.resource.data.diff(resource.data).affectedKeys();
+      let edicaoOperacional = request.resource.data.status == resource.data.status
+        && alterados.hasOnly(['conteudoOperacional']);
+      let revisado = resource.data.status == 'rascunho'
+        && request.resource.data.status == 'revisado'
+        && request.resource.data.revisadoPor == request.auth.uid
+        && request.resource.data.revisadoEm is timestamp
+        && alterados.hasOnly([
+          'conteudoOperacional',
+          'status',
+          'revisadoPor',
+          'revisadoEm'
+        ]);
+      let finalizado = resource.data.status in ['rascunho', 'revisado']
+        && request.resource.data.status == 'finalizado'
+        && request.resource.data.finalizadoPor == request.auth.uid
+        && request.resource.data.finalizadoEm is timestamp
+        && alterados.hasOnly([
+          'conteudoOperacional',
+          'status',
+          'finalizadoPor',
+          'finalizadoEm'
+        ]);
+      return perfil() == 'coordenador'
+        && resource.data.coordenadorUserId == request.auth.uid
+        && alterados.hasOnly([
+          'conteudoOperacional',
+          'status',
+          'revisadoPor',
+          'revisadoEm',
+          'finalizadoPor',
+          'finalizadoEm'
+        ])
+        && (edicaoOperacional || revisado || finalizado);
+    }
+
+    function criacaoOperacionalValida() {
+      return request.resource.data.status == 'rascunho'
+        && !request.resource.data.keys().hasAny([
+          'revisadoPor',
+          'revisadoEm',
+          'finalizadoPor',
+          'finalizadoEm'
+        ]);
+    }
+
+    match /usuarios/{usuarioId} {
+      allow read, write: if false;
+    }
+
+    match /acoes/{acaoId} {
+      allow get, list: if podeLer(resource.data);
+      allow create: if admin() || (ativo()
+        && completo(request.resource.data)
+        && criacaoOperacionalValida()
+        && (
+        (perfil() == 'coordenador'
+          && request.resource.data.coordenadorUserId == request.auth.uid)
+        || (perfil() == 'agente'
+          && request.resource.data.responsavelUserId == request.auth.uid)
+      ));
+      allow update: if admin() || (ativo()
+        && completo(resource.data)
+        && completo(request.resource.data)
+        && request.resource.data.responsavelUserId == resource.data.responsavelUserId
+        && request.resource.data.coordenadorUserId == resource.data.coordenadorUserId
+        && request.resource.data.regionalId == resource.data.regionalId
+        && request.resource.data.equipeId == resource.data.equipeId
+        && request.resource.data.projetoId == resource.data.projetoId
+        && (coordenadorPodeAtualizar() || agentePodeAtualizar()));
+      allow delete: if admin();
+    }
+
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

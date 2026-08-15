@@ -1,5 +1,6 @@
 class RaeAccessRecord {
   const RaeAccessRecord({
+    required this.aclClassificacaoCompleta,
     required this.responsavelUserId,
     required this.coordenadorUserId,
     required this.regionalId,
@@ -7,6 +8,7 @@ class RaeAccessRecord {
     required this.projetoId,
   });
 
+  final bool aclClassificacaoCompleta;
   final String responsavelUserId;
   final String coordenadorUserId;
   final String regionalId;
@@ -14,6 +16,7 @@ class RaeAccessRecord {
   final String projetoId;
 
   bool get classificacaoCompleta =>
+      aclClassificacaoCompleta &&
       responsavelUserId.trim().isNotEmpty &&
       coordenadorUserId.trim().isNotEmpty &&
       regionalId.trim().isNotEmpty &&

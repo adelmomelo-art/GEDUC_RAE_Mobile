@@ -122,14 +122,45 @@ test('Coordenador altera somente RAE sob sua coordenação', async () => {
     banco('coordenador-1').collection('acoes').doc('completo').update({
       status: 'revisado',
       revisadoPor: 'coordenador-1',
+      revisadoEm: new Date(),
     }),
   );
   await assertFails(
     banco('coordenador-2').collection('acoes').doc('completo').update({
       status: 'revisado',
       revisadoPor: 'coordenador-2',
+      revisadoEm: new Date(),
     }),
   );
+});
+
+test('Coordenador não adultera auditoria sem transição de status', async () => {
+  const ref = banco('coordenador-1').collection('acoes').doc('completo');
+  await assertFails(ref.update({
+    revisadoPor: 'coordenador-1',
+    revisadoEm: new Date(),
+  }));
+  await assertFails(ref.update({
+    finalizadoPor: 'coordenador-1',
+    finalizadoEm: new Date(),
+  }));
+});
+
+test('Coordenador usa trilhas de revisão e finalização válidas', async () => {
+  const ref = banco('coordenador-1').collection('acoes').doc('completo');
+  await assertSucceeds(ref.update({
+    status: 'revisado',
+    revisadoPor: 'coordenador-1',
+    revisadoEm: new Date(),
+  }));
+  await assertSucceeds(ref.update({
+    status: 'finalizado',
+    finalizadoPor: 'coordenador-1',
+    finalizadoEm: new Date(),
+  }));
+  await assertFails(ref.update({
+    finalizadoPor: 'coordenador-2',
+  }));
 });
 
 test('Agente altera somente o próprio RAE', async () => {
@@ -158,6 +189,30 @@ test('Gestor e Gerente não criam RAE', async () => {
   await assertSucceeds(
     banco('agente-1').collection('acoes').doc('novo-a').set(rae()),
   );
+});
+
+test('criação operacional rejeita status final e auditoria antecipada', async () => {
+  const colecao = banco('agente-1').collection('acoes');
+  await assertFails(colecao.doc('novo-finalizado').set(rae({
+    status: 'finalizado',
+    finalizadoPor: 'agente-1',
+    finalizadoEm: new Date(),
+  })));
+  await assertFails(colecao.doc('novo-auditado').set(rae({
+    revisadoPor: 'coordenador-1',
+    revisadoEm: new Date(),
+  })));
+});
+
+test('chave de escopo deve corresponder às três dimensões canônicas', async () => {
+  const colecao = banco('agente-1').collection('acoes');
+  await assertFails(colecao.doc('chave-forjada').set(rae({
+    aclScopeKey: 'r:regional-2|e:equipe-2|p:projeto-2',
+  })));
+  await assertFails(colecao.doc('id-invalido').set(rae({
+    regionalId: 'regional 1',
+    aclScopeKey: 'r:regional 1|e:equipe-1|p:projeto-1',
+  })));
 });
 
 test('consultas de coleção repetem as restrições das regras', async () => {

@@ -6,6 +6,7 @@ import 'package:geduc_rae_mobile/core/security/rae_access_record.dart';
 
 void main() {
   const completo = RaeAccessRecord(
+    aclClassificacaoCompleta: true,
     responsavelUserId: 'agente-1',
     coordenadorUserId: 'coordenador-1',
     regionalId: 'regional-1',
@@ -13,6 +14,7 @@ void main() {
     projetoId: 'projeto-1',
   );
   const q1 = RaeAccessRecord(
+    aclClassificacaoCompleta: false,
     responsavelUserId: '',
     coordenadorUserId: '',
     regionalId: 'regional-1',
@@ -21,6 +23,27 @@ void main() {
   );
 
   group('matriz ACL-001 Etapa 4A', () {
+    test('flag falsa bloqueia registro mesmo com dimensões preenchidas', () {
+      const inconsistente = RaeAccessRecord(
+        aclClassificacaoCompleta: false,
+        responsavelUserId: 'agente-1',
+        coordenadorUserId: 'coordenador-1',
+        regionalId: 'regional-1',
+        equipeId: 'equipe-1',
+        projetoId: 'projeto-1',
+      );
+
+      expect(
+        _autoriza(
+          'agente',
+          'agente-1',
+          Permission.consultarRae,
+          inconsistente,
+        ),
+        isFalse,
+      );
+    });
+
     test('Q1 é visível somente ao Administrador', () {
       expect(
         _autoriza('administrador', 'admin-1', Permission.consultarRae, q1),

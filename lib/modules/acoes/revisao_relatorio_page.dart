@@ -105,6 +105,7 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
     return context.read<AuthorizationService>().possuiPermissaoNoRae(
           permissao: permissao,
           rae: RaeAccessRecord(
+            aclClassificacaoCompleta: acao.aclClassificacaoCompleta,
             responsavelUserId: acao.responsavelUserId,
             coordenadorUserId: acao.coordenadorUserId,
             regionalId: acao.regionalId,

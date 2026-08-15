@@ -106,15 +106,84 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
     }
 
+    function escopoAcessoValido() {
+      return request.resource.data.keys().hasAll([
+          'escopoAcesso',
+          'scopeUpdatedAt',
+          'scopeUpdatedBy'
+        ])
+        && request.resource.data.escopoAcesso is map
+        && request.resource.data.escopoAcesso.keys().hasOnly([
+          'regionalIds',
+          'equipeIds',
+          'projetoIds',
+          'scopeVersion'
+        ])
+        && request.resource.data.escopoAcesso.keys().hasAll([
+          'regionalIds',
+          'equipeIds',
+          'projetoIds',
+          'scopeVersion'
+        ])
+        && request.resource.data.escopoAcesso.regionalIds is list
+        && request.resource.data.escopoAcesso.equipeIds is list
+        && request.resource.data.escopoAcesso.projetoIds is list
+        && request.resource.data.escopoAcesso.scopeVersion is int
+        && request.resource.data.escopoAcesso.scopeVersion > 0
+        && request.resource.data.scopeUpdatedAt is timestamp
+        && request.resource.data.scopeUpdatedBy == request.auth.uid;
+    }
+
+    function equipeValida() {
+      return request.resource.data.keys().hasAll([
+          'nome',
+          'codigo',
+          'regionalIds',
+          'membroIds',
+          'coordenadorUserIds',
+          'ativo'
+        ])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.codigo is string
+        && request.resource.data.regionalIds is list
+        && request.resource.data.membroIds is list
+        && request.resource.data.coordenadorUserIds is list
+        && request.resource.data.ativo is bool;
+    }
+
+    function projetoValido() {
+      return request.resource.data.keys().hasAll([
+          'nome',
+          'codigo',
+          'regionalIds',
+          'equipeIds',
+          'ativo'
+        ])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.codigo is string
+        && request.resource.data.regionalIds is list
+        && request.resource.data.equipeIds is list
+        && request.resource.data.ativo is bool;
+    }
+
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
       allow get: if autenticado() && request.auth.uid == usuarioId;
       allow list: if administrador();
 
-      // Não há fluxo cliente homologado para administrar identidade.
-      // Perfil, situação ativa e UID permanecem imutáveis pelo aplicativo.
-      allow create, update, delete: if false;
+      // O fluxo administrativo altera somente o escopo. Perfil, situação
+      // ativa e demais dados de identidade permanecem imutáveis no aplicativo.
+      allow update: if administrador()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'escopoAcesso',
+          'scopeUpdatedAt',
+          'scopeUpdatedBy'
+        ])
+        && escopoAcessoValido();
+      allow create, delete: if false;
     }
 
     match /domains/{domainId} {
@@ -151,6 +220,18 @@ service cloud.firestore {
     match /regionais/{regionalId} {
       allow get, list: if usuarioAtivo();
       allow create, update: if administrador();
+      allow delete: if false;
+    }
+
+    match /equipes/{equipeId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administrador() && equipeValida();
+      allow delete: if false;
+    }
+
+    match /projetos/{projetoId} {
+      allow get, list: if usuarioAtivo();
+      allow create, update: if administrador() && projetoValido();
       allow delete: if false;
     }
 

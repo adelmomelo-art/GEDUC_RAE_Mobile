@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/config/acl_feature_flags.dart';
 import '../../core/domains/domain_provider.dart';
+import '../../core/security/authorization_service.dart';
+import '../../core/security/permission.dart';
+import '../../core/security/rae_access_record.dart';
 import '../../core/services/faxita_insights_service.dart';
 import '../../core/services/faxita_review_service.dart';
 import '../../core/services/pdf_relatorio_service.dart';
 import '../../core/widgets/rae_qrcode_widget.dart';
+import '../../data/models/acao_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../../shared/widgets/layout/fenix_page_scaffold.dart';
@@ -55,6 +60,11 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
       return;
     }
 
+    if (!_permiteNoRae(acao, Permission.compartilharPdfRae)) {
+      _mostrarAcessoNegado();
+      return;
+    }
+
     final domainProvider = context.read<DomainProvider>();
     await PdfRelatorioService().gerarRelatorioAcao(
       acao,
@@ -63,6 +73,12 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
   }
 
   Future<void> _enviarRelatorio(AcaoController controller) async {
+    final acao = controller.acaoAtual;
+    if (acao == null || !_permiteNoRae(acao, Permission.finalizarRae)) {
+      _mostrarAcessoNegado();
+      return;
+    }
+
     final ok = await controller.enviarRelatorio();
 
     if (!mounted) {
@@ -82,6 +98,29 @@ class _RevisaoRelatorioPageState extends State<RevisaoRelatorioPage> {
     if (ok) {
       context.go('/home');
     }
+  }
+
+  bool _permiteNoRae(AcaoModel acao, Permission permissao) {
+    if (!AclFeatureFlags.scopedAccessEnabled) return true;
+    return context.read<AuthorizationService>().possuiPermissaoNoRae(
+          permissao: permissao,
+          rae: RaeAccessRecord(
+            responsavelUserId: acao.responsavelUserId,
+            coordenadorUserId: acao.coordenadorUserId,
+            regionalId: acao.regionalId,
+            equipeId: acao.equipeId,
+            projetoId: acao.projetoId,
+          ),
+        );
+  }
+
+  void _mostrarAcessoNegado() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Seu perfil não está autorizado para esta operação.'),
+      ),
+    );
   }
 
   void _verDetalhe(AcaoController controller) {
@@ -439,9 +478,12 @@ ${acao.fotosUrls.length}
             onVerDetalhe: () => _verDetalhe(controller),
             onGerarPdf: () => _gerarPdf(controller),
             onEnviarRelatorio: () => _enviarRelatorio(controller),
-            podeVerDetalhe: true,
-            podeGerarPdf: true,
-            podeEnviar: true,
+            podeVerDetalhe: _permiteNoRae(acao, Permission.consultarRae),
+            podeGerarPdf: _permiteNoRae(
+              acao,
+              Permission.compartilharPdfRae,
+            ),
+            podeEnviar: _permiteNoRae(acao, Permission.finalizarRae),
           ),
           const SizedBox(height: 12),
         ],

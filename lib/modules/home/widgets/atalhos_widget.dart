@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/config/acl_feature_flags.dart';
 import '../../../core/security/authorization_service.dart';
 import '../../../core/security/permission.dart';
 import '../../acoes/controllers/acao_controller.dart';
@@ -59,31 +60,41 @@ class AtalhosWidget extends StatelessWidget {
     final podeAcessarAdministracao = authorizationService.possuiPermissao(
       Permission.acessarAdministracao,
     );
+    const aclAtiva = AclFeatureFlags.scopedAccessEnabled;
+    final podeCriarRae =
+        !aclAtiva || authorizationService.possuiPermissao(Permission.criarRae);
+    final podeConsultarRae = !aclAtiva ||
+        authorizationService.possuiPermissao(Permission.consultarRae);
+    final podeAcessarCio = !aclAtiva ||
+        authorizationService.possuiPermissao(Permission.acessarCioEscopo);
 
     final principais = <_AtalhoItem>[
-      _AtalhoItem(
-        icon: Icons.add_rounded,
-        title: 'Nova Ação',
-        subtitle: 'Registrar atividade',
-        color: HomeVisualTokens.orange,
-        onTap: () => _abrirNovaAcao(context),
-      ),
-      _AtalhoItem(
-        icon: Icons.search_rounded,
-        title: 'Consultar RAE',
-        subtitle: 'Localizar registros',
-        color: HomeVisualTokens.teal,
-        onTap: () => context.push('/consulta-rae'),
-      ),
+      if (podeCriarRae)
+        _AtalhoItem(
+          icon: Icons.add_rounded,
+          title: 'Nova Ação',
+          subtitle: 'Registrar atividade',
+          color: HomeVisualTokens.orange,
+          onTap: () => _abrirNovaAcao(context),
+        ),
+      if (podeConsultarRae)
+        _AtalhoItem(
+          icon: Icons.search_rounded,
+          title: 'Consultar RAE',
+          subtitle: 'Localizar registros',
+          color: HomeVisualTokens.teal,
+          onTap: () => context.push('/consulta-rae'),
+        ),
     ];
 
     final secundarios = <_AtalhoItem>[
-      _AtalhoItem(
-        icon: Icons.dashboard_rounded,
-        title: 'Dashboard',
-        color: HomeVisualTokens.teal,
-        onTap: () => context.push('/dashboard'),
-      ),
+      if (podeAcessarCio)
+        _AtalhoItem(
+          icon: Icons.dashboard_rounded,
+          title: 'Dashboard',
+          color: HomeVisualTokens.teal,
+          onTap: () => context.push('/dashboard'),
+        ),
       _AtalhoItem(
         icon: Icons.cloud_sync_rounded,
         title: 'Offline',

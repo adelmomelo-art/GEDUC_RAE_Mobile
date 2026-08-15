@@ -5,6 +5,13 @@ class AuthorizationPolicy {
 
   static const Map<String, Set<Permission>> _permissoesPorPerfil = {
     'administrador': {
+      Permission.criarRae,
+      Permission.editarRae,
+      Permission.consultarRae,
+      Permission.revisarRae,
+      Permission.finalizarRae,
+      Permission.compartilharPdfRae,
+      Permission.acessarCioEscopo,
       Permission.acessarCioExecutivo,
       Permission.acessarAdministracao,
       Permission.gerenciarDominios,
@@ -15,16 +22,35 @@ class AuthorizationPolicy {
       Permission.gerenciarMateriais,
     },
     'gestor': {
+      Permission.consultarRae,
+      Permission.compartilharPdfRae,
+      Permission.acessarCioEscopo,
       Permission.acessarCioExecutivo,
       Permission.acessarAdministracao,
       Permission.gerenciarDominios,
       Permission.gerenciarTiposAcoes,
     },
-    'gerente': <Permission>{},
+    'gerente': {
+      Permission.consultarRae,
+      Permission.compartilharPdfRae,
+      Permission.acessarCioEscopo,
+    },
     'coordenador': {
+      Permission.criarRae,
+      Permission.editarRae,
+      Permission.consultarRae,
+      Permission.revisarRae,
+      Permission.finalizarRae,
+      Permission.compartilharPdfRae,
+      Permission.acessarCioEscopo,
       Permission.acessarCioExecutivo,
     },
-    'agente': <Permission>{},
+    'agente': {
+      Permission.criarRae,
+      Permission.editarRae,
+      Permission.consultarRae,
+      Permission.compartilharPdfRae,
+    },
   };
 
   static String normalizarPerfil(String? perfilAcesso) {
@@ -43,5 +69,11 @@ class AuthorizationPolicy {
   }) {
     final perfil = normalizarPerfil(perfilAcesso);
     return _permissoesPorPerfil[perfil]?.contains(permissao) ?? false;
+  }
+
+  static bool exigeEscopoCompletoDoGerente(Permission permissao) {
+    return permissao == Permission.consultarRae ||
+        permissao == Permission.compartilharPdfRae ||
+        permissao == Permission.acessarCioEscopo;
   }
 }

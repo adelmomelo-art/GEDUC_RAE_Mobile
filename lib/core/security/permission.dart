@@ -1,4 +1,11 @@
 enum Permission {
+  criarRae,
+  editarRae,
+  consultarRae,
+  revisarRae,
+  finalizarRae,
+  compartilharPdfRae,
+  acessarCioEscopo,
   acessarCioExecutivo,
   acessarAdministracao,
   gerenciarDominios,

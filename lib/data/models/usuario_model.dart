@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../core/security/access_scope.dart';
+
 class UsuarioModel {
   final String id;
   final String nome;
@@ -11,8 +13,9 @@ class UsuarioModel {
   final bool ativo;
   final DateTime dataCriacao;
   final DateTime? ultimoAcesso;
+  final AccessScope escopoAcesso;
 
-  const UsuarioModel({
+  UsuarioModel({
     required this.id,
     required this.nome,
     required this.email,
@@ -23,7 +26,8 @@ class UsuarioModel {
     required this.ativo,
     required this.dataCriacao,
     this.ultimoAcesso,
-  });
+    AccessScope? escopoAcesso,
+  }) : escopoAcesso = escopoAcesso ?? AccessScope();
 
   factory UsuarioModel.fromMap(
     Map<String, dynamic> map, {
@@ -42,6 +46,11 @@ class UsuarioModel {
       ultimoAcesso: map['ultimoAcesso'] != null
           ? _converterData(map['ultimoAcesso'])
           : null,
+      escopoAcesso: AccessScope.fromMap(
+        map['escopoAcesso'] is Map
+            ? Map<String, dynamic>.from(map['escopoAcesso'] as Map)
+            : null,
+      ),
     );
   }
 
@@ -56,9 +65,9 @@ class UsuarioModel {
       'perfilAcesso': perfilAcesso,
       'ativo': ativo,
       'dataCriacao': Timestamp.fromDate(dataCriacao),
-      'ultimoAcesso': ultimoAcesso != null
-          ? Timestamp.fromDate(ultimoAcesso!)
-          : null,
+      'ultimoAcesso':
+          ultimoAcesso != null ? Timestamp.fromDate(ultimoAcesso!) : null,
+      'escopoAcesso': escopoAcesso.toMap(),
     };
   }
 

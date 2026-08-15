@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/domains/domain_provider.dart';
 import 'core/routes/app_routes.dart';
 import 'core/security/authorization_service.dart';
+import 'core/security/access_scope_provider.dart';
 import 'core/services/firebase_acao_service.dart';
 import 'core/services/offline_service.dart';
 import 'core/services/sync_service.dart';
@@ -50,6 +51,9 @@ class GeducRaeApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(
           value: AuthorizationService.instance,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AccessScopeProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => AcaoController(

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/security/access_scope.dart';
+import '../../../core/security/scope_catalogs.dart';
 import '../../../data/models/usuario_model.dart';
 import '../../../repositories/usuario_repository.dart';
 
@@ -38,4 +40,21 @@ class UsuarioController extends ChangeNotifier {
   }
 
   Future<void> recarregar() => carregarUsuarios(forcar: true);
+
+  Future<ScopeCatalogs> carregarCatalogosEscopo() {
+    return _usuarioRepository.carregarCatalogosEscopo();
+  }
+
+  Future<void> atualizarEscopo({
+    required UsuarioModel usuario,
+    required AccessScope escopo,
+    required String atualizadoPor,
+  }) async {
+    await _usuarioRepository.atualizarEscopo(
+      usuarioId: usuario.id,
+      escopo: escopo,
+      atualizadoPor: atualizadoPor,
+    );
+    await recarregar();
+  }
 }

@@ -1,0 +1,21 @@
+PLATAFORMA FÊNIX — AUD-L2-R1 REGRESSION PROTECTION
+
+CRIADOS
+README_AUD-L2-R1.md
+MANIFESTO_AUD-L2-R1.txt
+test/support/acao_fixture.dart
+test/core/services/offline_service_test.dart
+test/core/services/sync_service_test.dart
+test/modules/recursos/recursos_operacionais_page_test.dart
+
+MODIFICADOS
+lib/modules/recursos/recursos_operacionais_page.dart
+test/data/models/acao_equipe_operacional_test.dart
+test/data/models/membro_equipe_model_test.dart
+
+FORA DO ESCOPO E NÃO ALTERADOS
+firestore.rules
+.github/workflows/quality-gates.yml
+pubspec.yaml
+materiais/domínios
+ACL Stage 4A

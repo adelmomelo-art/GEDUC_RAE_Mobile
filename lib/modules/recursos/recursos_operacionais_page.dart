@@ -9,7 +9,12 @@ import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class RecursosOperacionaisPage extends StatefulWidget {
-  const RecursosOperacionaisPage({super.key});
+  const RecursosOperacionaisPage({
+    super.key,
+    this.listarMembros,
+  });
+
+  final Future<List<MembroEquipeModel>> Function()? listarMembros;
 
   @override
   State<RecursosOperacionaisPage> createState() =>
@@ -17,7 +22,6 @@ class RecursosOperacionaisPage extends StatefulWidget {
 }
 
 class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
-  final EquipeOperacionalService _equipeService = EquipeOperacionalService();
   final Set<String> _agenteIds = <String>{};
   final Set<String> _terceirizadoIds = <String>{};
   final Map<String, String> _nomesPersistidos = <String, String>{};
@@ -96,7 +100,8 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
   Future<void> _carregarEquipe() async {
     final acao = context.read<AcaoController>().acaoAtual;
     try {
-      final membros = await _equipeService.listarMembros();
+      final membros = await (widget.listarMembros?.call() ??
+          EquipeOperacionalService().listarMembros());
       MembroEquipeModel? coordenador;
       if (acao != null) {
         final candidatos = membros.where(

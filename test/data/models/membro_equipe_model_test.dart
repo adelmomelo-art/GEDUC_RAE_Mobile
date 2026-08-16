@@ -39,6 +39,38 @@ void main() {
     expect(membro.usuarioId, 'carlos');
   });
 
+  test('preserva agente inativo e sem permissão para coordenar', () {
+    final membro = MembroEquipeModel.fromMap(
+      {
+        'nome': 'Agente Inativo',
+        'vinculo': 'agente',
+        'podeCoordenar': false,
+        'ativo': false,
+      },
+      documentId: 'agente-inativo',
+    );
+
+    expect(membro.vinculo, VinculoOperacional.agente);
+    expect(membro.ativo, isFalse);
+    expect(membro.podeCoordenar, isFalse);
+  });
+
+  test('preserva terceirizado ativo sem permissão para coordenar', () {
+    final membro = MembroEquipeModel.fromMap(
+      {
+        'nome': 'Terceirizado Ativo',
+        'vinculo': 'terceirizado',
+        'podeCoordenar': false,
+        'ativo': true,
+      },
+      documentId: 'terceirizado-ativo',
+    );
+
+    expect(membro.vinculo, VinculoOperacional.terceirizado);
+    expect(membro.ativo, isTrue);
+    expect(membro.podeCoordenar, isFalse);
+  });
+
   test('sincronização preserva situação operacional configurada', () {
     final atual = <String, dynamic>{
       'ativo': true,
@@ -69,6 +101,17 @@ void main() {
         atual: null,
         campo: 'ativo',
         padrao: false,
+      ),
+      isFalse,
+    );
+  });
+
+  test('MergePolicy preserva falso configurado para ativo', () {
+    expect(
+      EquipeOperacionalMergePolicy.preservarBooleano(
+        atual: const {'ativo': false},
+        campo: 'ativo',
+        padrao: true,
       ),
       isFalse,
     );

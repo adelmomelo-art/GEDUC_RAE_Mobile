@@ -11,10 +11,30 @@ class OfflineService {
   Future<void> salvarAcaoPendente(AcaoModel acao) async {
     final prefs = await SharedPreferences.getInstance();
     final lista = prefs.getStringList(_keyAcoesPendentes) ?? [];
+    final acaoSerializada = jsonEncode(acao.toMap());
+    final id = acao.id.trim();
+    final indiceExistente = id.isEmpty
+        ? -1
+        : lista.indexWhere((item) => _idDaAcaoSerializada(item) == id);
 
-    lista.add(jsonEncode(acao.toMap()));
+    if (indiceExistente >= 0) {
+      lista[indiceExistente] = acaoSerializada;
+    } else {
+      lista.add(acaoSerializada);
+    }
 
     await prefs.setStringList(_keyAcoesPendentes, lista);
+  }
+
+  String? _idDaAcaoSerializada(String item) {
+    try {
+      final dados = jsonDecode(item);
+      if (dados is! Map<String, dynamic>) return null;
+      final id = dados['id']?.toString().trim() ?? '';
+      return id.isEmpty ? null : id;
+    } on FormatException {
+      return null;
+    }
   }
 
   Future<List<AcaoModel>> listarAcoesPendentes() async {

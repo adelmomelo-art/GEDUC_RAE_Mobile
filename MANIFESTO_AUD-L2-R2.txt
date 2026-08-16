@@ -1,0 +1,19 @@
+PLATAFORMA FÊNIX — AUD-L2-R2 IDEMPOTENT PERSISTENCE
+
+CRIADOS
+README_AUD-L2-R2.md
+MANIFESTO_AUD-L2-R2.txt
+test/core/services/firebase_acao_service_test.dart
+
+MODIFICADOS
+lib/core/services/offline_service.dart
+lib/core/services/firebase_acao_service.dart
+test/core/services/offline_service_test.dart
+test/core/services/sync_service_test.dart
+
+FORA DO ESCOPO E NÃO ALTERADOS
+firestore.rules
+.github/workflows/quality-gates.yml
+pubspec.yaml
+lib/data/models/acao_model.dart
+lib/modules/recursos/recursos_operacionais_page.dart

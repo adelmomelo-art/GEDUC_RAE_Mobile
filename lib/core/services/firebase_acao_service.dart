@@ -10,26 +10,27 @@ class FirebaseAcaoService {
 
   Future<String> salvarAcao(AcaoModel acao) async {
     try {
+      final acaoId = AcaoPersistenceIdentity.documentId(acao);
+
       final numeroRae = acao.numeroRAE.isNotEmpty
           ? acao.numeroRAE
           : await gerarNumeroRaeAutomatico();
 
       final ano = DateTime.now().year;
 
-      final dados = acao.copyWith(
-        numeroRAE: numeroRae,
-        anoRAE: ano,
-        sincronizado: true,
-      ).toMap();
+      final dados = acao
+          .copyWith(
+            id: acaoId,
+            numeroRAE: numeroRae,
+            anoRAE: ano,
+            sincronizado: true,
+          )
+          .toMap();
+      dados['dataAtualizacao'] = FieldValue.serverTimestamp();
 
-      final docRef = await _acoesRef.add(dados);
+      await _acoesRef.doc(acaoId).set(dados);
 
-      await _acoesRef.doc(docRef.id).update({
-        'id': docRef.id,
-        'dataAtualizacao': FieldValue.serverTimestamp(),
-      });
-
-      return docRef.id;
+      return acaoId;
     } catch (e) {
       throw Exception('Erro ao salvar ação: $e');
     }
@@ -254,5 +255,21 @@ class FirebaseAcaoService {
       'Atingidas': atingidas,
       'Não atingidas': naoAtingidas,
     };
+  }
+}
+
+class AcaoPersistenceIdentity {
+  const AcaoPersistenceIdentity._();
+
+  static String documentId(AcaoModel acao) {
+    final id = acao.id.trim();
+    if (id.isEmpty) {
+      throw ArgumentError.value(
+        acao.id,
+        'acao.id',
+        'A ação precisa de um ID local para persistência idempotente.',
+      );
+    }
+    return id;
   }
 }

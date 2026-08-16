@@ -64,15 +64,18 @@ void main() {
     expect(await service.listarAcoesPendentes(), isEmpty);
   });
 
-  test('baseline mantém duplicidade quando o mesmo ID é salvo duas vezes',
+  test('mesmo ID substitui a pendência anterior sem alterar sua posição',
       () async {
-    final acao = criarAcaoTeste(id: 'duplicada');
+    final acao = criarAcaoTeste(id: 'repetida');
 
-    await service.salvarAcaoPendente(acao);
-    await service.salvarAcaoPendente(acao);
+    await service.salvarAcaoPendente(acao.copyWith(status: 'primeira-versao'));
+    await service.salvarAcaoPendente(criarAcaoTeste(id: 'outra'));
+    await service
+        .salvarAcaoPendente(acao.copyWith(status: 'versao-atualizada'));
 
     final pendentes = await service.listarAcoesPendentes();
     expect(pendentes, hasLength(2));
-    expect(pendentes.map((item) => item.id), everyElement('duplicada'));
+    expect(pendentes.map((item) => item.id), ['repetida', 'outra']);
+    expect(pendentes.first.status, 'versao-atualizada');
   });
 }

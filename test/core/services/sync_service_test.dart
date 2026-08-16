@@ -18,19 +18,33 @@ class _FakeConnectivity extends Fake implements Connectivity {
 }
 
 class _FakeFirebaseAcaoService extends Fake implements FirebaseAcaoService {
-  _FakeFirebaseAcaoService([List<bool>? resultados])
-      : resultados = resultados ?? <bool>[];
+  _FakeFirebaseAcaoService([List<_ResultadoEnvio>? resultados])
+      : resultados = resultados ?? <_ResultadoEnvio>[];
 
-  final List<bool> resultados;
+  final List<_ResultadoEnvio> resultados;
   final List<AcaoModel> recebidas = [];
+  final Map<String, AcaoModel> documentosRemotos = {};
 
   @override
   Future<String> salvarAcao(AcaoModel acao) async {
     recebidas.add(acao);
-    final sucesso = resultados.isEmpty ? true : resultados.removeAt(0);
-    if (!sucesso) throw Exception('falha remota controlada');
+    final resultado =
+        resultados.isEmpty ? _ResultadoEnvio.sucesso : resultados.removeAt(0);
+    if (resultado == _ResultadoEnvio.falhaAntesDePersistir) {
+      throw Exception('falha remota controlada antes da persistência');
+    }
+    documentosRemotos[acao.id] = acao;
+    if (resultado == _ResultadoEnvio.falhaDepoisDePersistir) {
+      throw Exception('falha remota controlada depois da persistência');
+    }
     return 'remota-${recebidas.length}';
   }
+}
+
+enum _ResultadoEnvio {
+  sucesso,
+  falhaAntesDePersistir,
+  falhaDepoisDePersistir,
 }
 
 void main() {
@@ -105,7 +119,9 @@ void main() {
     await offline.salvarAcaoPendente(criarAcaoTeste());
     final service = criarService(
       connectivity: _FakeConnectivity([ConnectivityResult.mobile]),
-      firebase: _FakeFirebaseAcaoService([false]),
+      firebase: _FakeFirebaseAcaoService([
+        _ResultadoEnvio.falhaAntesDePersistir,
+      ]),
     );
 
     await service.sincronizarAcoesPendentes();
@@ -121,7 +137,10 @@ void main() {
     await offline.salvarAcaoPendente(criarAcaoTeste(id: 'falha'));
     final service = criarService(
       connectivity: _FakeConnectivity([ConnectivityResult.wifi]),
-      firebase: _FakeFirebaseAcaoService([true, false]),
+      firebase: _FakeFirebaseAcaoService([
+        _ResultadoEnvio.sucesso,
+        _ResultadoEnvio.falhaAntesDePersistir,
+      ]),
     );
 
     await service.sincronizarAcoesPendentes();
@@ -134,7 +153,11 @@ void main() {
   test('falhas consecutivas acumulam e sucesso posterior zera contador',
       () async {
     await offline.salvarAcaoPendente(criarAcaoTeste(id: 'retry'));
-    final firebase = _FakeFirebaseAcaoService([false, false, true]);
+    final firebase = _FakeFirebaseAcaoService([
+      _ResultadoEnvio.falhaDepoisDePersistir,
+      _ResultadoEnvio.falhaDepoisDePersistir,
+      _ResultadoEnvio.sucesso,
+    ]);
     final service = criarService(
       connectivity: _FakeConnectivity([ConnectivityResult.wifi]),
       firebase: firebase,
@@ -148,6 +171,8 @@ void main() {
 
     expect(firebase.recebidas, hasLength(3));
     expect(firebase.recebidas.map((acao) => acao.id), everyElement('retry'));
+    expect(firebase.documentosRemotos.keys, ['retry']);
+    expect(firebase.documentosRemotos, hasLength(1));
     expect(service.falhasConsecutivasSincronizacao, 0);
     expect(service.erro, isNull);
     expect(await offline.listarAcoesPendentes(), isEmpty);

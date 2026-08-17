@@ -1,0 +1,19 @@
+AUD-L2-R3 — Operational Identity & Legacy Integrity
+
+ARQUIVOS DE PRODUÇÃO
+lib/core/services/firebase_acao_service.dart
+lib/modules/recursos/recursos_operacionais_page.dart
+
+ARQUIVOS DE TESTE
+test/core/services/firebase_acao_service_test.dart
+test/modules/recursos/recursos_operacionais_page_test.dart
+test/support/acao_fixture.dart
+
+DOCUMENTAÇÃO
+README_AUD-L2-R3.md
+MANIFESTO_AUD-L2-R3.txt
+
+VALIDAÇÃO
+flutter test: 699 testes aprovados
+flutter analyze: No issues found
+git diff --check: OK

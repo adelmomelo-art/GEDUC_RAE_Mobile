@@ -16,16 +16,17 @@ class FirebaseAcaoService {
           ? acao.numeroRAE
           : await gerarNumeroRaeAutomatico();
 
-      final ano = DateTime.now().year;
+      final anoRae = acao.anoRAE > 0 ? acao.anoRAE : acao.dataAcao.year;
 
       final dados = acao
           .copyWith(
             id: acaoId,
             numeroRAE: numeroRae,
-            anoRAE: ano,
+            anoRAE: anoRae,
             sincronizado: true,
           )
           .toMap();
+
       dados['dataAtualizacao'] = FieldValue.serverTimestamp();
 
       await _acoesRef.doc(acaoId).set(dados);
@@ -43,6 +44,7 @@ class FirebaseAcaoService {
   Future<void> atualizarAcao(String id, AcaoModel acao) async {
     try {
       final dados = acao.toMap();
+
       dados['id'] = id;
       dados['dataAtualizacao'] = FieldValue.serverTimestamp();
 
@@ -81,7 +83,9 @@ class FirebaseAcaoService {
     return _acoesRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
+
         data['id'] = doc.id;
+
         return AcaoModel.fromMap(data);
       }).toList();
     });
@@ -92,19 +96,26 @@ class FirebaseAcaoService {
 
     return snapshot.docs.map((doc) {
       final data = doc.data();
+
       data['id'] = doc.id;
+
       return AcaoModel.fromMap(data);
     }).toList();
   }
 
   Stream<List<AcaoModel>> listarAcoesPorProjeto(String projetoId) {
     return _acoesRef
-        .where('projetoId', isEqualTo: projetoId)
+        .where(
+          'projetoId',
+          isEqualTo: projetoId,
+        )
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
+
         data['id'] = doc.id;
+
         return AcaoModel.fromMap(data);
       }).toList();
     });
@@ -121,7 +132,10 @@ class FirebaseAcaoService {
     }
   }
 
-  Future<void> atualizarNumeroRae(String id, String numeroRae) async {
+  Future<void> atualizarNumeroRae(
+    String id,
+    String numeroRae,
+  ) async {
     try {
       await _acoesRef.doc(id).update({
         'numeroRAE': numeroRae,
@@ -135,7 +149,10 @@ class FirebaseAcaoService {
   Future<String> gerarNumeroRaeAutomatico() async {
     try {
       final ano = DateTime.now().year;
-      final counterRef = _firestore.collection('contadores').doc('rae_$ano');
+
+      final counterRef = _firestore.collection('contadores').doc(
+            'rae_$ano',
+          );
 
       return await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(counterRef);
@@ -144,6 +161,7 @@ class FirebaseAcaoService {
 
         if (snapshot.exists) {
           final data = snapshot.data();
+
           ultimoNumero = data?['ultimoNumero'] ?? 0;
         }
 
@@ -156,7 +174,9 @@ class FirebaseAcaoService {
             'ano': ano,
             'dataAtualizacao': FieldValue.serverTimestamp(),
           },
-          SetOptions(merge: true),
+          SetOptions(
+            merge: true,
+          ),
         );
 
         return '${novoNumero.toString().padLeft(4, '0')}/$ano';
@@ -166,7 +186,10 @@ class FirebaseAcaoService {
     }
   }
 
-  Future<void> vincularQrCode(String id, String qrCodeUrl) async {
+  Future<void> vincularQrCode(
+    String id,
+    String qrCodeUrl,
+  ) async {
     try {
       await _acoesRef.doc(id).update({
         'qrCodeUrl': qrCodeUrl,
@@ -179,23 +202,31 @@ class FirebaseAcaoService {
 
   Future<int> totalAcoes() async {
     final snapshot = await _acoesRef.get();
+
     return snapshot.docs.length;
   }
 
   Future<int> totalPessoasAlcancadas() async {
-    return totalPorCampo('pessoasAlcancadas');
+    return totalPorCampo(
+      'pessoasAlcancadas',
+    );
   }
 
   Future<int> totalVeiculosAbordados() async {
-    return totalPorCampo('veiculosAbordados');
+    return totalPorCampo(
+      'veiculosAbordados',
+    );
   }
 
   Future<int> totalCredenciaisEmitidas() async {
-    return totalPorCampo('credenciaisEmitidas');
+    return totalPorCampo(
+      'credenciaisEmitidas',
+    );
   }
 
   Future<int> totalPorCampo(String campo) async {
     final snapshot = await _acoesRef.get();
+
     int total = 0;
 
     for (final doc in snapshot.docs) {
@@ -219,6 +250,7 @@ class FirebaseAcaoService {
 
     for (final acao in acoes) {
       final chave = acao.regional.isEmpty ? 'Não informada' : acao.regional;
+
       mapa[chave] = (mapa[chave] ?? 0) + 1;
     }
 
@@ -231,6 +263,7 @@ class FirebaseAcaoService {
 
     for (final acao in acoes) {
       final chave = acao.tipoAcao.isEmpty ? 'Não informado' : acao.tipoAcao;
+
       mapa[chave] = (mapa[chave] ?? 0) + 1;
     }
 
@@ -263,6 +296,7 @@ class AcaoPersistenceIdentity {
 
   static String documentId(AcaoModel acao) {
     final id = acao.id.trim();
+
     if (id.isEmpty) {
       throw ArgumentError.value(
         acao.id,
@@ -270,6 +304,7 @@ class AcaoPersistenceIdentity {
         'A ação precisa de um ID local para persistência idempotente.',
       );
     }
+
     return id;
   }
 }

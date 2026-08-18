@@ -14,12 +14,13 @@ AcaoModel criarAcaoTeste({
   List<String> orgaoParticipanteIds = const [],
   String orgaoParticipanteId = '',
   int anoRAE = 2026,
+  DateTime? dataAcao,
 }) {
   return AcaoModel(
     id: id,
     numeroRAE: '0001/2026',
     anoRAE: anoRAE,
-    dataAcao: DateTime(2026, 8, 16),
+    dataAcao: dataAcao ?? DateTime(2026, 8, 16),
     turno: 'Manhã',
     nomeAcao: 'Ação de teste',
     tipoAcao: 'Educativa',

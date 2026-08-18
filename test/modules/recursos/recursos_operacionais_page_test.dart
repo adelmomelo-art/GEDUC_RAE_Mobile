@@ -45,8 +45,11 @@ Future<({AcaoController controller, _FakeAcaoRepository repository})>
   required acao,
 }) async {
   final repository = _FakeAcaoRepository();
-  final controller = AcaoController(acaoRepository: repository)
-    ..acaoAtual = acao;
+
+  final controller = AcaoController(
+    acaoRepository: repository,
+  )..acaoAtual = acao;
+
   final router = GoRouter(
     initialLocation: '/recursos-operacionais',
     routes: [
@@ -58,11 +61,15 @@ Future<({AcaoController controller, _FakeAcaoRepository repository})>
       ),
       GoRoute(
         path: '/caracterizacao-acao',
-        builder: (_, __) => const Scaffold(body: Text('CARACTERIZAÇÃO')),
+        builder: (_, __) => const Scaffold(
+          body: Text('CARACTERIZAÇÃO'),
+        ),
       ),
       GoRoute(
         path: '/integracao-observacoes',
-        builder: (_, __) => const Scaffold(body: Text('INTEGRAÇÃO')),
+        builder: (_, __) => const Scaffold(
+          body: Text('INTEGRAÇÃO'),
+        ),
       ),
     ],
   );
@@ -70,11 +77,18 @@ Future<({AcaoController controller, _FakeAcaoRepository repository})>
   await tester.pumpWidget(
     ChangeNotifierProvider.value(
       value: controller,
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        routerConfig: router,
+      ),
     ),
   );
+
   await tester.pumpAndSettle();
-  return (controller: controller, repository: repository);
+
+  return (
+    controller: controller,
+    repository: repository,
+  );
 }
 
 void main() {
@@ -84,216 +98,692 @@ void main() {
     vinculo: VinculoOperacional.agente,
     podeCoordenar: true,
   );
+
   final agente = _membro(
     id: 'agente-1',
     nome: 'Agente Bruno',
     vinculo: VinculoOperacional.agente,
   );
+
   final terceirizado = _membro(
     id: 'terceiro-1',
     nome: 'Terceirizada Carla',
     vinculo: VinculoOperacional.terceirizado,
   );
 
-  testWidgets('carrega equipe nominal e restaura materiais existentes',
-      (tester) async {
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadora, agente, terceirizado],
-      acao: criarAcaoTeste(
-        agenteEquipeIds: const ['agente-1'],
-        agenteEquipeNomes: const ['Agente Bruno'],
-        terceirizadoEquipeIds: const ['terceiro-1'],
-        terceirizadoEquipeNomes: const ['Terceirizada Carla'],
-        materialUtilizadoIds: const ['material_cone'],
-      ),
-    );
+  testWidgets(
+    'carrega equipe nominal e restaura materiais existentes',
+    (tester) async {
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadora,
+          agente,
+          terceirizado,
+        ],
+        acao: criarAcaoTeste(
+          agenteEquipeIds: const ['agente-1'],
+          agenteEquipeNomes: const ['Agente Bruno'],
+          terceirizadoEquipeIds: const ['terceiro-1'],
+          terceirizadoEquipeNomes: const ['Terceirizada Carla'],
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
 
-    expect(find.text('Coordenadora Ana'), findsWidgets);
-    expect(find.text('Agente Bruno'), findsOneWidget);
-    expect(find.text('Terceirizada Carla'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('Cone'),
-      find.byType(ListView),
-      const Offset(0, -300),
-    );
-    final cone = tester.widget<FilterChip>(
-      find.widgetWithText(FilterChip, 'Cone'),
-    );
-    expect(cone.selected, isTrue);
-  });
+      expect(
+        find.text('Coordenadora Ana'),
+        findsWidgets,
+      );
 
-  testWidgets('registro legado exibe quantidades sem nomes', (tester) async {
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadora],
-      acao: criarAcaoTeste(agentesTransito: 3, equipeTerceirizada: 2),
-    );
+      expect(
+        find.text('Agente Bruno'),
+        findsOneWidget,
+      );
 
-    expect(
-      find.text(
-          '3 participante(s) sem identificação nominal (registro anterior).'),
-      findsOneWidget,
-    );
-    expect(
-      find.text(
-          '2 participante(s) sem identificação nominal (registro anterior).'),
-      findsOneWidget,
-    );
-  });
+      expect(
+        find.text('Terceirizada Carla'),
+        findsOneWidget,
+      );
+
+      await tester.dragUntilVisible(
+        find.text('Cone'),
+        find.byType(ListView),
+        const Offset(0, -300),
+      );
+
+      final cone = tester.widget<FilterChip>(
+        find.widgetWithText(
+          FilterChip,
+          'Cone',
+        ),
+      );
+
+      expect(
+        cone.selected,
+        isTrue,
+      );
+    },
+  );
 
   testWidgets(
-      'seletor separa vínculos, preserva inativo histórico e trava coordenador',
-      (tester) async {
-    final historico = _membro(
-      id: 'historico',
-      nome: 'Agente Histórico',
-      vinculo: VinculoOperacional.agente,
-      ativo: false,
-    );
-    final inativoNovo = _membro(
-      id: 'inativo-novo',
-      nome: 'Agente Inativo Novo',
-      vinculo: VinculoOperacional.agente,
-      ativo: false,
-    );
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [
-        coordenadora,
-        agente,
-        terceirizado,
-        historico,
-        inativoNovo,
-      ],
-      acao: criarAcaoTeste(
-        agenteEquipeIds: const ['historico'],
-        agenteEquipeNomes: const ['Agente Histórico'],
-      ),
-    );
+    'registro legado exibe quantidades sem nomes',
+    (tester) async {
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadora],
+        acao: criarAcaoTeste(
+          agentesTransito: 3,
+          equipeTerceirizada: 2,
+        ),
+      );
 
-    await Scrollable.ensureVisible(
-      tester.element(find.text('Selecionar').first),
-      alignment: 0.5,
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Selecionar').first);
-    await tester.pumpAndSettle();
+      expect(
+        find.text(
+          '3 participante(s) sem identificação nominal (registro anterior).',
+        ),
+        findsOneWidget,
+      );
 
-    expect(find.text('Coordenadora Ana'), findsWidgets);
-    expect(find.text('Agente Bruno'), findsOneWidget);
-    expect(find.text('Agente Histórico'), findsWidgets);
-    expect(find.text('Agente Inativo Novo'), findsNothing);
-    expect(find.text('Terceirizada Carla'), findsNothing);
-    final coordenadorTile = tester.widget<CheckboxListTile>(
-      find.ancestor(
-        of: find.text('Coordenadora Ana'),
-        matching: find.byType(CheckboxListTile),
-      ),
-    );
-    expect(coordenadorTile.value, isTrue);
-    expect(coordenadorTile.onChanged, isNull);
-  });
+      expect(
+        find.text(
+          '2 participante(s) sem identificação nominal (registro anterior).',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('Voltar persiste recursos no controller', (tester) async {
-    final resultado = await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadora],
-      acao: criarAcaoTeste(materialUtilizadoIds: const ['material_cone']),
-    );
+  testWidgets(
+    'seletor separa vínculos, preserva inativo histórico e trava coordenador',
+    (tester) async {
+      final historico = _membro(
+        id: 'historico',
+        nome: 'Agente Histórico',
+        vinculo: VinculoOperacional.agente,
+        ativo: false,
+      );
 
-    await tester.tap(find.text('Voltar'));
-    await tester.pumpAndSettle();
+      final inativoNovo = _membro(
+        id: 'inativo-novo',
+        nome: 'Agente Inativo Novo',
+        vinculo: VinculoOperacional.agente,
+        ativo: false,
+      );
 
-    expect(find.text('CARACTERIZAÇÃO'), findsOneWidget);
-    expect(resultado.controller.acaoAtual!.agenteEquipeIds, ['coord-1']);
-    expect(resultado.controller.acaoAtual!.agenteEquipeNomes,
-        ['Coordenadora Ana']);
-    expect(resultado.repository.rascunhosSalvos, greaterThanOrEqualTo(1));
-  });
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadora,
+          agente,
+          terceirizado,
+          historico,
+          inativoNovo,
+        ],
+        acao: criarAcaoTeste(
+          agenteEquipeIds: const ['historico'],
+          agenteEquipeNomes: const ['Agente Histórico'],
+        ),
+      );
 
-  testWidgets('confirmação exige material e avança após seleção',
-      (tester) async {
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadora],
-      acao: criarAcaoTeste(),
-    );
+      await Scrollable.ensureVisible(
+        tester.element(
+          find.text('Selecionar').first,
+        ),
+        alignment: 0.5,
+      );
 
-    await tester.tap(find.text('Confirmar e avançar'));
-    await tester.pump();
-    expect(
-        find.text('Selecione ao menos um material utilizado.'), findsOneWidget);
+      await tester.pumpAndSettle();
 
-    await tester.dragUntilVisible(
-      find.text('Cone'),
-      find.byType(ListView),
-      const Offset(0, -300),
-    );
-    final cone = find.widgetWithText(FilterChip, 'Cone');
-    await tester.tap(cone);
-    await tester.pump();
-    await tester.tap(find.text('Confirmar e avançar'));
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.text('Selecionar').first,
+      );
 
-    expect(find.text('INTEGRAÇÃO'), findsOneWidget);
-  });
+      await tester.pumpAndSettle();
 
-  testWidgets('erro de carregamento oferece retry funcional', (tester) async {
-    var tentativas = 0;
-    await _pumpPagina(
-      tester,
-      listarMembros: () async {
-        tentativas++;
-        if (tentativas == 1) throw Exception('indisponível');
-        return [coordenadora];
-      },
-      acao: criarAcaoTeste(),
-    );
+      expect(
+        find.text('Coordenadora Ana'),
+        findsWidgets,
+      );
 
-    expect(find.text('TENTAR NOVAMENTE'), findsOneWidget);
-    await tester.tap(find.text('TENTAR NOVAMENTE'));
-    await tester.pumpAndSettle();
+      expect(
+        find.text('Agente Bruno'),
+        findsOneWidget,
+      );
 
-    expect(tentativas, 2);
-    expect(find.text('TENTAR NOVAMENTE'), findsNothing);
-    expect(find.text('Coordenadora Ana'), findsWidgets);
-  });
+      expect(
+        find.text('Agente Histórico'),
+        findsWidgets,
+      );
 
-  testWidgets('baseline aceita coordenador inativo encontrado', (tester) async {
-    final coordenadorInativo = _membro(
-      id: 'coord-1',
-      nome: 'Coordenadora Ana',
-      vinculo: VinculoOperacional.agente,
-      ativo: false,
-      podeCoordenar: true,
-    );
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadorInativo],
-      acao: criarAcaoTeste(materialUtilizadoIds: const ['material_cone']),
-    );
+      expect(
+        find.text('Agente Inativo Novo'),
+        findsNothing,
+      );
 
-    await tester.tap(find.text('Confirmar e avançar'));
-    await tester.pumpAndSettle();
-    expect(find.text('INTEGRAÇÃO'), findsOneWidget);
-  });
+      expect(
+        find.text('Terceirizada Carla'),
+        findsNothing,
+      );
 
-  testWidgets('baseline aceita coordenador sem podeCoordenar', (tester) async {
-    final coordenadorSemPermissao = _membro(
-      id: 'coord-1',
-      nome: 'Coordenadora Ana',
-      vinculo: VinculoOperacional.agente,
-      podeCoordenar: false,
-    );
-    await _pumpPagina(
-      tester,
-      listarMembros: () async => [coordenadorSemPermissao],
-      acao: criarAcaoTeste(materialUtilizadoIds: const ['material_cone']),
-    );
+      final coordenadorTile = tester.widget<CheckboxListTile>(
+        find.ancestor(
+          of: find.text('Coordenadora Ana'),
+          matching: find.byType(
+            CheckboxListTile,
+          ),
+        ),
+      );
 
-    await tester.tap(find.text('Confirmar e avançar'));
-    await tester.pumpAndSettle();
-    expect(find.text('INTEGRAÇÃO'), findsOneWidget);
-  });
+      expect(
+        coordenadorTile.value,
+        isTrue,
+      );
+
+      expect(
+        coordenadorTile.onChanged,
+        isNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'Voltar persiste recursos no controller',
+    (tester) async {
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadora],
+        acao: criarAcaoTeste(
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await tester.tap(
+        find.text('Voltar'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('CARACTERIZAÇÃO'),
+        findsOneWidget,
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeIds,
+        ['coord-1'],
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeNomes,
+        ['Coordenadora Ana'],
+      );
+
+      expect(
+        resultado.repository.rascunhosSalvos,
+        greaterThanOrEqualTo(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'confirmação exige material e avança após seleção',
+    (tester) async {
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadora],
+        acao: criarAcaoTeste(),
+      );
+
+      await tester.tap(
+        find.text('Confirmar e avançar'),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Selecione ao menos um material utilizado.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.dragUntilVisible(
+        find.text('Cone'),
+        find.byType(ListView),
+        const Offset(0, -300),
+      );
+
+      final cone = find.widgetWithText(
+        FilterChip,
+        'Cone',
+      );
+
+      await tester.tap(cone);
+      await tester.pump();
+
+      await tester.tap(
+        find.text('Confirmar e avançar'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('INTEGRAÇÃO'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'erro de carregamento oferece retry funcional',
+    (tester) async {
+      var tentativas = 0;
+
+      await _pumpPagina(
+        tester,
+        listarMembros: () async {
+          tentativas++;
+
+          if (tentativas == 1) {
+            throw Exception('indisponível');
+          }
+
+          return [coordenadora];
+        },
+        acao: criarAcaoTeste(),
+      );
+
+      expect(
+        find.text('TENTAR NOVAMENTE'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text('TENTAR NOVAMENTE'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        tentativas,
+        2,
+      );
+
+      expect(
+        find.text('TENTAR NOVAMENTE'),
+        findsNothing,
+      );
+
+      expect(
+        find.text('Coordenadora Ana'),
+        findsWidgets,
+      );
+    },
+  );
+
+  testWidgets(
+    'bloqueia coordenador inativo encontrado',
+    (tester) async {
+      final coordenadorInativo = _membro(
+        id: 'coord-1',
+        nome: 'Coordenadora Ana',
+        vinculo: VinculoOperacional.agente,
+        ativo: false,
+        podeCoordenar: true,
+      );
+
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadorInativo,
+        ],
+        acao: criarAcaoTeste(
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await tester.tap(
+        find.text('Confirmar e avançar'),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.text('INTEGRAÇÃO'),
+        findsNothing,
+      );
+
+      expect(
+        find.text(
+          'Vincule o coordenador à Equipe Operacional antes de avançar.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'bloqueia coordenador sem habilitação para coordenar',
+    (tester) async {
+      final coordenadorSemPermissao = _membro(
+        id: 'coord-1',
+        nome: 'Coordenadora Ana',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: false,
+      );
+
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadorSemPermissao,
+        ],
+        acao: criarAcaoTeste(
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await tester.tap(
+        find.text('Confirmar e avançar'),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.text('INTEGRAÇÃO'),
+        findsNothing,
+      );
+
+      expect(
+        find.text(
+          'Vincule o coordenador à Equipe Operacional antes de avançar.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'bloqueia coordenador resolvido apenas por fallback de nome',
+    (tester) async {
+      final coordenadorSomentePorNome = _membro(
+        id: 'coord-catalogo',
+        nome: 'Coordenadora Ana',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadorSomentePorNome,
+        ],
+        acao: criarAcaoTeste(
+          coordenadorId: 'uid-diferente',
+          coordenadorNome: 'Coordenadora Ana',
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      expect(
+        find.textContaining(
+          'localizado apenas pelo nome',
+        ),
+        findsWidgets,
+      );
+
+      await tester.tap(
+        find.text('Confirmar e avançar'),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.text('INTEGRAÇÃO'),
+        findsNothing,
+      );
+
+      expect(
+        find.text(
+          'Vincule o coordenador à Equipe Operacional antes de avançar.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'cancelar migração nominal preserva registro legado',
+    (tester) async {
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadora,
+          agente,
+        ],
+        acao: criarAcaoTeste(
+          agentesTransito: 3,
+          equipeTerceirizada: 2,
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await Scrollable.ensureVisible(
+        tester.element(
+          find.text('Selecionar').first,
+        ),
+        alignment: 0.5,
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.text('Selecionar').first,
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Agente Bruno'),
+        findsOneWidget,
+      );
+
+      final agenteTile = tester.widget<CheckboxListTile>(
+        find.ancestor(
+          of: find.text('Agente Bruno'),
+          matching: find.byType(
+            CheckboxListTile,
+          ),
+        ),
+      );
+
+      expect(
+        agenteTile.value,
+        isFalse,
+      );
+
+      await tester.tap(
+        find.ancestor(
+          of: find.text('Agente Bruno'),
+          matching: find.byType(
+            CheckboxListTile,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      await tester.tap(
+        find.text('CONFIRMAR'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Atualizar equipe histórica?'),
+        findsOneWidget,
+      );
+
+      expect(
+        find.textContaining(
+          '3 agente(s)',
+        ),
+        findsOneWidget,
+      );
+
+      expect(
+        find.textContaining(
+          '2 terceirizado(s)',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text('CANCELAR'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Atualizar equipe histórica?'),
+        findsNothing,
+      );
+
+      expect(
+        find.text(
+          '3 participante(s) sem identificação nominal (registro anterior).',
+        ),
+        findsOneWidget,
+      );
+
+      expect(
+        find.text(
+          '2 participante(s) sem identificação nominal (registro anterior).',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text('Voltar'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        resultado.controller.acaoAtual!.agentesTransito,
+        3,
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.equipeTerceirizada,
+        2,
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeIds,
+        isEmpty,
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.terceirizadoEquipeIds,
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'confirmar migração converte registro legado para equipe nominal',
+    (tester) async {
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadora,
+          agente,
+        ],
+        acao: criarAcaoTeste(
+          agentesTransito: 3,
+          equipeTerceirizada: 0,
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await Scrollable.ensureVisible(
+        tester.element(
+          find.text('Selecionar').first,
+        ),
+        alignment: 0.5,
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.text('Selecionar').first,
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.ancestor(
+          of: find.text('Agente Bruno'),
+          matching: find.byType(
+            CheckboxListTile,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      await tester.tap(
+        find.text('CONFIRMAR'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Atualizar equipe histórica?'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text('CONTINUAR'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Atualizar equipe histórica?'),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.text('Voltar'),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeIds,
+        containsAll(
+          [
+            'coord-1',
+            'agente-1',
+          ],
+        ),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeNomes,
+        containsAll(
+          [
+            'Coordenadora Ana',
+            'Agente Bruno',
+          ],
+        ),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.agentesTransito,
+        2,
+      );
+    },
+  );
 }

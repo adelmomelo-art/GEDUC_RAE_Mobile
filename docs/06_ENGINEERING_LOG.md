@@ -1,4 +1,4 @@
-﻿# ENGINEERING LOG
+# ENGINEERING LOG
 
 > Diário Oficial de Engenharia da Plataforma Fênix> Sistema de Conhecimento da Plataforma Fênix (SKPF)
 
@@ -1164,3 +1164,8 @@ O aviso de conversão LF para CRLF apresentado pelo Git em ambiente Windows foi 
 `AUD-L2-R4`: **HOMOLOGADO**.
 
 O lote está autorizado para registro em commit único. Push, Pull Request e merge permanecem etapas separadas e dependem de autorização própria.
+### Correção R1 — Regional Scope Enforcement
+
+A Code Review do PR #40 identificou que `AccessScope.regionalIds` não participava da resolução R4.3. A R1 tornou a dimensão Regional obrigatória no `RaeScopeResolver`: escopo regional vazio ou Regional fora do conjunto permitido falha de forma fechada antes da resolução de Equipe e Projeto.
+
+Foram adicionadas regressões explícitas para Regional fora e dentro do `AccessScope`. A `RecursosOperacionaisPage` passou a encaminhar `escopo.regionalIds` ao resolver.

@@ -36,6 +36,7 @@ class RaeScopeResolver {
 
   static RaeScopeResolution resolve({
     required String regionalId,
+    required Iterable<String> regionalIdsPermitidas,
     required String coordenadorUserId,
     required Iterable<String> equipeIdsPermitidas,
     required Iterable<String> projetoIdsPermitidos,
@@ -45,6 +46,9 @@ class RaeScopeResolver {
     final regional = regionalId.trim();
     final coordenador = coordenadorUserId.trim();
 
+    final regionaisPermitidas = _normalizarIds(
+      regionalIdsPermitidas,
+    );
     final equipesPermitidas = _normalizarIds(
       equipeIdsPermitidas,
     );
@@ -53,7 +57,10 @@ class RaeScopeResolver {
       projetoIdsPermitidos,
     );
 
-    if (regional.isEmpty || coordenador.isEmpty || equipesPermitidas.isEmpty) {
+    if (regional.isEmpty ||
+        !regionaisPermitidas.contains(regional) ||
+        coordenador.isEmpty ||
+        equipesPermitidas.isEmpty) {
       return const RaeScopeResolution(
         status: RaeScopeResolutionStatus.naoResolvido,
         equipeId: '',

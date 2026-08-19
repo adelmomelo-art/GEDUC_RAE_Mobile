@@ -38,6 +38,7 @@ void main() {
     test('resolve equipe e projeto únicos', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -93,6 +94,7 @@ void main() {
     test('não resolve sem regionalId', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: '   ',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -123,6 +125,7 @@ void main() {
     test('não resolve sem coordenadorUserId', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: '',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -143,6 +146,7 @@ void main() {
     test('ignora equipe fora da regional da ação', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -178,6 +182,7 @@ void main() {
     test('ignora equipe sem vínculo com coordenador', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -208,6 +213,7 @@ void main() {
     test('ignora equipe fora do escopo permitido', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-permitida',
@@ -238,6 +244,7 @@ void main() {
     test('duas equipes compatíveis produzem ambiguidade', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -289,6 +296,7 @@ void main() {
     test('equipe única sem projeto compatível fica não resolvida', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -339,6 +347,7 @@ void main() {
     test('ignora projeto fora do escopo permitido', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -384,6 +393,7 @@ void main() {
     test('dois projetos compatíveis produzem ambiguidade', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -452,6 +462,7 @@ void main() {
     test('ignora equipe e projeto inativos', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
         coordenadorUserId: 'usuario-coord-1',
         equipeIdsPermitidas: const [
           'equipe-1',
@@ -494,6 +505,7 @@ void main() {
     test('normaliza espaços externos dos identificadores', () {
       final resultado = RaeScopeResolver.resolve(
         regionalId: '  regional-1  ',
+        regionalIdsPermitidas: const ['  regional-1  '],
         coordenadorUserId: '  usuario-coord-1  ',
         equipeIdsPermitidas: const [
           '  equipe-1  ',
@@ -541,9 +553,71 @@ void main() {
       );
     });
   });
+  test(
+    'regional fora do AccessScope não resolve mesmo com equipe e projeto compatíveis',
+    () {
+      final resultado = RaeScopeResolver.resolve(
+        regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-2'],
+        coordenadorUserId: 'usuario-coord-1',
+        equipeIdsPermitidas: const ['equipe-1'],
+        projetoIdsPermitidos: const ['projeto-1'],
+        equipes: [
+          _equipe(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coord-1'],
+          ),
+        ],
+        projetos: [
+          _projeto(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      expect(resultado.naoResolvido, isTrue);
+      expect(resultado.equipeId, isEmpty);
+      expect(resultado.projetoId, isEmpty);
+    },
+  );
+
+  test(
+    'regional dentro do AccessScope permite resolução conjunta de equipe e projeto',
+    () {
+      final resultado = RaeScopeResolver.resolve(
+        regionalId: 'regional-1',
+        regionalIdsPermitidas: const ['regional-1'],
+        coordenadorUserId: 'usuario-coord-1',
+        equipeIdsPermitidas: const ['equipe-1'],
+        projetoIdsPermitidos: const ['projeto-1'],
+        equipes: [
+          _equipe(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coord-1'],
+          ),
+        ],
+        projetos: [
+          _projeto(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      expect(resultado.resolvido, isTrue);
+      expect(resultado.equipeId, 'equipe-1');
+      expect(resultado.projetoId, 'projeto-1');
+    },
+  );
   test('escopo de equipes vazio não concede resolução implícita', () {
     final resultado = RaeScopeResolver.resolve(
       regionalId: 'regional-1',
+      regionalIdsPermitidas: const ['regional-1'],
       coordenadorUserId: 'usuario-coord-1',
       equipeIdsPermitidas: const [],
       projetoIdsPermitidos: const [
@@ -592,6 +666,7 @@ void main() {
   test('escopo de projetos vazio não concede resolução implícita', () {
     final resultado = RaeScopeResolver.resolve(
       regionalId: 'regional-1',
+      regionalIdsPermitidas: const ['regional-1'],
       coordenadorUserId: 'usuario-coord-1',
       equipeIdsPermitidas: const [
         'equipe-1',

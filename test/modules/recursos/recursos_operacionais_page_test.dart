@@ -860,4 +860,57 @@ void main() {
       expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
     },
   );
+  testWidgets(
+    'regional fora do AccessScope limpa equipe e projeto',
+    (tester) async {
+      final coordenadorCanonico = _membro(
+        id: 'coord-operacional-r1',
+        usuarioId: 'usuario-coordenador-r1',
+        nome: 'Coordenadora R1',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final acao = criarAcaoTeste(
+        coordenadorId: 'coord-operacional-r1',
+        coordenadorNome: 'Coordenadora R1',
+        materialUtilizadoIds: const ['material_cone'],
+      ).copyWith(
+        regionalId: 'regional-1',
+        equipeId: 'equipe-antiga',
+        projetoId: 'projeto-antigo',
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadorCanonico],
+        acao: acao,
+        escopoAcesso: AccessScope(
+          regionalIds: const ['regional-2'],
+          equipeIds: const ['equipe-1'],
+          projetoIds: const ['projeto-1'],
+        ),
+        listarEquipes: () async => [
+          _equipeAcl(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coordenador-r1'],
+          ),
+        ],
+        listarProjetos: () async => [
+          _projetoAcl(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
+      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
+    },
+  );
 }

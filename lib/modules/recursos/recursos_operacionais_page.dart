@@ -419,6 +419,7 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
 
     final resolucao = RaeScopeResolver.resolve(
       regionalId: acao.regionalId,
+      regionalIdsPermitidas: escopo.regionalIds,
       coordenadorUserId: coordenadorUserIdResolvido,
       equipeIdsPermitidas: escopo.equipeIds,
       projetoIdsPermitidos: escopo.projetoIds,

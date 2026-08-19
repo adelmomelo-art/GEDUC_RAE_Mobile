@@ -1,4 +1,4 @@
-﻿# AUD-L2-R4 — ACL operacional e Send Gate
+# AUD-L2-R4 — ACL operacional e Send Gate
 
 **Data de fechamento:** 19/08/2026
 **Status:** HOMOLOGADO
@@ -91,3 +91,6 @@ AUD-L2-R4:                     HOMOLOGADO
 ## 6. Limites do escopo
 
 Este lote não publica regras Firebase, não altera dados remotos e não executa migração retroativa de RAEs históricos. A compatibilidade de registros legados é preservada no gate de envio.
+## 7. Correção R1 — Regional Scope Enforcement
+
+A revisão do PR #40 identificou que a resolução de escopo ainda não validava `AccessScope.regionalIds`. A R1 passa a exigir simultaneamente Regional, Equipe e Projeto no escopo permitido. Regional ausente ou fora do escopo falha de forma fechada.

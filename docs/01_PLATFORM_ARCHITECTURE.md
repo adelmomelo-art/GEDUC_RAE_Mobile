@@ -1,4 +1,4 @@
-﻿# ARQUITETURA DA PLATAFORMA FÊNIX
+# ARQUITETURA DA PLATAFORMA FÊNIX
 
 > Documento Oficial de Arquitetura do Sistema de Conhecimento da
 > Plataforma Fênix (SKPF)
@@ -953,3 +953,6 @@ R4.4-B Send Gate
 - `RaeScopeCatalogService`
 
 A integração permanece concentrada em `AcaoController` e `RecursosOperacionaisPage`, sem transferência de decisão de segurança para a interface.
+### R4-R1 — Regional Scope Enforcement
+
+A dimensão Regional do `AccessScope` passa a ser obrigatória na resolução do escopo ACL. Antes de avaliar Equipe e Projeto, o `regionalId` do RAE deve estar presente em `AccessScope.regionalIds`. Escopo regional vazio ou incompatível falha de forma fechada.

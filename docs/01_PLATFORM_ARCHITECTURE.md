@@ -1,4 +1,4 @@
-# ARQUITETURA DA PLATAFORMA FÊNIX
+﻿# ARQUITETURA DA PLATAFORMA FÊNIX
 
 > Documento Oficial de Arquitetura do Sistema de Conhecimento da
 > Plataforma Fênix (SKPF)
@@ -898,3 +898,58 @@ Documento Oficial
 Arquitetura da Plataforma Fênix
 
 Versão 2.8
+
+------------------------------------------------------------------------
+
+## AUD-L2-R4 — ACL operacional e Send Gate
+
+**Data:** 19/08/2026
+**Status:** Homologado
+
+A Plataforma Fênix passa a possuir uma cadeia ACL explícita para RAEs novos:
+
+```text
+AuthorizationService / identidade autenticada
+        |
+        v
+R4.2 Identity Binding
+        |
+        +--> responsavelUserId
+        +--> coordenadorUserId canonico
+        |
+        v
+R4.3 Scope Resolver
+        |
+        +--> regionalId
+        +--> equipeId
+        +--> projetoId
+        |
+        v
+R4.4 RaeAclClassifier
+        |
+        +--> aclClassificacaoCompleta
+        +--> aclScopeKey
+        |
+        v
+R4.4-B Send Gate
+```
+
+### Invariantes arquiteturais
+
+1. Nome de coordenador não autoriza avanço; somente identidade canônica.
+2. Escopo ambíguo não é resolvido por escolha arbitrária.
+3. ACL completa exige Regional, responsável, coordenador, Equipe e Projeto.
+4. A chave canônica é `r:<regional>|e:<equipe>|p:<projeto>`.
+5. Alteração em qualquer dimensão classificatória invalida a classificação anterior.
+6. RAE novo em `rascunho` não pode ser enviado com ACL incompleta ou inconsistente.
+7. ACL persistida inconsistente não pode ser silenciosamente normalizada durante o envio.
+8. Registros históricos fora de `rascunho` preservam compatibilidade e não recebem bloqueio retroativo.
+
+### Componentes introduzidos
+
+- `RaeAclClassifier`
+- `RaeIdentityResolver`
+- `RaeScopeResolver`
+- `RaeScopeCatalogService`
+
+A integração permanece concentrada em `AcaoController` e `RecursosOperacionaisPage`, sem transferência de decisão de segurança para a interface.

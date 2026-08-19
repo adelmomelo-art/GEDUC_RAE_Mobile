@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/security/rae_acl_classifier.dart';
 import '../../../core/services/acao_rules_service.dart';
 import '../../../data/models/acao_model.dart';
 import '../../../repositories/acao_repository.dart';
@@ -302,6 +303,8 @@ class AcaoController extends ChangeNotifier {
       bairro: bairro.trim(),
       regional: regional.trim(),
       regionalId: regionalId.trim(),
+      aclClassificacaoCompleta: false,
+      aclScopeKey: '',
       tipoRegional: tipoRegional.trim(),
       equipamentoReferencia: referenciaNormalizada,
       nomeLocal: nomeLocal.trim(),
@@ -387,6 +390,75 @@ class AcaoController extends ChangeNotifier {
 
     unawaited(_salvarRascunhoAtual());
     notifyListeners();
+  }
+
+  void vincularIdentidadeAcl({
+    required String responsavelUserId,
+    required String coordenadorUserId,
+  }) {
+    if (acaoAtual == null) {
+      criarRascunhoInicial();
+    }
+
+    acaoAtual = acaoAtual!.copyWith(
+      responsavelUserId: responsavelUserId.trim(),
+      coordenadorUserId: coordenadorUserId.trim(),
+      aclClassificacaoCompleta: false,
+      aclScopeKey: '',
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  void vincularEscopoAcl({
+    required String equipeId,
+    required String projetoId,
+  }) {
+    if (acaoAtual == null) {
+      criarRascunhoInicial();
+    }
+
+    acaoAtual = acaoAtual!.copyWith(
+      equipeId: equipeId.trim(),
+      projetoId: projetoId.trim(),
+      aclClassificacaoCompleta: false,
+      aclScopeKey: '',
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
+  bool classificarAclFinal() {
+    final acao = acaoAtual;
+
+    if (acao == null) {
+      return false;
+    }
+
+    final classificacao = RaeAclClassifier.classificar(
+      regionalId: acao.regionalId,
+      responsavelUserId: acao.responsavelUserId,
+      coordenadorUserId: acao.coordenadorUserId,
+      equipeId: acao.equipeId,
+      projetoId: acao.projetoId,
+    );
+
+    acaoAtual = acao.copyWith(
+      regionalId: classificacao.regionalId,
+      responsavelUserId: classificacao.responsavelUserId,
+      coordenadorUserId: classificacao.coordenadorUserId,
+      equipeId: classificacao.equipeId,
+      projetoId: classificacao.projetoId,
+      aclClassificacaoCompleta: classificacao.completa,
+      aclScopeKey: classificacao.aclScopeKey,
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+
+    return classificacao.completa;
   }
 
   void preencherIntegracaoObservacoes({
@@ -535,12 +607,41 @@ class AcaoController extends ChangeNotifier {
     }
   }
 
+  bool _aclObrigatoriaParaEnvio(AcaoModel acao) {
+    return acao.status.trim().toLowerCase() == 'rascunho';
+  }
+
+  bool _aclFinalConsistente(AcaoModel acao) {
+    final classificacao = RaeAclClassifier.classificar(
+      regionalId: acao.regionalId,
+      responsavelUserId: acao.responsavelUserId,
+      coordenadorUserId: acao.coordenadorUserId,
+      equipeId: acao.equipeId,
+      projetoId: acao.projetoId,
+    );
+
+    return classificacao.completa &&
+        acao.aclClassificacaoCompleta &&
+        acao.aclScopeKey == classificacao.aclScopeKey;
+  }
+
+  bool _aclTemClassificacaoPersistida(AcaoModel acao) {
+    return acao.aclClassificacaoCompleta || acao.aclScopeKey.trim().isNotEmpty;
+  }
+
   bool validarAntesDoEnvio() {
     erro = null;
     final acao = acaoAtual;
 
     if (acao == null) {
       erro = 'Nenhuma ação foi criada.';
+      return false;
+    }
+
+    if (_aclObrigatoriaParaEnvio(acao) && !_aclFinalConsistente(acao)) {
+      erro =
+          'Não foi possível concluir a classificação de acesso (ACL) do RAE. '
+          'Revise responsável, coordenador, regional, equipe e projeto.';
       return false;
     }
 
@@ -622,6 +723,14 @@ class AcaoController extends ChangeNotifier {
   }
 
   Future<bool> enviarRelatorio() async {
+    final acao = acaoAtual;
+
+    if (acao != null &&
+        _aclObrigatoriaParaEnvio(acao) &&
+        !_aclTemClassificacaoPersistida(acao)) {
+      classificarAclFinal();
+    }
+
     if (!validarAntesDoEnvio()) {
       notifyListeners();
       return false;

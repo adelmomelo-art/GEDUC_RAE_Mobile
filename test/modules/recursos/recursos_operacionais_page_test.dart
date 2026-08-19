@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geduc_rae_mobile/core/security/access_scope.dart';
+import 'package:geduc_rae_mobile/data/models/acao_model.dart';
+import 'package:geduc_rae_mobile/data/models/equipe_model.dart';
 import 'package:geduc_rae_mobile/data/models/membro_equipe_model.dart';
+import 'package:geduc_rae_mobile/data/models/projeto_model.dart';
 import 'package:geduc_rae_mobile/modules/acoes/controllers/acao_controller.dart';
 import 'package:geduc_rae_mobile/modules/recursos/recursos_operacionais_page.dart';
 import 'package:geduc_rae_mobile/repositories/acao_repository.dart';
@@ -20,6 +24,7 @@ class _FakeAcaoRepository extends Fake implements AcaoRepository {
 
 MembroEquipeModel _membro({
   required String id,
+  String? usuarioId,
   required String nome,
   required VinculoOperacional vinculo,
   bool ativo = true,
@@ -27,7 +32,7 @@ MembroEquipeModel _membro({
 }) {
   return MembroEquipeModel(
     id: id,
-    usuarioId: id,
+    usuarioId: usuarioId ?? id,
     nome: nome,
     vinculo: vinculo,
     podeCoordenar: podeCoordenar,
@@ -38,11 +43,44 @@ MembroEquipeModel _membro({
   );
 }
 
+EquipeModel _equipeAcl({
+  required String id,
+  required List<String> regionalIds,
+  required List<String> coordenadorUserIds,
+  bool ativo = true,
+}) {
+  return EquipeModel(
+    id: id,
+    nome: 'Equipe $id',
+    regionalIds: regionalIds,
+    coordenadorUserIds: coordenadorUserIds,
+    ativo: ativo,
+  );
+}
+
+ProjetoModel _projetoAcl({
+  required String id,
+  required List<String> regionalIds,
+  required List<String> equipeIds,
+  bool ativo = true,
+}) {
+  return ProjetoModel(
+    id: id,
+    nome: 'Projeto $id',
+    regionalIds: regionalIds,
+    equipeIds: equipeIds,
+    ativo: ativo,
+  );
+}
+
 Future<({AcaoController controller, _FakeAcaoRepository repository})>
     _pumpPagina(
   WidgetTester tester, {
   required Future<List<MembroEquipeModel>> Function() listarMembros,
-  required acao,
+  required AcaoModel acao,
+  AccessScope? escopoAcesso,
+  Future<List<EquipeModel>> Function()? listarEquipes,
+  Future<List<ProjetoModel>> Function()? listarProjetos,
 }) async {
   final repository = _FakeAcaoRepository();
 
@@ -57,6 +95,10 @@ Future<({AcaoController controller, _FakeAcaoRepository repository})>
         path: '/recursos-operacionais',
         builder: (_, __) => RecursosOperacionaisPage(
           listarMembros: listarMembros,
+          responsavelUserId: 'usuario-responsavel-teste',
+          escopoAcesso: escopoAcesso ?? AccessScope(),
+          listarEquipes: listarEquipes ?? () async => const <EquipeModel>[],
+          listarProjetos: listarProjetos ?? () async => const <ProjetoModel>[],
         ),
       ),
       GoRoute(
@@ -130,20 +172,9 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('Coordenadora Ana'),
-        findsWidgets,
-      );
-
-      expect(
-        find.text('Agente Bruno'),
-        findsOneWidget,
-      );
-
-      expect(
-        find.text('Terceirizada Carla'),
-        findsOneWidget,
-      );
+      expect(find.text('Coordenadora Ana'), findsWidgets);
+      expect(find.text('Agente Bruno'), findsOneWidget);
+      expect(find.text('Terceirizada Carla'), findsOneWidget);
 
       await tester.dragUntilVisible(
         find.text('Cone'),
@@ -152,16 +183,10 @@ void main() {
       );
 
       final cone = tester.widget<FilterChip>(
-        find.widgetWithText(
-          FilterChip,
-          'Cone',
-        ),
+        find.widgetWithText(FilterChip, 'Cone'),
       );
 
-      expect(
-        cone.selected,
-        isTrue,
-      );
+      expect(cone.selected, isTrue);
     },
   );
 
@@ -226,63 +251,29 @@ void main() {
       );
 
       await Scrollable.ensureVisible(
-        tester.element(
-          find.text('Selecionar').first,
-        ),
+        tester.element(find.text('Selecionar').first),
         alignment: 0.5,
       );
-
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.text('Selecionar').first,
-      );
-
+      await tester.tap(find.text('Selecionar').first);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Coordenadora Ana'),
-        findsWidgets,
-      );
-
-      expect(
-        find.text('Agente Bruno'),
-        findsOneWidget,
-      );
-
-      expect(
-        find.text('Agente Histórico'),
-        findsWidgets,
-      );
-
-      expect(
-        find.text('Agente Inativo Novo'),
-        findsNothing,
-      );
-
-      expect(
-        find.text('Terceirizada Carla'),
-        findsNothing,
-      );
+      expect(find.text('Coordenadora Ana'), findsWidgets);
+      expect(find.text('Agente Bruno'), findsOneWidget);
+      expect(find.text('Agente Histórico'), findsWidgets);
+      expect(find.text('Agente Inativo Novo'), findsNothing);
+      expect(find.text('Terceirizada Carla'), findsNothing);
 
       final coordenadorTile = tester.widget<CheckboxListTile>(
         find.ancestor(
           of: find.text('Coordenadora Ana'),
-          matching: find.byType(
-            CheckboxListTile,
-          ),
+          matching: find.byType(CheckboxListTile),
         ),
       );
 
-      expect(
-        coordenadorTile.value,
-        isTrue,
-      );
-
-      expect(
-        coordenadorTile.onChanged,
-        isNull,
-      );
+      expect(coordenadorTile.value, isTrue);
+      expect(coordenadorTile.onChanged, isNull);
     },
   );
 
@@ -297,27 +288,18 @@ void main() {
         ),
       );
 
-      await tester.tap(
-        find.text('Voltar'),
-      );
-
+      await tester.tap(find.text('Voltar'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('CARACTERIZAÇÃO'),
-        findsOneWidget,
-      );
-
+      expect(find.text('CARACTERIZAÇÃO'), findsOneWidget);
       expect(
         resultado.controller.acaoAtual!.agenteEquipeIds,
         ['coord-1'],
       );
-
       expect(
         resultado.controller.acaoAtual!.agenteEquipeNomes,
         ['Coordenadora Ana'],
       );
-
       expect(
         resultado.repository.rascunhosSalvos,
         greaterThanOrEqualTo(1),
@@ -334,16 +316,11 @@ void main() {
         acao: criarAcaoTeste(),
       );
 
-      await tester.tap(
-        find.text('Confirmar e avançar'),
-      );
-
+      await tester.tap(find.text('Confirmar e avançar'));
       await tester.pump();
 
       expect(
-        find.text(
-          'Selecione ao menos um material utilizado.',
-        ),
+        find.text('Selecione ao menos um material utilizado.'),
         findsOneWidget,
       );
 
@@ -353,24 +330,15 @@ void main() {
         const Offset(0, -300),
       );
 
-      final cone = find.widgetWithText(
-        FilterChip,
-        'Cone',
+      await tester.tap(
+        find.widgetWithText(FilterChip, 'Cone'),
       );
-
-      await tester.tap(cone);
       await tester.pump();
 
-      await tester.tap(
-        find.text('Confirmar e avançar'),
-      );
-
+      await tester.tap(find.text('Confirmar e avançar'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('INTEGRAÇÃO'),
-        findsOneWidget,
-      );
+      expect(find.text('INTEGRAÇÃO'), findsOneWidget);
     },
   );
 
@@ -393,31 +361,14 @@ void main() {
         acao: criarAcaoTeste(),
       );
 
-      expect(
-        find.text('TENTAR NOVAMENTE'),
-        findsOneWidget,
-      );
+      expect(find.text('TENTAR NOVAMENTE'), findsOneWidget);
 
-      await tester.tap(
-        find.text('TENTAR NOVAMENTE'),
-      );
-
+      await tester.tap(find.text('TENTAR NOVAMENTE'));
       await tester.pumpAndSettle();
 
-      expect(
-        tentativas,
-        2,
-      );
-
-      expect(
-        find.text('TENTAR NOVAMENTE'),
-        findsNothing,
-      );
-
-      expect(
-        find.text('Coordenadora Ana'),
-        findsWidgets,
-      );
+      expect(tentativas, 2);
+      expect(find.text('TENTAR NOVAMENTE'), findsNothing);
+      expect(find.text('Coordenadora Ana'), findsWidgets);
     },
   );
 
@@ -434,25 +385,16 @@ void main() {
 
       await _pumpPagina(
         tester,
-        listarMembros: () async => [
-          coordenadorInativo,
-        ],
+        listarMembros: () async => [coordenadorInativo],
         acao: criarAcaoTeste(
           materialUtilizadoIds: const ['material_cone'],
         ),
       );
 
-      await tester.tap(
-        find.text('Confirmar e avançar'),
-      );
-
+      await tester.tap(find.text('Confirmar e avançar'));
       await tester.pump();
 
-      expect(
-        find.text('INTEGRAÇÃO'),
-        findsNothing,
-      );
-
+      expect(find.text('INTEGRAÇÃO'), findsNothing);
       expect(
         find.text(
           'Vincule o coordenador à Equipe Operacional antes de avançar.',
@@ -474,25 +416,16 @@ void main() {
 
       await _pumpPagina(
         tester,
-        listarMembros: () async => [
-          coordenadorSemPermissao,
-        ],
+        listarMembros: () async => [coordenadorSemPermissao],
         acao: criarAcaoTeste(
           materialUtilizadoIds: const ['material_cone'],
         ),
       );
 
-      await tester.tap(
-        find.text('Confirmar e avançar'),
-      );
-
+      await tester.tap(find.text('Confirmar e avançar'));
       await tester.pump();
 
-      expect(
-        find.text('INTEGRAÇÃO'),
-        findsNothing,
-      );
-
+      expect(find.text('INTEGRAÇÃO'), findsNothing);
       expect(
         find.text(
           'Vincule o coordenador à Equipe Operacional antes de avançar.',
@@ -507,16 +440,15 @@ void main() {
     (tester) async {
       final coordenadorSomentePorNome = _membro(
         id: 'coord-catalogo',
+        usuarioId: 'usuario-coord-fallback',
         nome: 'Coordenadora Ana',
         vinculo: VinculoOperacional.agente,
         podeCoordenar: true,
       );
 
-      await _pumpPagina(
+      final resultado = await _pumpPagina(
         tester,
-        listarMembros: () async => [
-          coordenadorSomentePorNome,
-        ],
+        listarMembros: () async => [coordenadorSomentePorNome],
         acao: criarAcaoTeste(
           coordenadorId: 'uid-diferente',
           coordenadorNome: 'Coordenadora Ana',
@@ -525,28 +457,24 @@ void main() {
       );
 
       expect(
-        find.textContaining(
-          'localizado apenas pelo nome',
-        ),
+        find.textContaining('localizado apenas pelo nome'),
         findsWidgets,
       );
 
-      await tester.tap(
-        find.text('Confirmar e avançar'),
-      );
-
+      await tester.tap(find.text('Confirmar e avançar'));
       await tester.pump();
 
-      expect(
-        find.text('INTEGRAÇÃO'),
-        findsNothing,
-      );
-
+      expect(find.text('INTEGRAÇÃO'), findsNothing);
       expect(
         find.text(
           'Vincule o coordenador à Equipe Operacional antes de avançar.',
         ),
         findsOneWidget,
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.coordenadorUserId,
+        isEmpty,
       );
     },
   );
@@ -568,85 +496,44 @@ void main() {
       );
 
       await Scrollable.ensureVisible(
-        tester.element(
-          find.text('Selecionar').first,
-        ),
+        tester.element(find.text('Selecionar').first),
         alignment: 0.5,
       );
-
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.text('Selecionar').first,
-      );
-
+      await tester.tap(find.text('Selecionar').first);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Agente Bruno'),
-        findsOneWidget,
-      );
+      expect(find.text('Agente Bruno'), findsOneWidget);
 
       final agenteTile = tester.widget<CheckboxListTile>(
         find.ancestor(
           of: find.text('Agente Bruno'),
-          matching: find.byType(
-            CheckboxListTile,
-          ),
+          matching: find.byType(CheckboxListTile),
         ),
       );
 
-      expect(
-        agenteTile.value,
-        isFalse,
-      );
+      expect(agenteTile.value, isFalse);
 
       await tester.tap(
         find.ancestor(
           of: find.text('Agente Bruno'),
-          matching: find.byType(
-            CheckboxListTile,
-          ),
+          matching: find.byType(CheckboxListTile),
         ),
       );
-
       await tester.pump();
 
-      await tester.tap(
-        find.text('CONFIRMAR'),
-      );
-
+      await tester.tap(find.text('CONFIRMAR'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Atualizar equipe histórica?'),
-        findsOneWidget,
-      );
+      expect(find.text('Atualizar equipe histórica?'), findsOneWidget);
+      expect(find.textContaining('3 agente(s)'), findsOneWidget);
+      expect(find.textContaining('2 terceirizado(s)'), findsOneWidget);
 
-      expect(
-        find.textContaining(
-          '3 agente(s)',
-        ),
-        findsOneWidget,
-      );
-
-      expect(
-        find.textContaining(
-          '2 terceirizado(s)',
-        ),
-        findsOneWidget,
-      );
-
-      await tester.tap(
-        find.text('CANCELAR'),
-      );
-
+      await tester.tap(find.text('CANCELAR'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Atualizar equipe histórica?'),
-        findsNothing,
-      );
+      expect(find.text('Atualizar equipe histórica?'), findsNothing);
 
       expect(
         find.text(
@@ -662,27 +549,15 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(
-        find.text('Voltar'),
-      );
-
+      await tester.tap(find.text('Voltar'));
       await tester.pumpAndSettle();
 
-      expect(
-        resultado.controller.acaoAtual!.agentesTransito,
-        3,
-      );
-
-      expect(
-        resultado.controller.acaoAtual!.equipeTerceirizada,
-        2,
-      );
-
+      expect(resultado.controller.acaoAtual!.agentesTransito, 3);
+      expect(resultado.controller.acaoAtual!.equipeTerceirizada, 2);
       expect(
         resultado.controller.acaoAtual!.agenteEquipeIds,
         isEmpty,
       );
-
       expect(
         resultado.controller.acaoAtual!.terceirizadoEquipeIds,
         isEmpty,
@@ -707,83 +582,282 @@ void main() {
       );
 
       await Scrollable.ensureVisible(
-        tester.element(
-          find.text('Selecionar').first,
-        ),
+        tester.element(find.text('Selecionar').first),
         alignment: 0.5,
       );
-
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.text('Selecionar').first,
-      );
-
+      await tester.tap(find.text('Selecionar').first);
       await tester.pumpAndSettle();
 
       await tester.tap(
         find.ancestor(
           of: find.text('Agente Bruno'),
-          matching: find.byType(
-            CheckboxListTile,
-          ),
+          matching: find.byType(CheckboxListTile),
         ),
       );
-
       await tester.pump();
 
-      await tester.tap(
-        find.text('CONFIRMAR'),
-      );
-
+      await tester.tap(find.text('CONFIRMAR'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Atualizar equipe histórica?'),
-        findsOneWidget,
-      );
+      expect(find.text('Atualizar equipe histórica?'), findsOneWidget);
 
-      await tester.tap(
-        find.text('CONTINUAR'),
-      );
-
+      await tester.tap(find.text('CONTINUAR'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Atualizar equipe histórica?'),
-        findsNothing,
-      );
+      expect(find.text('Atualizar equipe histórica?'), findsNothing);
 
-      await tester.tap(
-        find.text('Voltar'),
-      );
-
+      await tester.tap(find.text('Voltar'));
       await tester.pumpAndSettle();
 
       expect(
         resultado.controller.acaoAtual!.agenteEquipeIds,
-        containsAll(
-          [
-            'coord-1',
-            'agente-1',
-          ],
-        ),
+        containsAll([
+          'coord-1',
+          'agente-1',
+        ]),
       );
 
       expect(
         resultado.controller.acaoAtual!.agenteEquipeNomes,
-        containsAll(
-          [
-            'Coordenadora Ana',
-            'Agente Bruno',
-          ],
+        containsAll([
+          'Coordenadora Ana',
+          'Agente Bruno',
+        ]),
+      );
+
+      expect(resultado.controller.acaoAtual!.agentesTransito, 2);
+    },
+  );
+
+  testWidgets(
+    'persiste responsavelUserId no RAE',
+    (tester) async {
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadora],
+        acao: criarAcaoTeste(
+          materialUtilizadoIds: const ['material_cone'],
         ),
       );
 
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
       expect(
-        resultado.controller.acaoAtual!.agentesTransito,
-        2,
+        resultado.controller.acaoAtual!.responsavelUserId,
+        'usuario-responsavel-teste',
       );
+    },
+  );
+
+  testWidgets(
+    'converte id operacional do coordenador para usuarioId canônico',
+    (tester) async {
+      final coordenadorComIdentidadeCanonica = _membro(
+        id: 'coord-operacional-1',
+        usuarioId: 'usuario-coordenador-99',
+        nome: 'Coordenadora Canônica',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [
+          coordenadorComIdentidadeCanonica,
+        ],
+        acao: criarAcaoTeste(
+          coordenadorId: 'coord-operacional-1',
+          coordenadorNome: 'Coordenadora Canônica',
+          materialUtilizadoIds: const ['material_cone'],
+        ),
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(
+        resultado.controller.acaoAtual!.coordenadorUserId,
+        'usuario-coordenador-99',
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.coordenadorUserId,
+        isNot('coord-operacional-1'),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.responsavelUserId,
+        'usuario-responsavel-teste',
+      );
+    },
+  );
+
+  testWidgets(
+    'resolução ACL única grava equipeId e projetoId',
+    (tester) async {
+      final coordenadorCanonico = _membro(
+        id: 'coord-operacional-1',
+        usuarioId: 'usuario-coordenador-1',
+        nome: 'Coordenadora Canônica',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final acao = criarAcaoTeste(
+        coordenadorId: 'coord-operacional-1',
+        coordenadorNome: 'Coordenadora Canônica',
+        materialUtilizadoIds: const ['material_cone'],
+      ).copyWith(
+        regionalId: 'regional-1',
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadorCanonico],
+        acao: acao,
+        escopoAcesso: AccessScope(
+          regionalIds: const ['regional-1'],
+          equipeIds: const ['equipe-1'],
+          projetoIds: const ['projeto-1'],
+        ),
+        listarEquipes: () async => [
+          _equipeAcl(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coordenador-1'],
+          ),
+        ],
+        listarProjetos: () async => [
+          _projetoAcl(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(resultado.controller.acaoAtual!.equipeId, 'equipe-1');
+      expect(resultado.controller.acaoAtual!.projetoId, 'projeto-1');
+      expect(
+        resultado.controller.acaoAtual!.aclClassificacaoCompleta,
+        isFalse,
+      );
+      expect(resultado.controller.acaoAtual!.aclScopeKey, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'ambiguidade de equipe não grava classificação de escopo',
+    (tester) async {
+      final coordenadorCanonico = _membro(
+        id: 'coord-operacional-1',
+        usuarioId: 'usuario-coordenador-1',
+        nome: 'Coordenadora Canônica',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final acao = criarAcaoTeste(
+        coordenadorId: 'coord-operacional-1',
+        coordenadorNome: 'Coordenadora Canônica',
+        materialUtilizadoIds: const ['material_cone'],
+      ).copyWith(
+        regionalId: 'regional-1',
+        equipeId: 'equipe-antiga',
+        projetoId: 'projeto-antigo',
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadorCanonico],
+        acao: acao,
+        escopoAcesso: AccessScope(
+          regionalIds: const ['regional-1'],
+          equipeIds: const ['equipe-1', 'equipe-2'],
+          projetoIds: const ['projeto-1'],
+        ),
+        listarEquipes: () async => [
+          _equipeAcl(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coordenador-1'],
+          ),
+          _equipeAcl(
+            id: 'equipe-2',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coordenador-1'],
+          ),
+        ],
+        listarProjetos: () async => [
+          _projetoAcl(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
+      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'escopo vazio não grava classificação de escopo',
+    (tester) async {
+      final coordenadorCanonico = _membro(
+        id: 'coord-operacional-1',
+        usuarioId: 'usuario-coordenador-1',
+        nome: 'Coordenadora Canônica',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final acao = criarAcaoTeste(
+        coordenadorId: 'coord-operacional-1',
+        coordenadorNome: 'Coordenadora Canônica',
+        materialUtilizadoIds: const ['material_cone'],
+      ).copyWith(
+        regionalId: 'regional-1',
+        equipeId: 'equipe-antiga',
+        projetoId: 'projeto-antigo',
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => [coordenadorCanonico],
+        acao: acao,
+        escopoAcesso: AccessScope(),
+        listarEquipes: () async => [
+          _equipeAcl(
+            id: 'equipe-1',
+            regionalIds: const ['regional-1'],
+            coordenadorUserIds: const ['usuario-coordenador-1'],
+          ),
+        ],
+        listarProjetos: () async => [
+          _projetoAcl(
+            id: 'projeto-1',
+            regionalIds: const ['regional-1'],
+            equipeIds: const ['equipe-1'],
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
+      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
     },
   );
 }

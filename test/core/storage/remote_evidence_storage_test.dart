@@ -71,8 +71,8 @@ void main() {
     });
   });
 
-  group('AUD-L2-R5.1 - EvidenceStoragePolicy', () {
-    test('baseline preserva local como obrigatorio e remoto desligado', () {
+  group('AUD-L2-R5.1-R1 - EvidenceStoragePolicy', () {
+    test('baseline preserva local obrigatorio e remoto desligado', () {
       const policy = EvidenceStoragePolicy();
 
       expect(policy.localStorageRequired, isTrue);
@@ -80,12 +80,13 @@ void main() {
       expect(policy.remoteStorageEnabled, isFalse);
     });
 
-    test('permite habilitar remoto futuramente sem remover local', () {
+    test('habilitar remoto nunca remove obrigatoriedade local', () {
       const policy = EvidenceStoragePolicy(
         remoteStorageEnabled: true,
       );
 
       expect(policy.localStorageRequired, isTrue);
+      expect(policy.localFirst, isTrue);
       expect(policy.remoteStorageEnabled, isTrue);
     });
   });

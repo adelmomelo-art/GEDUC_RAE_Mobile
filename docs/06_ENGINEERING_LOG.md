@@ -1175,7 +1175,7 @@ Foram adicionadas regressões explícitas para Regional fora e dentro do `Access
 
 **Data:** 19/08/2026
 **Branch:** `audit/aud-l2-r5-evidence-storage-architecture`
-**Status:** Homologado localmente; ainda sem commit
+**Status:** R5.1 homologado; R5.1-R1 em validação
 
 ### Contexto
 
@@ -1213,4 +1213,16 @@ Upload remoto:                 nenhum
 
 `AUD-L2-R5.1`: **HOMOLOGADO LOCALMENTE**.
 
-A etapa estabelece somente a fundação arquitetural. Commit, push, Pull Request e integração real com armazenamento remoto exigem autorizações próprias.
+A etapa estabelece somente a fundação arquitetural. O commit inicial do R5.1 é db43b2 e o trabalho está publicado no PR #41. A revisão pré-merge identificou que localStorageRequired ainda era configurável; a R5.1-R1 remove essa possibilidade para tornar a invariante local-first estruturalmente obrigatória. Integração real com armazenamento remoto permanece fora deste escopo.
+### R5.1-R1 — Consolidação da invariante local-first
+
+A revisão do PR #41 identificou que `EvidenceStoragePolicy` aceitava `localStorageRequired: false`, contrariando a invariante arquitetural de que toda evidência deve permanecer local-first.
+
+A R1 remove `localStorageRequired` do construtor e o transforma em propriedade invariavelmente verdadeira. A habilitação futura do armazenamento remoto passa a ser independente da persistência local obrigatória.
+
+```text
+Commit inicial R5.1:            adb43b2
+Pull Request:                   #41
+Local storage required:         sempre true
+Remote storage enabled:         configurável
+```

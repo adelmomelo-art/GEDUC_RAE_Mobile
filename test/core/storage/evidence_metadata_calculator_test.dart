@@ -68,6 +68,28 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('rejeita identificadores reservados ponto e ponto-ponto', () {
+      for (final reservado in const <String>['.', '..']) {
+        expect(
+          () => calculator.buildObjectKey(
+            acaoId: reservado,
+            evidenciaId: 'ev-001',
+            localFilePath: '/local/foto.jpg',
+          ),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => calculator.buildObjectKey(
+            acaoId: 'rae-001',
+            evidenciaId: reservado,
+            localFilePath: '/local/foto.jpg',
+          ),
+          throwsArgumentError,
+        );
+      }
+    });
   });
 
   group('AUD-L2-R5.2-B - EvidenciaStorageService', () {

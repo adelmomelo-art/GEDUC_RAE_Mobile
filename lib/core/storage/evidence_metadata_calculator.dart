@@ -61,6 +61,12 @@ class EvidenceMetadataCalculator {
       throw ArgumentError('acaoId e evidenciaId são obrigatórios.');
     }
 
+    if (_identificadorReservado(acao) || _identificadorReservado(evidencia)) {
+      throw ArgumentError(
+        'acaoId e evidenciaId não podem ser "." ou "..".',
+      );
+    }
+
     if (_contemSeparadorDeCaminho(acao) ||
         _contemSeparadorDeCaminho(evidencia)) {
       throw ArgumentError(
@@ -71,6 +77,10 @@ class EvidenceMetadataCalculator {
     final extension = path.extension(localFilePath).toLowerCase();
 
     return 'evidencias/$acao/$evidencia$extension';
+  }
+
+  bool _identificadorReservado(String value) {
+    return value == '.' || value == '..';
   }
 
   bool _contemSeparadorDeCaminho(String value) {

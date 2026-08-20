@@ -1397,3 +1397,47 @@ RemoteEvidenceTransport   = plano de dados
 O plano de dados não possui `createReadUri()`, não possui `delete()` e não
 recebe credenciais permanentes de provedor. A integração HTTP real e o adapter
 Cloudflare R2 continuam reservados às próximas subetapas.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-B — Hardening de grants e object keys
+
+**Data:** 20/08/2026
+**Branch:** `audit/aud-l2-r5-4-b-grant-object-key-hardening`
+**Baseline:** `ead4fe18b9e5ebb35a508baecbc6242b9d18fd2f`
+**Tipo:** Hardening de segurança / storage remoto
+
+### Escopo
+
+- exigir HTTPS em grants;
+- exigir host em grants;
+- rejeitar grants expirados;
+- conferir compatibilidade de operação por `validoPara(...)`;
+- rejeitar `.` e `..` em identificadores usados por `buildObjectKey()`;
+- preservar o bloqueio existente de separadores de caminho.
+
+### Limites
+
+A etapa não introduz transporte HTTP, Cloudflare R2, Worker, credenciais,
+signed URLs reais ou DELETE remoto.
+### Validação final
+
+```text
+Baseline de entrada:           ead4fe18b9e5ebb35a508baecbc6242b9d18fd2f
+Testes focados R5.4-B:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  7 caminhos Git previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.4-B`: **HOMOLOGADO LOCALMENTE**.
+
+O grant remoto passa a exigir HTTPS, host válido, expiração futura e
+compatibilidade explícita de operação. A geração de object keys também
+passa a rejeitar os identificadores reservados `.` e `..`, preservando
+o bloqueio já existente de separadores de caminho.
+
+Nenhum transporte HTTP real, Worker, Cloudflare R2 ou credencial foi
+introduzido nesta etapa.

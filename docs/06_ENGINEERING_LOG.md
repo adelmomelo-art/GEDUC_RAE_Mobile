@@ -1169,3 +1169,48 @@ O lote está autorizado para registro em commit único. Push, Pull Request e mer
 A Code Review do PR #40 identificou que `AccessScope.regionalIds` não participava da resolução R4.3. A R1 tornou a dimensão Regional obrigatória no `RaeScopeResolver`: escopo regional vazio ou Regional fora do conjunto permitido falha de forma fechada antes da resolução de Equipe e Projeto.
 
 Foram adicionadas regressões explícitas para Regional fora e dentro do `AccessScope`. A `RecursosOperacionaisPage` passou a encaminhar `escopo.regionalIds` ao resolver.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.1 — Fundação de Evidence Storage
+
+**Data:** 19/08/2026
+**Branch:** `audit/aud-l2-r5-evidence-storage-architecture`
+**Status:** Homologado localmente; ainda sem commit
+
+### Contexto
+
+A análise do armazenamento de evidências confirmou que as fotografias permanecem salvas localmente no dispositivo. A não utilização de Firebase Storage é uma decisão arquitetural consciente associada ao controle de custos.
+
+Foi aprovada a criação de uma camada abstrata para permitir futura sincronização remota sem retirar do armazenamento local o papel de fonte operacional.
+
+### Implementação
+
+Foram introduzidos:
+
+- `lib/core/storage/remote_evidence_models.dart`;
+- `lib/core/storage/remote_evidence_storage.dart`;
+- `lib/core/storage/disabled_remote_evidence_storage.dart`;
+- `lib/core/storage/evidence_storage_policy.dart`;
+- `test/core/storage/remote_evidence_storage_test.dart`;
+- `README_AUD-L2-R5.md`.
+
+O `EvidenciaStorageService` existente não foi alterado. O `SyncService`, os Providers e as rotas também permaneceram intactos.
+
+### Resultado técnico
+
+```text
+Testes focados R5.1:           8/8 aprovados
+flutter analyze:               No issues found
+git diff --check:              aprovado
+RemoteEvidenceStorage:         contrato criado
+Remote provider padrão:        desabilitado / fail-closed
+Cloudflare R2:                 não integrado
+Credenciais:                   nenhuma
+Upload remoto:                 nenhum
+```
+
+### Parecer
+
+`AUD-L2-R5.1`: **HOMOLOGADO LOCALMENTE**.
+
+A etapa estabelece somente a fundação arquitetural. Commit, push, Pull Request e integração real com armazenamento remoto exigem autorizações próprias.

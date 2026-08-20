@@ -956,3 +956,64 @@ A integração permanece concentrada em `AcaoController` e `RecursosOperacionais
 ### R4-R1 — Regional Scope Enforcement
 
 A dimensão Regional do `AccessScope` passa a ser obrigatória na resolução do escopo ACL. Antes de avaliar Equipe e Projeto, o `regionalId` do RAE deve estar presente em `AccessScope.regionalIds`. Escopo regional vazio ou incompatível falha de forma fechada.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.1 — Arquitetura híbrida de evidências
+
+**Data:** 19/08/2026
+**Status:** Homologado localmente
+
+A Plataforma Fênix adota uma fronteira arquitetural para armazenamento remoto de evidências sem alterar a decisão operacional vigente de manter as fotografias no dispositivo.
+
+### Princípio local-first
+
+O `EvidenciaStorageService` permanece responsável pelo armazenamento local e continua sendo obrigatório. A indisponibilidade ou ausência de armazenamento remoto não pode impedir a captura, persistência ou continuidade de uma ação educativa.
+
+```text
+Captura da evidência
+        |
+        v
+EvidenciaStorageService
+        |
+        +--> armazenamento local obrigatório
+        |
+        +--> EvidenciaModel(status: pendente)
+        |
+        `--> integração remota futura e opcional
+                 |
+                 v
+          RemoteEvidenceStorage
+                 |
+                 +--> Cloudflare R2
+                 +--> Backblaze B2
+                 `--> outro adaptador
+```
+
+### Contratos introduzidos
+
+- `RemoteEvidenceStorage`: contrato neutro de fornecedor;
+- `RemoteEvidenceUploadRequest`: dados mínimos para futura transferência;
+- `RemoteEvidenceUploadResult`: resultado neutro da sincronização remota;
+- `DisabledRemoteEvidenceStorage`: implementação fail-closed quando não existe provedor configurado;
+- `EvidenceStoragePolicy`: política explícita local-first com remoto desligado por padrão.
+
+### Invariantes
+
+1. O armazenamento local é obrigatório.
+2. O armazenamento remoto é opcional.
+3. Nenhuma credencial de provedor remoto pode ser embutida no APK.
+4. A ausência de nuvem não pode impedir a operação de campo.
+5. O contrato do aplicativo não deve depender diretamente de Cloudflare, Backblaze, Firebase ou outro fornecedor.
+6. O R5.1 não altera `SyncService`, Providers, rotas ou o fluxo atual de evidências.
+7. Cloudflare R2 e Backblaze B2 são candidatos futuros, não dependências atuais.
+8. Firebase Storage permanece fora do fluxo de fotografias por decisão arquitetural e econômica vigente.
+
+### Homologação
+
+```text
+Testes R5.1:                   8/8
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Integração remota ativa:       não
+Mudança no fluxo de produção:  não
+```

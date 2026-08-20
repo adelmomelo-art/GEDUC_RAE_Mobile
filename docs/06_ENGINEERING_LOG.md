@@ -538,8 +538,8 @@ administrativos.
 
 ## 7.10 ADM-001C.1 — Identidade Confiável
 
-**Data:** 01/08/2026  
-**Commit:** `072c5a5`  
+**Data:** 01/08/2026
+**Commit:** `072c5a5`
 **Branch:** `feature/adm-001c-identidade-seguranca`
 
 ### Resultado
@@ -566,8 +566,8 @@ Home, Administração, logout, retomada de sessão e ausência de tela branca.
 
 ## 7.11 ADM-001C.2 — Política Única de Autorização
 
-**Data:** 01/08/2026  
-**Commit:** `fc575a0`  
+**Data:** 01/08/2026
+**Commit:** `fc575a0`
 **Branch:** `feature/adm-001c-identidade-seguranca`
 
 ### Resultado
@@ -589,9 +589,9 @@ Home, Administração, logout, retomada de sessão e ausência de tela branca.
 
 ## 7.12 ADM-001C.3 — Firestore Security Baseline
 
-**Data:** 01/08/2026  
-**Commit base:** `42e3560`  
-**Correção R1:** `2129355`  
+**Data:** 01/08/2026
+**Commit base:** `42e3560`
+**Correção R1:** `2129355`
 **Branch:** `feature/adm-001c-identidade-seguranca`
 
 ### Auditoria
@@ -637,7 +637,7 @@ publicado na branch do PR nº 3.
 
 ## 7.13 ADM-001C.4 — Homologação integrada e encerramento
 
-**Data:** 01/08/2026  
+**Data:** 01/08/2026
 **Status:** Concluída e validada após o merge
 
 ### Objetivo
@@ -1115,3 +1115,57 @@ Documento Oficial
 Engineering Log
 
 Versão 2.8
+
+------------------------------------------------------------------------
+
+## AUD-L2-R4 — Encerramento ACL operacional
+
+**Data:** 19/08/2026
+**Status:** Homologado; preparado para commit único
+
+### Objetivo
+
+Concluir o hardening da classificação de acesso dos RAEs, vinculando identidade canônica e escopo operacional antes da persistência da classificação ACL e impedindo o envio de novos RAEs com classificação incompleta ou inconsistente.
+
+### Resultado por etapa
+
+- **R4.1 — ACL Core:** classificador central e chave canônica.
+- **R4.2 — Identity Binding:** responsável e coordenador vinculados por identidade canônica.
+- **R4.3 — Scope Resolver:** Regional, Equipe e Projeto resolvidos de forma determinística e fail-closed.
+- **R4.4-A — Final Classification:** classificação final persistida e invalidada quando suas entradas mudam.
+- **R4.4-B — Send Gate:** envio de RAE em rascunho condicionado à integridade da ACL.
+
+### Proteções consolidadas
+
+- fallback nominal não concede autorização;
+- coordenador canônico deriva de `usuarioId`;
+- escopo ambíguo permanece não resolvido;
+- `aclScopeKey` é validada contra os identificadores efetivamente persistidos;
+- chave inconsistente bloqueia envio;
+- alteração posterior de identidade ou escopo invalida classificação anterior;
+- registro legado fora de rascunho não sofre bloqueio ACL retroativo.
+
+### Homologação
+
+```text
+RaeAclClassifier:              8/8
+AcaoController ACL:            9/9
+R4.4-A Final Classification:   7/7
+R4.4-B Send Gate:              5/5
+Regressao completa:            755/755
+flutter analyze:               No issues found
+git diff --check:              sem erro de whitespace
+```
+
+O aviso de conversão LF para CRLF apresentado pelo Git em ambiente Windows foi classificado como informativo e não representa falha de whitespace.
+
+### Parecer
+
+`AUD-L2-R4`: **HOMOLOGADO**.
+
+O lote está autorizado para registro em commit único. Push, Pull Request e merge permanecem etapas separadas e dependem de autorização própria.
+### Correção R1 — Regional Scope Enforcement
+
+A Code Review do PR #40 identificou que `AccessScope.regionalIds` não participava da resolução R4.3. A R1 tornou a dimensão Regional obrigatória no `RaeScopeResolver`: escopo regional vazio ou Regional fora do conjunto permitido falha de forma fechada antes da resolução de Equipe e Projeto.
+
+Foram adicionadas regressões explícitas para Regional fora e dentro do `AccessScope`. A `RecursosOperacionaisPage` passou a encaminhar `escopo.regionalIds` ao resolver.

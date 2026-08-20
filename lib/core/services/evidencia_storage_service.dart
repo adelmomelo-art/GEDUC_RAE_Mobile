@@ -4,13 +4,27 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../models/evidencia_model.dart';
+import '../storage/evidence_metadata_calculator.dart';
+
+typedef DocumentsDirectoryProvider = Future<Directory> Function();
 
 class EvidenciaStorageService {
+  EvidenciaStorageService({
+    DocumentsDirectoryProvider? documentsDirectoryProvider,
+    EvidenceMetadataCalculator? metadataCalculator,
+  })  : _documentsDirectoryProvider =
+            documentsDirectoryProvider ?? getApplicationDocumentsDirectory,
+        _metadataCalculator =
+            metadataCalculator ?? const EvidenceMetadataCalculator();
+
   static const String _baseFolderName = 'GEDUC';
   static const String _evidenciasFolderName = 'evidencias';
 
+  final DocumentsDirectoryProvider _documentsDirectoryProvider;
+  final EvidenceMetadataCalculator _metadataCalculator;
+
   Future<Directory> _getBaseDirectory() async {
-    final Directory appDir = await getApplicationDocumentsDirectory();
+    final Directory appDir = await _documentsDirectoryProvider();
 
     final Directory baseDir = Directory(
       path.join(appDir.path, _baseFolderName, _evidenciasFolderName),
@@ -51,6 +65,7 @@ class EvidenciaStorageService {
     final String destinoPath = path.join(acaoDir.path, nomeArquivo);
 
     final File arquivoSalvo = await arquivoOrigem.copy(destinoPath);
+    final metadata = await _metadataCalculator.calculate(arquivoSalvo);
 
     return EvidenciaModel(
       id: id,
@@ -59,6 +74,12 @@ class EvidenciaStorageService {
       tipo: tipo,
       criadoEm: DateTime.now(),
       status: EvidenciaStatus.pendente,
+      sha256: metadata.sha256,
+      tamanhoBytes: metadata.sizeBytes,
+      mimeType: metadata.mimeType,
+      objectKey: '',
+      sincronizadoEm: null,
+      autorUserId: '',
     );
   }
 
@@ -84,7 +105,6 @@ class EvidenciaStorageService {
 
   Future<List<File>> listarArquivosDaAcao(String acaoId) async {
     final Directory acaoDir = await _getAcaoDirectory(acaoId);
-
     final List<FileSystemEntity> entidades = await acaoDir.list().toList();
 
     return entidades.whereType<File>().toList();

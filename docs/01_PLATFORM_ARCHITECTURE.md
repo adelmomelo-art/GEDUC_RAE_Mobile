@@ -1017,3 +1017,76 @@ git diff --check:              aprovado
 Integração remota ativa:       não
 Mudança no fluxo de produção:  não
 ```
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.2 / R5.2-C — Integridade e autoria canônica das evidências
+
+**Data:** 20/08/2026
+**Status:** Homologado localmente
+
+A camada local de evidências passa a registrar metadados de integridade e
+autoria operacional sem alterar a invariante local-first.
+
+### Metadados de integridade
+
+Cada nova evidência pode registrar:
+
+- `sha256`;
+- `tamanhoBytes`;
+- `mimeType`;
+- `objectKey`;
+- `sincronizadoEm`;
+- `autorUserId`.
+
+O SHA-256 e o tamanho são calculados sobre o arquivo local definitivo após a
+cópia. `objectKey` permanece vazio enquanto não houver confirmação remota e
+`sincronizadoEm` permanece nulo enquanto a evidência for somente local.
+
+### Identity Binding
+
+A fonte canônica de autoria é:
+
+```text
+AuthorizationService
+        |
+        v
+usuarioAtual.id
+        |
+        v
+EvidenciasPage
+        |
+        v
+autorUserId obrigatório
+        |
+        v
+EvidenciaStorageService
+        |
+        v
+EvidenciaModel.autorUserId
+```
+
+O `AuthorizationService` resolve `usuarios/{uid}` a partir da sessão
+autenticada. Não existe fallback por nome, e-mail, cargo ou outro campo
+descritivo.
+
+### Invariantes
+
+1. Evidência nova exige identidade operacional válida.
+2. `EvidenciaStorageService` não depende diretamente de Firebase Auth ou Firestore.
+3. `autorUserId` vazio é rejeitado antes do salvamento.
+4. Evidências legadas com `autorUserId == ''` permanecem legíveis.
+5. Armazenamento local continua obrigatório.
+6. Cloudflare R2, upload remoto, URLs assinadas e `SyncService` permanecem fora deste escopo.
+7. `AcaoModel`, Providers e rotas não são alterados pelo R5.2-C.
+
+### Homologação
+
+```text
+R5.2-A/B testes focados:       17/17
+R5.2-A/B regressão completa:   775/775
+R5.2-C testes focados:         aprovados
+R5.2-C regressão completa:     aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+```

@@ -97,6 +97,7 @@ void main() {
         acaoId: 'rae-001',
         arquivoOrigem: source,
         tipo: 'imagem',
+        autorUserId: 'uid-operacional-001',
       );
 
       expect(File(evidencia.caminhoArquivo).existsSync(), isTrue);
@@ -110,7 +111,7 @@ void main() {
       expect(evidencia.mimeType, 'image/jpeg');
       expect(evidencia.objectKey, isEmpty);
       expect(evidencia.sincronizadoEm, isNull);
-      expect(evidencia.autorUserId, isEmpty);
+      expect(evidencia.autorUserId, 'uid-operacional-001');
     });
   });
 }

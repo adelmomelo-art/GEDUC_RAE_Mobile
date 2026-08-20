@@ -1150,3 +1150,70 @@ Credenciais remotas no APK:    nenhuma
 A homologação confirma apenas a fronteira arquitetural e os contratos
 fail-closed. Nenhum grant real, URL assinada, upload remoto ou segredo de
 provedor foi introduzido no aplicativo.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-A — Separação entre autorização e transporte remoto
+
+**Data:** 20/08/2026
+**Baseline:** `8d4e0c2`
+**Status:** Homologado localmente
+
+A arquitetura remota passa a separar formalmente o plano de controle do plano
+de dados.
+
+```text
+PLANO DE CONTROLE
+
+Flutter
+   |
+   v
+EvidenceAccessBroker
+   |
+   v
+backend confiável futuro
+   |
+   v
+EvidenceAccessGrant
+
+
+PLANO DE DADOS
+
+arquivo local
+   |
+   | EvidenceAccessGrant
+   v
+RemoteEvidenceTransport
+   |
+   v
+provedor remoto futuro
+```
+
+### Decisões
+
+1. `RemoteEvidenceStorage` deixa de existir como contrato cliente.
+2. `RemoteEvidenceTransport` não cria grants nem URLs assinadas.
+3. O upload exige um `EvidenceAccessGrant` previamente emitido.
+4. `createReadUri()` é removido do plano de dados.
+5. `delete()` é removido do contrato e permanece não autorizado.
+6. O transporte não conhece ACL, identidade operacional ou credenciais R2.
+7. `DisabledRemoteEvidenceTransport` é a implementação padrão fail-closed.
+8. Nenhuma integração HTTP ou Cloudflare é introduzida no R5.4-A.
+9. A política local-first permanece obrigatória.
+### Homologação
+
+```text
+Testes focados R5.3 + R5.4-A:  aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  9 caminhos Git
+Contrato legado:               removido
+HTTP real:                     não
+Cloudflare R2 real:            não
+Worker/backend remoto:         não
+Credenciais no APK:            nenhuma
+```
+
+A homologação confirma que o plano de dados perdeu qualquer autoridade para
+fabricar grants, URLs assinadas ou exclusões remotas. O transporte apenas
+consome um `EvidenceAccessGrant` previamente emitido.

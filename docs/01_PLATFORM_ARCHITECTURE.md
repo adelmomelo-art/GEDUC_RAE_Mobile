@@ -1090,3 +1090,63 @@ R5.2-C regressão completa:     aprovada
 flutter analyze:               0 issues
 git diff --check:              aprovado
 ```
+------------------------------------------------------------------------
+
+## AUD-L2-R5.3 — Fronteira de autorização de evidências remotas
+
+**Data:** 20/08/2026
+**Status:** Homologado localmente
+
+O acesso remoto futuro às evidências passa a possuir uma fronteira explícita
+entre o cliente Flutter e a autoridade capaz de conceder acesso temporário.
+
+```text
+Flutter / identidade operacional
+        |
+        v
+EvidenceAccessBroker
+        |
+        v
+Backend confiável futuro
+        |
+        +--> valida token
+        +--> resolve UID canônico
+        +--> valida usuário ativo e perfil
+        +--> valida ACL do RAE
+        +--> determina operação
+        |
+        v
+Grant temporário
+        |
+        v
+Armazenamento privado
+```
+
+### Decisões
+
+1. Nenhuma credencial de armazenamento ou segredo de assinatura pode existir no APK.
+2. O cliente não pode fabricar grants ou URLs assinadas.
+3. `autorUserId` é metadado de auditoria e não prova identidade ao backend.
+4. A identidade deve ser derivada pelo backend a partir da sessão autenticada.
+5. Leitura remota futura corresponde semanticamente a `Permission.consultarRae`.
+6. Upload remoto futuro corresponde semanticamente a `Permission.editarRae`.
+7. Exclusão remota não é autorizada pelo R5.3.
+8. `DisabledEvidenceAccessBroker` é a implementação padrão fail-closed.
+9. Cloudflare R2 e Worker permanecem candidatos futuros, não dependências deste pacote.
+10. A invariante local-first permanece intacta.
+### Homologação
+
+```text
+Testes focados R5.1 + R5.3:    aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  8 arquivos
+Integração R2 ativa:           não
+Worker/backend remoto:         não
+Credenciais remotas no APK:    nenhuma
+```
+
+A homologação confirma apenas a fronteira arquitetural e os contratos
+fail-closed. Nenhum grant real, URL assinada, upload remoto ou segredo de
+provedor foi introduzido no aplicativo.

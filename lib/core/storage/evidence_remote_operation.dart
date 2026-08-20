@@ -1,0 +1,4 @@
+enum EvidenceRemoteOperation {
+  read,
+  upload,
+}

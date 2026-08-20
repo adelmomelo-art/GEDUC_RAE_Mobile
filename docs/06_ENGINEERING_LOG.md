@@ -1280,3 +1280,55 @@ Firebase Storage, alterações em `SyncService`, `AcaoModel`, Providers ou rotas
 
 Commit controlado do R5.2-C, publicação da branch, Pull Request e validação dos
 Quality Gates antes do merge.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.3 — Autorização remota e Access Broker
+
+**Data:** 20/08/2026
+**Branch:** `audit/aud-l2-r5-3-remote-access-authorization`
+**Tipo:** Segurança arquitetural / trust boundary
+
+### Objetivo
+
+Impedir que a futura integração de armazenamento remoto transfira ao APK
+credenciais, segredo de assinatura ou autoridade para conceder acesso ao
+bucket.
+
+### Decisão arquitetural
+
+Foi introduzido um contrato `EvidenceAccessBroker` separado do transporte de
+armazenamento. O broker representa a solicitação de acesso, enquanto a futura
+emissão do grant deverá ocorrer exclusivamente em backend confiável.
+
+A implementação padrão `DisabledEvidenceAccessBroker` falha fechado para
+leitura e upload.
+
+### Operações
+
+- leitura: futura equivalência com `Permission.consultarRae`;
+- upload: futura equivalência com `Permission.editarRae`;
+- exclusão: fora do escopo e não autorizada.
+
+### Limites
+
+Nenhum Worker, R2, credencial, URL assinada real, chamada HTTP, SyncService ou
+deploy remoto é introduzido no R5.3.
+### Validação final
+
+```text
+Baseline de entrada:           53ac988
+Testes focados R5.1 + R5.3:    aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  8 arquivos previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.3`: **HOMOLOGADO LOCALMENTE**.
+
+O pacote estabelece exclusivamente a fronteira de confiança para autorização
+remota de evidências. A implementação produtiva do backend confiável, emissão
+de grants temporários, Cloudflare Worker, R2 e transporte HTTP permanecem
+reservados às etapas posteriores.

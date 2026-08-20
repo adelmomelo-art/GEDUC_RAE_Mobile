@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/security/authorization_service.dart';
 import '../../core/services/evidencia_storage_service.dart';
 import '../../core/services/imagem_service.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
@@ -130,6 +131,19 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
     return controller.acaoAtual!.id;
   }
 
+  Future<String> _obterAutorUserId() async {
+    final auth = context.read<AuthorizationService>();
+    await auth.garantirUsuarioAtual();
+
+    final autorUserId = auth.usuarioAtual?.id.trim() ?? '';
+    if (!auth.identidadeValida || autorUserId.isEmpty) {
+      throw StateError(
+        'Nao foi possivel validar a identidade do autor da evidencia.',
+      );
+    }
+    return autorUserId;
+  }
+
   void _mostrarMensagem(String mensagem) {
     if (!mounted) {
       return;
@@ -165,10 +179,12 @@ class _EvidenciasPageState extends State<EvidenciasPage> {
 
     try {
       final acaoId = await _garantirAcaoId();
+      final autorUserId = await _obterAutorUserId();
 
       final evidencias = await _evidenciaStorageService.salvarEvidencias(
         acaoId: acaoId,
         arquivos: arquivos,
+        autorUserId: autorUserId,
       );
 
       final novasFotos = evidencias

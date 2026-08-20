@@ -1226,3 +1226,57 @@ Pull Request:                   #41
 Local storage required:         sempre true
 Remote storage enabled:         configurável
 ```
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.2 / R5.2-C — Metadados, SHA-256 e autoria de evidências
+
+**Data:** 20/08/2026
+**Branch:** `audit/aud-l2-r5-2-c-evidence-author-identity`
+**Tipo:** Evolução de integridade e identidade operacional
+
+### Resumo
+
+O R5.2-A/B adicionou metadados de integridade às evidências locais, incluindo
+SHA-256, tamanho real, MIME type e campos reservados à futura sincronização
+remota. O R5.2-C vinculou novas evidências à identidade operacional canônica
+por meio de `AuthorizationService.usuarioAtual.id`.
+
+### Decisão arquitetural
+
+A interface obtém a identidade validada e repassa explicitamente
+`autorUserId` ao `EvidenciaStorageService`. O serviço de arquivos permanece
+desacoplado do Firebase Auth e do Firestore.
+
+A ausência de identidade canônica provoca falha fechada. Evidências legadas
+permanecem compatíveis.
+
+### Arquivos do R5.2-C
+
+- `README_AUD-L2-R5.2-C.md`;
+- `lib/core/services/evidencia_storage_service.dart`;
+- `lib/modules/evidencias/evidencias_page.dart`;
+- `test/core/services/evidencia_storage_service_test.dart`;
+- `test/core/storage/evidence_metadata_calculator_test.dart`.
+
+### Validação
+
+```text
+R5.2-A/B commit:               3647210
+R5.2-A/B merge:                479c9dc
+R5.2-A/B testes focados:       17/17
+R5.2-A/B regressão:            775/775
+R5.2-C regressão completa:     aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+```
+
+### Limites
+
+Não foram introduzidos Cloudflare R2, upload remoto, URLs assinadas,
+Firebase Storage, alterações em `SyncService`, `AcaoModel`, Providers ou rotas.
+
+### Próxima ação
+
+Commit controlado do R5.2-C, publicação da branch, Pull Request e validação dos
+Quality Gates antes do merge.

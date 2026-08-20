@@ -55,7 +55,17 @@ class EvidenciaStorageService {
     required String acaoId,
     required File arquivoOrigem,
     required String tipo,
+    required String autorUserId,
   }) async {
+    final autorId = autorUserId.trim();
+    if (autorId.isEmpty) {
+      throw ArgumentError.value(
+        autorUserId,
+        'autorUserId',
+        'A identidade canonica do autor da evidencia e obrigatoria.',
+      );
+    }
+
     final Directory acaoDir = await _getAcaoDirectory(acaoId);
 
     final String extensao = path.extension(arquivoOrigem.path);
@@ -79,13 +89,14 @@ class EvidenciaStorageService {
       mimeType: metadata.mimeType,
       objectKey: '',
       sincronizadoEm: null,
-      autorUserId: '',
+      autorUserId: autorId,
     );
   }
 
   Future<List<EvidenciaModel>> salvarEvidencias({
     required String acaoId,
     required List<File> arquivos,
+    required String autorUserId,
     String tipo = 'imagem',
   }) async {
     final List<EvidenciaModel> evidencias = [];
@@ -95,6 +106,7 @@ class EvidenciaStorageService {
         acaoId: acaoId,
         arquivoOrigem: arquivo,
         tipo: tipo,
+        autorUserId: autorUserId,
       );
 
       evidencias.add(evidencia);

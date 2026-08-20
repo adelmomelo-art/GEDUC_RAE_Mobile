@@ -1332,3 +1332,68 @@ O pacote estabelece exclusivamente a fronteira de confiança para autorização
 remota de evidências. A implementação produtiva do backend confiável, emissão
 de grants temporários, Cloudflare Worker, R2 e transporte HTTP permanecem
 reservados às etapas posteriores.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-A — Refatoração do contrato remoto
+
+**Data:** 20/08/2026
+**Branch:** `audit/aud-l2-r5-4-a-remote-transport-contract`
+**Baseline:** `8d4e0c2`
+**Tipo:** Refatoração arquitetural / storage remoto
+
+### Motivação
+
+A HAT-1 do R5.4 identificou que o contrato legado `RemoteEvidenceStorage`
+misturava transporte com concessão de acesso ao expor `createReadUri()` e
+`delete()`.
+
+Essa forma permitiria que uma futura implementação cliente assumisse
+responsabilidades que pertencem ao backend confiável.
+
+### Implementação
+
+O contrato legado é substituído por `RemoteEvidenceTransport`, cuja operação de
+upload recebe obrigatoriamente:
+
+- `EvidenceAccessGrant`;
+- `RemoteEvidenceUploadRequest`.
+
+A implementação padrão continua fail-closed por meio de
+`DisabledRemoteEvidenceTransport`.
+
+### Fora do escopo
+
+- HTTP real;
+- Cloudflare R2;
+- Worker;
+- credenciais;
+- signed URLs reais;
+- exclusão remota;
+- SyncService;
+- Providers;
+- rotas.
+### Validação final
+
+```text
+Baseline de entrada:           8d4e0c2
+Testes focados R5.3 + R5.4-A:  aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  9 caminhos Git previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.4-A`: **HOMOLOGADO LOCALMENTE**.
+
+A refatoração remove a ambiguidade do contrato legado e consolida a separação:
+
+```text
+EvidenceAccessBroker      = plano de controle
+RemoteEvidenceTransport   = plano de dados
+```
+
+O plano de dados não possui `createReadUri()`, não possui `delete()` e não
+recebe credenciais permanentes de provedor. A integração HTTP real e o adapter
+Cloudflare R2 continuam reservados às próximas subetapas.

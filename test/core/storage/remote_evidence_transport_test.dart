@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geduc_rae_mobile/core/storage/disabled_remote_evidence_storage.dart';
+import 'package:geduc_rae_mobile/core/storage/disabled_remote_evidence_transport.dart';
+import 'package:geduc_rae_mobile/core/storage/evidence_access_models.dart';
+import 'package:geduc_rae_mobile/core/storage/evidence_remote_operation.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_storage_policy.dart';
 import 'package:geduc_rae_mobile/core/storage/remote_evidence_models.dart';
 
@@ -16,8 +18,7 @@ void main() {
       expect(request.valido, isTrue);
     });
 
-    test('falha validacao quando qualquer identificador obrigatorio esta vazio',
-        () {
+    test('falha validacao quando identificador obrigatorio esta vazio', () {
       const request = RemoteEvidenceUploadRequest(
         acaoId: '',
         evidenciaId: 'evidencia-001',
@@ -29,14 +30,23 @@ void main() {
     });
   });
 
-  group('AUD-L2-R5.1 - DisabledRemoteEvidenceStorage', () {
-    const storage = DisabledRemoteEvidenceStorage();
+  group('AUD-L2-R5.4-A - DisabledRemoteEvidenceTransport', () {
+    const transport = DisabledRemoteEvidenceTransport();
 
     test('permanece desabilitado por padrao', () {
-      expect(storage.enabled, isFalse);
+      expect(transport.enabled, isFalse);
     });
 
-    test('upload falha fechado sem integracao remota configurada', () async {
+    test('upload exige grant previamente emitido e falha fechado', () async {
+      final grant = EvidenceAccessGrant(
+        uri: Uri.parse('https://example.invalid/evidencia-001.jpg'),
+        operation: EvidenceRemoteOperation.upload,
+        expiresAt: DateTime.utc(2026, 8, 20, 19),
+        requiredHeaders: const <String, String>{
+          'Content-Type': 'image/jpeg',
+        },
+      );
+
       const request = RemoteEvidenceUploadRequest(
         acaoId: 'rae-001',
         evidenciaId: 'evidencia-001',
@@ -45,26 +55,9 @@ void main() {
       );
 
       await expectLater(
-        storage.upload(request),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('leitura remota falha fechado sem integracao configurada', () async {
-      await expectLater(
-        storage.createReadUri(
-          acaoId: 'rae-001',
-          evidenciaId: 'evidencia-001',
-        ),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('exclusao remota falha fechado sem integracao configurada', () async {
-      await expectLater(
-        storage.delete(
-          acaoId: 'rae-001',
-          evidenciaId: 'evidencia-001',
+        transport.upload(
+          grant: grant,
+          request: request,
         ),
         throwsA(isA<StateError>()),
       );

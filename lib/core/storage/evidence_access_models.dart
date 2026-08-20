@@ -53,6 +53,19 @@ class EvidenceAccessGrant {
   final DateTime expiresAt;
   final Map<String, String> requiredHeaders;
 
-  bool validoEm(DateTime instante) =>
-      uri.hasScheme && expiresAt.isAfter(instante.toUtc());
+  bool validoEm(DateTime instante) {
+    final agoraUtc = instante.toUtc();
+    final expiracaoUtc = expiresAt.toUtc();
+
+    return uri.scheme.toLowerCase() == 'https' &&
+        uri.host.trim().isNotEmpty &&
+        expiracaoUtc.isAfter(agoraUtc);
+  }
+
+  bool validoPara({
+    required EvidenceRemoteOperation operacaoEsperada,
+    required DateTime instante,
+  }) {
+    return operation == operacaoEsperada && validoEm(instante);
+  }
 }

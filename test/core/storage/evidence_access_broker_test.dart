@@ -65,18 +65,84 @@ void main() {
     });
   });
 
-  group('AUD-L2-R5.3 - EvidenceAccessGrant', () {
-    test('e valido somente antes da expiracao e com URI absoluta', () {
-      final now = DateTime.utc(2026, 8, 20, 14);
-      final grant = EvidenceAccessGrant(
-        uri: Uri.parse('https://example.invalid/object'),
-        operation: EvidenceRemoteOperation.read,
-        expiresAt: now.add(const Duration(minutes: 5)),
+  group('AUD-L2-R5.4-B - EvidenceAccessGrant', () {
+    final now = DateTime.utc(2026, 8, 20, 16);
+
+    EvidenceAccessGrant grant({
+      required String uri,
+      EvidenceRemoteOperation operation = EvidenceRemoteOperation.read,
+      Duration validade = const Duration(minutes: 5),
+    }) {
+      return EvidenceAccessGrant(
+        uri: Uri.parse(uri),
+        operation: operation,
+        expiresAt: now.add(validade),
+      );
+    }
+
+    test('aceita somente HTTPS com host e expiracao futura', () {
+      expect(
+        grant(uri: 'https://example.invalid/object').validoEm(now),
+        isTrue,
+      );
+    });
+
+    test('rejeita HTTP, FTP e FILE', () {
+      expect(
+        grant(uri: 'http://example.invalid/object').validoEm(now),
+        isFalse,
+      );
+      expect(
+        grant(uri: 'ftp://example.invalid/object').validoEm(now),
+        isFalse,
+      );
+      expect(
+        grant(uri: 'file:///tmp/object').validoEm(now),
+        isFalse,
+      );
+    });
+
+    test('rejeita URI HTTPS sem host', () {
+      expect(
+        grant(uri: 'https:///object').validoEm(now),
+        isFalse,
+      );
+    });
+
+    test('rejeita grant expirado ou exatamente no instante de expiracao', () {
+      expect(
+        grant(
+          uri: 'https://example.invalid/object',
+          validade: Duration.zero,
+        ).validoEm(now),
+        isFalse,
       );
 
-      expect(grant.validoEm(now), isTrue);
       expect(
-        grant.validoEm(now.add(const Duration(minutes: 6))),
+        grant(
+          uri: 'https://example.invalid/object',
+          validade: const Duration(seconds: -1),
+        ).validoEm(now),
+        isFalse,
+      );
+    });
+
+    test('validoPara exige operacao compativel', () {
+      final readGrant = grant(uri: 'https://example.invalid/object');
+
+      expect(
+        readGrant.validoPara(
+          operacaoEsperada: EvidenceRemoteOperation.read,
+          instante: now,
+        ),
+        isTrue,
+      );
+
+      expect(
+        readGrant.validoPara(
+          operacaoEsperada: EvidenceRemoteOperation.upload,
+          instante: now,
+        ),
         isFalse,
       );
     });

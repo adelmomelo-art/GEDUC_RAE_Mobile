@@ -1217,3 +1217,54 @@ Credenciais no APK:            nenhuma
 A homologação confirma que o plano de dados perdeu qualquer autoridade para
 fabricar grants, URLs assinadas ou exclusões remotas. O transporte apenas
 consome um `EvidenceAccessGrant` previamente emitido.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-B — Hardening de grants e object keys
+
+**Data:** 20/08/2026
+**Baseline:** `ead4fe18b9e5ebb35a508baecbc6242b9d18fd2f`
+**Status:** Homologado localmente
+
+Antes da camada HTTP real, a fronteira de acesso remoto recebe endurecimento
+estrutural e temporal.
+
+### Grant
+
+`EvidenceAccessGrant` é válido somente se:
+
+1. o esquema for exatamente `https`;
+2. existir host;
+3. a expiração estiver estritamente no futuro;
+4. quando usado via `validoPara(...)`, a operação do grant coincidir com a
+   operação esperada.
+
+### Object key
+
+Os identificadores de RAE e evidência continuam sem aceitar separadores de
+caminho e passam a rejeitar explicitamente `.` e `..`.
+
+A regra impede ambiguidades de normalização antes que qualquer chave seja
+submetida a um backend ou provedor remoto.
+
+Nenhum HTTP, Worker, R2 real ou credencial é introduzido nesta subetapa.
+### Homologação
+
+```text
+Testes focados R5.4-B:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  7 caminhos Git
+HTTPS obrigatório:             sim
+Host obrigatório:              sim
+Expiração futura obrigatória:  sim
+Operação compatível:           sim
+"." e ".." bloqueados:         sim
+HTTP real:                     não
+Cloudflare R2 real:            não
+Worker/backend remoto:         não
+Credenciais no APK:            nenhuma
+```
+
+A homologação confirma o endurecimento das pré-condições de acesso remoto
+antes da introdução de qualquer transporte HTTP real.

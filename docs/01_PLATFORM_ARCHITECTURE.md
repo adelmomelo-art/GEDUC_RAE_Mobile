@@ -1506,3 +1506,113 @@ tentativa explícita.
 
 A camada de transporte permanece provider-neutral e não recebe responsabilidade
 por política operacional de fila ou sincronização.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-F — Integration Closure
+
+**Data:** 21/08/2026
+**Baseline:** `766a83a65de7c84e819dc2fd499f86c9d835d3ff`
+**Status:** Homologado localmente
+
+O R5.4-F fecha o bloco de adapter remoto sem adicionar nova responsabilidade de
+produção.
+
+### Gate integrado A-E
+
+```text
+CONTROL PLANE
+Flutter
+  -> EvidenceAccessBroker
+  -> backend confiavel
+  -> ACL/autorizacao
+  -> EvidenceAccessGrant
+
+DATA PLANE
+arquivo local
+  + EvidenceAccessGrant
+  -> RemoteEvidenceTransport
+  -> SignedUrlRemoteEvidenceTransport
+  -> EvidenceHttpClient
+  -> endpoint HTTPS autorizado
+```
+
+Invariantes de fechamento:
+
+- grant vem da fronteira confiavel;
+- objectKey vem do grant;
+- URI precisa ser HTTPS;
+- operacao e expiracao sao verificadas antes do HTTP;
+- Content-Type autorizado deve coincidir com o arquivo;
+- headers assinados sao opacos;
+- existe uma tentativa HTTP por chamada;
+- nao-2xx nunca representa sincronizacao concluida;
+- ETag nao substitui SHA-256;
+- falhas sao tipadas;
+- retryCandidate nao executa retry;
+- retry/backoff pertence ao futuro R5.5;
+- transporte continua neutro de provedor;
+- nenhuma credencial permanente existe no APK.
+
+### Gate para R5.5
+
+O R5.5 somente deve assumir orquestracao de sincronizacao.
+
+Nao deve mover para o SyncService:
+
+- assinatura de URL;
+- credenciais R2/B2;
+- decisao ACL autoritativa;
+- fabricacao de objectKey;
+- retry interno do adapter.
+
+HTTP real permanece uma decisao separada de infraestrutura.
+### Homologação R5.4-F
+
+```text
+Teste transversal R5.4-F:      aprovado
+Regressão test/core/storage:   aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  4 caminhos Git
+Código de produção alterado:   não
+HTTP real:                     não
+Retry automático:              não
+Credenciais no APK:            nenhuma
+```
+
+O R5.4 é considerado tecnicamente fechado.
+
+A fronteira consolidada permanece:
+
+```text
+CONTROL PLANE
+Flutter
+  -> broker
+  -> backend confiável
+  -> grant
+
+DATA PLANE
+arquivo local
+  + grant
+  -> RemoteEvidenceTransport
+  -> SignedUrlRemoteEvidenceTransport
+  -> EvidenceHttpClient
+  -> endpoint autorizado
+```
+
+#### Gate de entrada no R5.5
+
+O R5.5 poderá introduzir orquestração de sincronização, fila, conectividade,
+backoff e decisão de nova tentativa.
+
+Continuam proibidos na camada Flutter:
+
+- assinatura local de URL;
+- credenciais permanentes R2/B2;
+- ACL autoritativa;
+- fabricação arbitrária de `objectKey`;
+- retry automático dentro do adapter;
+- acoplamento do domínio ao provedor de storage.
+
+HTTP real e infraestrutura de backend permanecem decisões separadas.

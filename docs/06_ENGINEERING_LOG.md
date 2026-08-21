@@ -1576,3 +1576,52 @@ sincronização quais falhas podem admitir nova tentativa.
 
 Nenhum pacote HTTP concreto, tráfego de rede real, Worker/backend, Cloudflare
 R2 produtivo, renovação de grant ou credencial foi introduzido nesta etapa.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-F — Integration Closure
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-4-f-integration-closure`
+**Baseline:** `766a83a65de7c84e819dc2fd499f86c9d835d3ff`
+**Tipo:** Gate de integracao / fechamento R5.4
+
+### Objetivo
+
+Consolidar A-E em um contrato transversal antes de iniciar R5.5.
+
+### Escopo
+
+- novo teste integrado dos invariantes do plano de dados remoto;
+- fechamento documental R5.4;
+- definicao explicita da fronteira de entrada do R5.5.
+
+### Limites
+
+Nenhum adapter HTTP real, dependencia de rede, Worker, provedor remoto,
+credencial, fila, backoff ou retry automatico e introduzido.
+### Validação final
+
+```text
+Baseline de entrada:           766a83a65de7c84e819dc2fd499f86c9d835d3ff
+Teste transversal R5.4-F:      aprovado
+Regressão test/core/storage:   aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  4 caminhos Git previstos
+Código de produção novo:       não
+```
+
+### Parecer
+
+`AUD-L2-R5.4-F`: **HOMOLOGADO LOCALMENTE**.
+
+O bloco R5.4 fica encerrado com os contratos A-E consolidados e validados de
+forma transversal.
+
+O transporte remoto continua provider-neutral, fail-closed, sem credenciais e
+sem retry automático.
+
+A próxima etapa, R5.5, deve assumir exclusivamente responsabilidades de
+sincronização/orquestração, preservando as fronteiras de confiança e de dados
+definidas no R5.4.

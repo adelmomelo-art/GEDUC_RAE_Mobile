@@ -1625,3 +1625,53 @@ sem retry automático.
 A próxima etapa, R5.5, deve assumir exclusivamente responsabilidades de
 sincronização/orquestração, preservando as fronteiras de confiança e de dados
 definidas no R5.4.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-A — Durable Evidence Sync Queue
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-5-a-durable-evidence-sync-queue`
+**Baseline:** `b9bfe53640e9417f236e9c9b4ef913e1d79f1e93`
+**Tipo:** Persistencia offline-first / fundacao de sincronizacao
+
+### Diagnostico
+
+O `SyncService` atual sincroniza RAEs persistidos pelo `OfflineService`.
+
+O estado rico de evidencias, entretanto, e mantido em memoria pelo
+`EvidenciaStorageService`.
+
+Integrar upload remoto antes de criar persistencia especifica de evidencias
+criaria risco de perda de fila e de estado apos reinicio do aplicativo.
+
+### Escopo
+
+- `EvidenceSyncJob`;
+- `EvidenceSyncStore`;
+- `SharedPreferencesEvidenceSyncStore`;
+- serializacao de operacoes do store;
+- validacao fail-closed;
+- testes de persistencia, upsert, remocao, corrupcao e concorrencia.
+
+### Limites
+
+Nenhuma rede, retry, backoff, broker real, transporte real, Worker, R2/B2,
+credencial ou integracao com o `SyncService` e introduzida.
+
+### Validacao final
+
+- teste focado R5.5-A: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo: 7 caminhos;
+- ajuste R5.5-A-R1 do contrato assincrono: aprovado.
+
+### Parecer
+
+AUD-L2-R5.5-A: **HOMOLOGADO LOCALMENTE**.
+
+A fundacao duravel da fila de sincronizacao de evidencias esta pronta para o
+R5.5-B, que podera iniciar a orquestracao sem introduzir rede real ou autoridade
+de backend no cliente.

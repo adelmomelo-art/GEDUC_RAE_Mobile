@@ -1616,3 +1616,57 @@ Continuam proibidos na camada Flutter:
 - acoplamento do domínio ao provedor de storage.
 
 HTTP real e infraestrutura de backend permanecem decisões separadas.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-A — Durable Evidence Sync Queue
+
+**Data:** 21/08/2026
+**Baseline:** `b9bfe53640e9417f236e9c9b4ef913e1d79f1e93`
+**Status:** Em implementação local
+
+A primeira etapa do R5.5 nao conecta o transporte ao `SyncService`.
+
+Foi identificado que a fila offline de RAEs e persistente, enquanto o estado
+rico de evidencias e mantido em memoria pelo `EvidenciaStorageService`.
+
+Para preservar o offline-first, a sincronizacao remota passa a exigir uma fila
+duravel propria.
+
+```text
+Evidencia local + metadados
+        |
+        v
+EvidenceSyncJob
+        |
+        v
+EvidenceSyncStore
+        |
+        v
+SharedPreferencesEvidenceSyncStore
+        |
+        +--> sobrevive ao restart
+        +--> nao executa rede
+        +--> nao conhece R2/B2
+```
+
+A fila de evidencia permanece separada da fila de RAE.
+
+R5.5-B podera consumir esta fila por meio de um orquestrador dependente de
+`EvidenceAccessBroker` e `RemoteEvidenceTransport`.
+
+### Homologacao R5.5-A
+
+R5.5-A foi homologado localmente com:
+
+- teste focado aprovado;
+- regressao `test/core/sync` aprovada;
+- `flutter analyze` com 0 issues;
+- `git diff --check` aprovado;
+- escopo final limitado a 7 caminhos.
+
+A fila persistente de evidencia passa a ser o gate obrigatorio para qualquer
+orquestracao remota posterior.
+
+O R5.5-B deve apenas orquestrar estados e dependencias ja definidas, sem mover
+autoridade de ACL, assinatura ou credenciais para o cliente Flutter.

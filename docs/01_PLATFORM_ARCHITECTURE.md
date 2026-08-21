@@ -1340,3 +1340,79 @@ Credenciais no APK:            nenhuma
 A homologação confirma que a aplicação passa a possuir somente a porta HTTP
 necessária para a futura transferência remota. A autoridade de `objectKey`
 permanece fora do cliente, e nenhum tráfego HTTP real foi introduzido.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-D — Signed URL Remote Transport
+
+**Data:** 21/08/2026
+**Baseline:** `75176edfe61b273bb3b95de7d05e1b8cfe1513c6`
+**Status:** Homologado localmente
+
+A implementação concreta do plano de dados permanece neutra de provedor.
+
+```text
+CONTROL PLANE
+
+Trusted backend
+      |
+      v
+EvidenceAccessGrant
+
+DATA PLANE
+
+SignedUrlRemoteEvidenceTransport
+      |
+      v
+EvidenceHttpClient
+      |
+      v
+HTTP real futuro
+```
+
+### Regra de desacoplamento
+
+Não existe motivo técnico para criar um adapter Cloudflare R2 no APK quando
+o transporte recebe uma signed URL completa e headers opacos.
+
+Cloudflare R2 e Backblaze B2 permanecem detalhes do backend que emite grants.
+
+### Fail-closed
+
+Antes da transferência, o transporte exige:
+
+1. `RemoteEvidenceUploadRequest` válido;
+2. grant válido para `upload`;
+3. grant ainda não expirado;
+4. `Content-Type` explicitamente autorizado;
+5. igualdade entre `Content-Type` autorizado e o arquivo local.
+
+Somente HTTP 2xx pode gerar resultado de sincronização.
+
+`objectKey` vem do grant. `ETag` é metadado opcional e não representa
+automaticamente SHA-256.
+### Homologação R5.4-D
+
+```text
+Testes focados R5.4-D:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  5 caminhos Git
+Transporte concreto:           SignedUrlRemoteEvidenceTransport
+Grant upload válido:           obrigatório
+Grant expirado:                rejeitado
+Operação incompatível:         rejeitada
+Content-Type autorizado:       obrigatório
+HTTP não-2xx:                  não sincroniza
+objectKey:                     somente do grant
+ETag = SHA-256:                não
+Pacote http/Dio:               não
+HTTP real:                     não
+Cloudflare R2 real:            não
+Worker/backend produtivo:      não
+Credenciais no APK:            nenhuma
+```
+
+A homologação confirma que o plano de dados remoto possui agora um adapter
+concreto e neutro de provedor, mas ainda totalmente testado com cliente HTTP
+fake. Nenhuma dependência operacional de Cloudflare R2 foi introduzida no APK.

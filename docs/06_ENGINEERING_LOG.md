@@ -1483,3 +1483,49 @@ da `objectKey`, que passa a ser fornecida pelo `EvidenceAccessGrant`.
 
 Nenhuma implementação HTTP concreta, Cloudflare R2, Worker/backend,
 signed URL real ou credencial foi introduzida.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-D — Signed URL Remote Transport
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-4-d-signed-url-remote-transport`
+**Baseline:** `75176edfe61b273bb3b95de7d05e1b8cfe1513c6`
+**Tipo:** Implementação do plano de dados / storage remoto
+
+### Escopo
+
+- introduzir `SignedUrlRemoteEvidenceTransport`;
+- conectar grant autorizado à porta `EvidenceHttpClient`;
+- validar operação, expiração e Content-Type antes do HTTP;
+- preservar URI e headers recebidos no grant;
+- aceitar somente HTTP 2xx;
+- usar a `objectKey` fornecida pelo grant;
+- registrar `ETag` apenas como metadado opcional;
+- testar todo o fluxo com cliente HTTP fake.
+
+### Limites
+
+Nenhum pacote HTTP concreto, tráfego de rede real, endpoint Cloudflare,
+Worker produtivo, credencial, assinatura SigV4 ou persistência de signed URL é
+introduzido nesta etapa.
+### Validação final
+
+```text
+Baseline de entrada:           75176edfe61b273bb3b95de7d05e1b8cfe1513c6
+Testes focados R5.4-D:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  5 caminhos Git previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.4-D`: **HOMOLOGADO LOCALMENTE**.
+
+A etapa implementa `SignedUrlRemoteEvidenceTransport`, conectando o grant
+autorizado à porta `EvidenceHttpClient` em modo fail-closed.
+
+A implementação não conhece Cloudflare R2, não assina URLs, não possui
+credenciais permanentes, não interpreta `ETag` como SHA-256 e não executa
+tráfego HTTP real nesta subetapa.

@@ -77,6 +77,7 @@ void main() {
         uri: Uri.parse(uri),
         operation: operation,
         expiresAt: now.add(validade),
+        objectKey: 'evidencias/rae-001/evidencia-001.jpg',
       );
     }
 
@@ -144,6 +145,25 @@ void main() {
           instante: now,
         ),
         isFalse,
+      );
+    });
+    test('rejeita objectKey vazia mesmo com HTTPS e validade futura', () {
+      final invalidGrant = EvidenceAccessGrant(
+        uri: Uri.parse('https://example.invalid/object'),
+        operation: EvidenceRemoteOperation.upload,
+        expiresAt: now.add(const Duration(minutes: 5)),
+        objectKey: ' ',
+      );
+
+      expect(invalidGrant.validoEm(now), isFalse);
+    });
+
+    test('preserva objectKey emitida pela fronteira confiavel', () {
+      final validGrant = grant(uri: 'https://example.invalid/object');
+
+      expect(
+        validGrant.objectKey,
+        'evidencias/rae-001/evidencia-001.jpg',
       );
     });
   });

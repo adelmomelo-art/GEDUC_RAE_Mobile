@@ -45,12 +45,20 @@ class EvidenceAccessGrant {
     required this.uri,
     required this.operation,
     required this.expiresAt,
+    required this.objectKey,
     this.requiredHeaders = const <String, String>{},
   });
 
   final Uri uri;
   final EvidenceRemoteOperation operation;
   final DateTime expiresAt;
+
+  /// Identificador remoto autorizado pela fronteira confiavel.
+  ///
+  /// O cliente nao deve reconstruir, substituir ou derivar esta chave a partir
+  /// da URL assinada.
+  final String objectKey;
+
   final Map<String, String> requiredHeaders;
 
   bool validoEm(DateTime instante) {
@@ -59,6 +67,7 @@ class EvidenceAccessGrant {
 
     return uri.scheme.toLowerCase() == 'https' &&
         uri.host.trim().isNotEmpty &&
+        objectKey.trim().isNotEmpty &&
         expiracaoUtc.isAfter(agoraUtc);
   }
 

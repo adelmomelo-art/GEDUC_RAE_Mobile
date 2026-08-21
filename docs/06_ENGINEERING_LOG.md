@@ -1441,3 +1441,45 @@ o bloqueio já existente de separadores de caminho.
 
 Nenhum transporte HTTP real, Worker, Cloudflare R2 ou credencial foi
 introduzido nesta etapa.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-C — Abstração de transporte HTTP
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-4-c-http-transport-abstraction`
+**Baseline:** `8c04ba7e661942f212abfd15c840cb54f8ff7d0e`
+**Tipo:** Arquitetura de transporte / storage remoto
+
+### Escopo
+
+- acrescentar `objectKey` ao `EvidenceAccessGrant`;
+- garantir que a chave remota venha da fronteira confiável;
+- introduzir `EvidenceHttpPutRequest`;
+- introduzir `EvidenceHttpResponse`;
+- introduzir `EvidenceHttpClient`;
+- testar a porta HTTP com fake, sem tráfego real.
+
+### Limites
+
+Nenhuma biblioteca HTTP, chamada de rede, Cloudflare R2, Worker, credencial,
+signed URL real ou upload remoto produtivo é introduzido no R5.4-C.
+### Validação final
+
+```text
+Baseline de entrada:           8c04ba7e661942f212abfd15c840cb54f8ff7d0e
+Testes focados R5.4-C:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  9 caminhos Git previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.4-C`: **HOMOLOGADO LOCALMENTE**.
+
+A etapa introduz a abstração HTTP neutra de provedor e corrige a autoridade
+da `objectKey`, que passa a ser fornecida pelo `EvidenceAccessGrant`.
+
+Nenhuma implementação HTTP concreta, Cloudflare R2, Worker/backend,
+signed URL real ou credencial foi introduzida.

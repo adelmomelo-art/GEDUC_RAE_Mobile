@@ -1268,3 +1268,75 @@ Credenciais no APK:            nenhuma
 
 A homologação confirma o endurecimento das pré-condições de acesso remoto
 antes da introdução de qualquer transporte HTTP real.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-C — Abstração de transporte HTTP
+
+**Data:** 21/08/2026
+**Baseline:** `8c04ba7e661942f212abfd15c840cb54f8ff7d0e`
+**Status:** Homologado localmente
+
+A camada remota passa a possuir uma porta HTTP neutra de provedor, sem
+implementação de rede real.
+
+```text
+CONTROL PLANE
+
+EvidenceAccessBroker
+        |
+        v
+EvidenceAccessGrant
+  - uri
+  - operation
+  - expiresAt
+  - objectKey
+  - requiredHeaders
+
+DATA PLANE
+
+RemoteEvidenceTransport
+        |
+        v
+EvidenceHttpClient
+        |
+        v
+HTTP real futuro
+```
+
+### Autoridade da objectKey
+
+A `objectKey` usada após sincronização deve ser a chave autorizada pela
+fronteira confiável e retornada no grant.
+
+O cliente não deve inferir a chave pela URL assinada nem tratar
+`EvidenceMetadataCalculator.buildObjectKey()` como autoridade remota.
+
+### Contrato HTTP
+
+`EvidenceHttpClient` é apenas uma porta. Nesta subetapa:
+
+- nenhum pacote HTTP é adicionado;
+- nenhum socket é aberto;
+- nenhum endpoint Cloudflare é chamado;
+- nenhum segredo é conhecido pelo aplicativo;
+- headers do grant continuam opacos para o cliente.
+### Homologação R5.4-C
+
+```text
+Testes focados R5.4-C:          aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  9 caminhos Git
+objectKey no grant:            sim
+HTTP client concreto:          não
+Pacote http/Dio:               não
+HTTP real:                     não
+Cloudflare R2 real:            não
+Worker/backend remoto:         não
+Credenciais no APK:            nenhuma
+```
+
+A homologação confirma que a aplicação passa a possuir somente a porta HTTP
+necessária para a futura transferência remota. A autoridade de `objectKey`
+permanece fora do cliente, e nenhum tráfego HTTP real foi introduzido.

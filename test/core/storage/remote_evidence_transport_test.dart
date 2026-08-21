@@ -42,6 +42,7 @@ void main() {
         uri: Uri.parse('https://example.invalid/evidencia-001.jpg'),
         operation: EvidenceRemoteOperation.upload,
         expiresAt: DateTime.utc(2026, 8, 20, 19),
+        objectKey: 'evidencias/rae-001/evidencia-001.jpg',
         requiredHeaders: const <String, String>{
           'Content-Type': 'image/jpeg',
         },

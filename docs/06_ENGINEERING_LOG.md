@@ -1675,3 +1675,55 @@ AUD-L2-R5.5-A: **HOMOLOGADO LOCALMENTE**.
 A fundacao duravel da fila de sincronizacao de evidencias esta pronta para o
 R5.5-B, que podera iniciar a orquestracao sem introduzir rede real ou autoridade
 de backend no cliente.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-B — Evidence Sync Queue Orchestrator
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-5-b-evidence-sync-orchestrator`
+**Baseline:** `bd55ba7f8df7d177a4e684c91c322e8ac6c063e0`
+**Tipo:** Orquestracao de fila / selecao deterministica
+
+### Escopo
+
+- `EvidenceSyncOrchestrator`;
+- leitura de `EvidenceSyncStore`;
+- validacao fail-closed;
+- elegibilidade de `pending`;
+- elegibilidade temporal de `retryScheduled`;
+- exclusao de `synced` e `blocked`;
+- ordenacao deterministica;
+- selecao do proximo candidato;
+- testes sem side effects.
+
+### Limites
+
+Nenhuma persistencia e alterada pelo ato de selecionar candidatos.
+
+Nao sao introduzidos broker produtivo, grant, transporte real, HTTP,
+retry/backoff, conectividade, Worker, R2/B2 ou credenciais.
+
+### Gate seguinte
+
+R5.5-C podera consumir o candidato selecionado para solicitar um grant de
+upload ao `EvidenceAccessBroker`, preservando o backend como autoridade.
+
+### Validacao final
+
+- teste focado R5.5-B: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo: 5 caminhos;
+- selecao sem persistencia, rede ou side effects.
+
+### Parecer
+
+AUD-L2-R5.5-B: **HOMOLOGADO LOCALMENTE**.
+
+A fila duravel do R5.5-A agora possui uma camada deterministica e fail-closed
+para selecionar candidatos de sincronizacao.
+
+R5.5-C fica autorizado apenas como proxima etapa arquitetural, ainda sujeito a
+implementacao, validacao e homologacao separadas.

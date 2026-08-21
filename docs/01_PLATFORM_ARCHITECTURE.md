@@ -1670,3 +1670,53 @@ orquestracao remota posterior.
 
 O R5.5-B deve apenas orquestrar estados e dependencias ja definidas, sem mover
 autoridade de ACL, assinatura ou credenciais para o cliente Flutter.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-B — Evidence Sync Queue Orchestrator
+
+**Data:** 21/08/2026
+**Baseline:** `bd55ba7f8df7d177a4e684c91c322e8ac6c063e0`
+**Status:** Implementacao local
+
+R5.5-B introduz uma camada provider-neutral de selecao da fila persistida no
+R5.5-A.
+
+```text
+EvidenceSyncStore
+       |
+       v
+EvidenceSyncOrchestrator
+       |
+       +--> valida fila fail-closed
+       +--> pending => elegivel
+       +--> retryScheduled vencido => elegivel
+       +--> synced/blocked => excluido
+       +--> ordenacao deterministica
+       |
+       v
+candidato para etapa posterior
+```
+
+A selecao nao altera estado e nao executa efeitos remotos.
+
+`autorUserId` continua sendo dado de auditoria, nunca fonte de autorizacao.
+
+Broker, grant, transporte, retry/backoff e conectividade permanecem fora desta
+etapa.
+
+### Homologacao R5.5-B
+
+R5.5-B foi homologado localmente com:
+
+- teste focado aprovado;
+- regressao `test/core/sync` aprovada;
+- `flutter analyze` com 0 issues;
+- `git diff --check` aprovado;
+- escopo final limitado a 5 caminhos.
+
+A camada de selecao permanece sem side effects e sem rede.
+
+O proximo gate, R5.5-C, podera solicitar grant ao broker confiavel, mantendo:
+ACL autoritativa no backend, `objectKey` confiavel no grant e ausencia de
+credenciais permanentes no cliente Flutter.

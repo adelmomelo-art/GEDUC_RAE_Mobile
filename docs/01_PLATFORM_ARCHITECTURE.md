@@ -1416,3 +1416,93 @@ Credenciais no APK:            nenhuma
 A homologação confirma que o plano de dados remoto possui agora um adapter
 concreto e neutro de provedor, mas ainda totalmente testado com cliente HTTP
 fake. Nenhuma dependência operacional de Cloudflare R2 foi introduzida no APK.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-E — Upload Failure Hardening
+
+**Data:** 21/08/2026
+**Baseline:** `7d17cfb5c3f67295ded46cdea4ce5004f99584aa`
+**Status:** Homologado localmente
+
+O transporte remoto passa a expor falhas de domínio tipadas por
+`RemoteEvidenceUploadException`.
+
+### Regra de retry
+
+```text
+SignedUrlRemoteEvidenceTransport
+        |
+        | 1 tentativa por chamada
+        v
+EvidenceHttpClient
+
+NÃO existe retry automático no transporte.
+
+Falha potencialmente recuperável
+        |
+        v
+futuro SyncService / orquestrador
+        |
+        +--> backoff
+        +--> conectividade
+        +--> renovação de grant
+        +--> nova tentativa explícita
+```
+
+A propriedade `retryCandidate` é somente uma classificação para a camada
+superior. Ela não executa repetição.
+
+### Classificação
+
+Candidatos a retry externo:
+
+- falha de transporte;
+- HTTP 408;
+- HTTP 425;
+- HTTP 429;
+- HTTP 5xx.
+
+Não candidatos:
+
+- request inválido;
+- grant inválido ou expirado;
+- Content-Type ausente/divergente;
+- 4xx comuns.
+
+Isso preserva a fronteira fail-closed e impede que o adapter esconda ciclos de
+retry ou reutilize grants sem decisão explícita da camada de sincronização.
+### Homologação R5.4-E
+
+```text
+Testes focados R5.4-E/R1:       aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  7 caminhos Git
+Erro de upload tipado:         sim
+Retry automático transporte:   não
+Tentativas HTTP por chamada:   1
+Retry candidate:
+  transportFailure             sim
+  HTTP 408                     sim
+  HTTP 425                     sim
+  HTTP 429                     sim
+  HTTP 5xx                     sim
+  4xx comum                    não
+  invalidRequest               não
+  invalidGrant                 não
+  missingContentType           não
+  contentTypeMismatch          não
+HTTP real:                     não
+Cloudflare R2 real:            não
+Worker/backend produtivo:      não
+Credenciais no APK:            nenhuma
+```
+
+A homologação fixa que `SignedUrlRemoteEvidenceTransport` não implementa
+retry automático. Ele produz uma classificação de falha suficiente para que
+a futura camada de sincronização decida backoff, renovação de grant e nova
+tentativa explícita.
+
+A camada de transporte permanece provider-neutral e não recebe responsabilidade
+por política operacional de fila ou sincronização.

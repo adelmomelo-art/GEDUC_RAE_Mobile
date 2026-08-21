@@ -1529,3 +1529,50 @@ autorizado à porta `EvidenceHttpClient` em modo fail-closed.
 A implementação não conhece Cloudflare R2, não assina URLs, não possui
 credenciais permanentes, não interpreta `ETag` como SHA-256 e não executa
 tráfego HTTP real nesta subetapa.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.4-E — Upload Failure Hardening
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-4-e-upload-failure-hardening`
+**Baseline:** `7d17cfb5c3f67295ded46cdea4ce5004f99584aa`
+**Tipo:** Contrato de erro / preparação para sincronização
+
+### Escopo
+
+- substituir falhas genéricas do adapter por exceções tipadas;
+- diferenciar falhas locais, grant, Content-Type, HTTP e transporte;
+- preservar status HTTP quando disponível;
+- preservar causa de falha de transporte;
+- classificar falhas potencialmente recuperáveis;
+- garantir por teste que existe apenas uma tentativa HTTP por chamada;
+- manter retry/backoff fora do transporte.
+
+### Limites
+
+Nenhum retry automático, pacote HTTP concreto, chamada de rede, Worker,
+Cloudflare R2, renovação de grant ou credencial é introduzido nesta etapa.
+### Validação final
+
+```text
+Baseline de entrada:           7d17cfb5c3f67295ded46cdea4ce5004f99584aa
+Testes focados R5.4-E/R1:       aprovados
+Regressão Flutter completa:    aprovada
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  7 caminhos Git previstos
+```
+
+### Parecer
+
+`AUD-L2-R5.4-E`: **HOMOLOGADO LOCALMENTE**.
+
+A etapa substitui falhas genéricas por `RemoteEvidenceUploadException`,
+preservando tipo, status HTTP e causa quando aplicável.
+
+O transporte executa uma única tentativa HTTP por chamada e não executa retry
+automático. A propriedade `retryCandidate` apenas informa à futura camada de
+sincronização quais falhas podem admitir nova tentativa.
+
+Nenhum pacote HTTP concreto, tráfego de rede real, Worker/backend, Cloudflare
+R2 produtivo, renovação de grant ou credencial foi introduzido nesta etapa.

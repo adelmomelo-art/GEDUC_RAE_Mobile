@@ -4,6 +4,7 @@ import 'package:geduc_rae_mobile/core/storage/evidence_http_client.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_http_models.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_remote_operation.dart';
 import 'package:geduc_rae_mobile/core/storage/remote_evidence_models.dart';
+import 'package:geduc_rae_mobile/core/storage/remote_evidence_upload_exception.dart';
 import 'package:geduc_rae_mobile/core/storage/signed_url_remote_evidence_transport.dart';
 
 class _FakeEvidenceHttpClient implements EvidenceHttpClient {
@@ -21,6 +22,14 @@ class _FakeEvidenceHttpClient implements EvidenceHttpClient {
     lastRequest = request;
     return response;
   }
+}
+
+Matcher uploadFailure(RemoteEvidenceUploadFailure failure) {
+  return isA<RemoteEvidenceUploadException>().having(
+    (error) => error.failure,
+    'failure',
+    failure,
+  );
 }
 
 void main() {
@@ -131,7 +140,7 @@ void main() {
           grant: uploadGrant(operation: EvidenceRemoteOperation.read),
           request: request,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(uploadFailure(RemoteEvidenceUploadFailure.invalidGrant)),
       );
 
       expect(httpClient.calls, 0);
@@ -151,7 +160,7 @@ void main() {
           ),
           request: request,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(uploadFailure(RemoteEvidenceUploadFailure.invalidGrant)),
       );
 
       expect(httpClient.calls, 0);
@@ -173,7 +182,7 @@ void main() {
           ),
           request: request,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(uploadFailure(RemoteEvidenceUploadFailure.missingContentType)),
       );
 
       expect(httpClient.calls, 0);
@@ -198,7 +207,7 @@ void main() {
           grant: uploadGrant(),
           request: pngRequest,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(uploadFailure(RemoteEvidenceUploadFailure.contentTypeMismatch)),
       );
 
       expect(httpClient.calls, 0);
@@ -219,7 +228,15 @@ void main() {
           grant: uploadGrant(),
           request: request,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<RemoteEvidenceUploadException>()
+              .having(
+                (error) => error.failure,
+                'failure',
+                RemoteEvidenceUploadFailure.httpRejected,
+              )
+              .having((error) => error.statusCode, 'statusCode', 403),
+        ),
       );
 
       expect(httpClient.calls, 1);
@@ -244,7 +261,7 @@ void main() {
           grant: uploadGrant(),
           request: invalidRequest,
         ),
-        throwsA(isA<ArgumentError>()),
+        throwsA(uploadFailure(RemoteEvidenceUploadFailure.invalidRequest)),
       );
 
       expect(httpClient.calls, 0);

@@ -4,6 +4,7 @@ import 'evidence_http_models.dart';
 import 'evidence_remote_operation.dart';
 import 'remote_evidence_models.dart';
 import 'remote_evidence_transport.dart';
+import 'remote_evidence_upload_exception.dart';
 
 /// Transporte remoto por URL previamente autorizada.
 ///
@@ -13,7 +14,8 @@ import 'remote_evidence_transport.dart';
 /// - nao decide ACL;
 /// - nao conhece Cloudflare R2, B2 ou outro provedor;
 /// - nao possui credenciais permanentes;
-/// - nao inventa object keys.
+/// - nao inventa object keys;
+/// - executa exatamente uma tentativa HTTP por chamada de upload.
 class SignedUrlRemoteEvidenceTransport implements RemoteEvidenceTransport {
   SignedUrlRemoteEvidenceTransport({
     required EvidenceHttpClient httpClient,
@@ -35,15 +37,19 @@ class SignedUrlRemoteEvidenceTransport implements RemoteEvidenceTransport {
     final instante = _now().toUtc();
 
     if (!request.valido) {
-      throw ArgumentError('Requisicao de upload remoto invalida.');
+      throw const RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.invalidRequest,
+        message: 'Requisicao de upload remoto invalida.',
+      );
     }
 
     if (!grant.validoPara(
       operacaoEsperada: EvidenceRemoteOperation.upload,
       instante: instante,
     )) {
-      throw StateError(
-        'Grant remoto invalido, expirado ou incompativel com upload.',
+      throw const RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.invalidGrant,
+        message: 'Grant remoto invalido, expirado ou incompativel com upload.',
       );
     }
 
@@ -53,15 +59,18 @@ class SignedUrlRemoteEvidenceTransport implements RemoteEvidenceTransport {
     );
 
     if (contentTypeAutorizado == null || contentTypeAutorizado.trim().isEmpty) {
-      throw StateError(
-        'Grant de upload deve autorizar explicitamente Content-Type.',
+      throw const RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.missingContentType,
+        message: 'Grant de upload deve autorizar explicitamente Content-Type.',
       );
     }
 
     if (contentTypeAutorizado.trim().toLowerCase() !=
         request.contentType.trim().toLowerCase()) {
-      throw StateError(
-        'Content-Type local diverge do Content-Type autorizado no grant.',
+      throw const RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.contentTypeMismatch,
+        message:
+            'Content-Type local diverge do Content-Type autorizado no grant.',
       );
     }
 
@@ -74,14 +83,31 @@ class SignedUrlRemoteEvidenceTransport implements RemoteEvidenceTransport {
     );
 
     if (!httpRequest.valido) {
-      throw StateError('Requisicao HTTP derivada do grant e invalida.');
+      throw const RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.invalidGrant,
+        message: 'Requisicao HTTP derivada do grant e invalida.',
+      );
     }
 
-    final response = await _httpClient.putFile(httpRequest);
+    late final EvidenceHttpResponse response;
+
+    try {
+      response = await _httpClient.putFile(httpRequest);
+    } on RemoteEvidenceUploadException {
+      rethrow;
+    } catch (error) {
+      throw RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.transportFailure,
+        message: 'Falha durante a transferencia HTTP da evidencia.',
+        cause: error,
+      );
+    }
 
     if (!response.sucesso) {
-      throw StateError(
-        'Upload remoto rejeitado com HTTP ${response.statusCode}.',
+      throw RemoteEvidenceUploadException(
+        failure: RemoteEvidenceUploadFailure.httpRejected,
+        message: 'Upload remoto rejeitado pelo endpoint autorizado.',
+        statusCode: response.statusCode,
       );
     }
 

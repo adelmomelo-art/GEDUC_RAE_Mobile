@@ -1867,3 +1867,117 @@ Somente depois dessas verificacoes o job passa a `synced`.
 A janela entre efeito remoto e persistencia local permanece explicitamente nao
 atomica e devera ser absorvida pela politica de reconciliacao/idempotencia do
 R5.5-E/F.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-E — Retry, Backoff, Connectivity e Reconciliacao
+
+**Data:** 24/08/2026
+**Baseline:** `57767c55d16e9dd8a02945d60df3c320f83e3e78`
+**Status:** Implementacao local
+
+R5.5-E torna explicita a camada dona da politica de tentativa.
+
+```text
+EvidenceSyncConnectivityProbe
+          |
+          +-- sem rede --> nao conta tentativa
+          |
+          v
+EvidenceSyncGrantCoordinator
+          |
+          v
+grant + job
+          |
+          +-- reconciliationObjectKey != grant.objectKey --> BLOCKED
+          |
+          v
+EvidenceSyncUploadCoordinator
+          |
+          +-- sucesso --> SYNCED
+          |
+          +-- retryable --> RETRY_SCHEDULED
+          |
+          +-- nao retryable --> BLOCKED
+          |
+          +-- persistencia local falhou apos efeito remoto
+                         |
+                         v
+                  RETRY_SCHEDULED
+                  mesma chave remota
+```
+
+### Identidade de reconciliacao
+
+`EvidenceSyncJob.reconciliationObjectKey` e uma chave temporaria de seguranca.
+
+Ela pode existir em `retryScheduled` ou `blocked`, mas nunca substitui
+`objectKey`. O `objectKey` final continua permitido apenas em `synced`.
+
+A chave de reconciliacao deve ter origem no grant confiavel.
+
+### Backoff
+
+A politica inicial e exponencial, deterministica e limitada:
+
+30 s -> 60 s -> 120 s -> ... -> teto de 30 min.
+
+O limite padrao e 6 tentativas.
+
+### Regra de idempotencia
+
+Quando uma tentativa anterior pode ter produzido efeito remoto, a proxima
+tentativa somente pode enviar se o novo grant preservar exatamente o mesmo
+`objectKey`.
+
+O snapshot SHA continua fazendo parte da solicitacao ao broker.
+
+Isso transforma a repeticao em reconciliacao sobre a mesma identidade remota,
+nao em criacao de uma nova evidencia.
+
+### Concorrencia
+
+R5.5-E nao introduz claim/lock distribuido.
+
+A protecao de R5.5-D contra overwrite de snapshot alterado continua ativa.
+Paralelismo real de workers permanece fora do escopo.
+
+### Homologacao R5.5-E
+
+R5.5-E foi homologado localmente apos dois ajustes de validacao:
+
+- R1 removeu `const` de `EvidenceSyncRetryPolicy`, preservando os asserts em
+  runtime;
+- R2 alinhou a regressao do R5.5-D ao novo contrato
+  `EvidenceSyncConfirmationException`.
+
+Gates finais:
+
+- teste legado R5.5-D: aprovado;
+- teste focado R5.5-E: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo final: 11 caminhos.
+
+A arquitetura consolidada mantem quatro fronteiras:
+
+1. conectividade funciona apenas como gate antecipado;
+2. transporte executa exatamente uma tentativa;
+3. politica de retry/backoff pertence ao coordenador de resiliencia;
+4. reconciliacao exige estabilidade da identidade remota confiavel.
+
+`reconciliationObjectKey` nao equivale a sucesso. O campo registra apenas a
+identidade remota que deve permanecer estavel quando uma tentativa anterior
+pode ter causado efeito remoto sem confirmacao local duravel.
+
+O `objectKey` definitivo continua exclusivo de jobs em `synced`.
+
+Riscos ainda abertos:
+
+- ausencia de transacao atomica remoto/local;
+- ausencia de claim/lock distribuido;
+- ausencia de jitter;
+- ausencia de backend remoto real;
+- dependencia futura de semantica idempotente para PUT na mesma chave e mesmo
+  snapshot SHA.

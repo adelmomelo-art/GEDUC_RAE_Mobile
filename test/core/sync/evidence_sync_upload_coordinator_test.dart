@@ -6,6 +6,7 @@ import 'package:geduc_rae_mobile/core/storage/remote_evidence_transport.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_grant_coordinator.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_job.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_store.dart';
+import 'package:geduc_rae_mobile/core/sync/evidence_sync_upload_confirmation_exception.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_upload_coordinator.dart';
 
 void main() {
@@ -208,7 +209,13 @@ void main() {
           store: store,
           clock: () => agora,
         ).executar(preparation(value: original)),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<EvidenceSyncConfirmationException>().having(
+            (error) => error.failure,
+            'failure',
+            EvidenceSyncConfirmationFailure.objectKeyMismatch,
+          ),
+        ),
       );
 
       expect(transport.uploadCalls, 1);
@@ -232,7 +239,13 @@ void main() {
           store: store,
           clock: () => agora,
         ).executar(preparation(value: original)),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<EvidenceSyncConfirmationException>().having(
+            (error) => error.failure,
+            'failure',
+            EvidenceSyncConfirmationFailure.sizeMismatch,
+          ),
+        ),
       );
 
       expect(transport.uploadCalls, 1);
@@ -263,7 +276,13 @@ void main() {
           store: store,
           clock: () => agora,
         ).executar(preparation(value: original)),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<EvidenceSyncConfirmationException>().having(
+            (error) => error.failure,
+            'failure',
+            EvidenceSyncConfirmationFailure.jobChanged,
+          ),
+        ),
       );
 
       expect(transport.uploadCalls, 1);

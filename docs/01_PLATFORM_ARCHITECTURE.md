@@ -1787,3 +1787,83 @@ movida para o cliente Flutter.
 
 O proximo gate, R5.5-D, fica restrito ao consumo do contexto `job + grant` para
 uma unica tentativa de transporte, sem retry automatico.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-D — Evidence Upload + Persisted Confirmation
+
+**Data:** 24/08/2026
+**Baseline:** `6ea5aaae6cf46734ae559af91448a4b6f2e71936`
+**Status:** Implementacao local
+
+R5.5-D fecha a primeira passagem controlada pelo plano de dados:
+
+```text
+EvidenceSyncGrantPreparation
+          |
+          v
+RemoteEvidenceUploadRequest
+          |
+          v
+RemoteEvidenceTransport.upload()   [1 tentativa]
+          |
+          v
+RemoteEvidenceUploadResult
+          |
+          +--> objectKey == grant.objectKey
+          +--> sizeBytes coerente, quando informado
+          |
+          v
+releitura EvidenceSyncStore
+          |
+          +--> snapshot inalterado?
+          |
+          v
+status = synced
+objectKey = confirmado
+syncedAt = confirmado
+attemptCount += 1
+lastAttemptAt = inicio da tentativa
+```
+
+O transporte continua sem autoridade de ACL e sem poder fabricar grant.
+
+A fila somente registra sucesso depois da confirmacao remota.
+
+### Janela remoto -> persistencia
+
+O upload remoto e a gravacao local nao formam uma transacao atomica.
+
+Portanto, falha de persistencia depois de sucesso remoto pode deixar o job
+localmente pendente. A estrategia de retry/reconciliacao deve reutilizar o
+mesmo `objectKey` confiavel e o mesmo snapshot SHA, evitando criar objetos
+alternativos para a mesma evidencia.
+
+R5.5-E sera responsavel pela politica de retry/backoff/conectividade; R5.5-F
+devera fechar as invariantes de idempotencia e reconciliacao.
+
+### Homologacao R5.5-D
+
+R5.5-D foi homologado localmente com:
+
+- teste focado aprovado;
+- regressao `test/core/sync` aprovada;
+- `flutter analyze` com 0 issues;
+- `git diff --check` aprovado;
+- escopo final limitado a 5 caminhos.
+
+A confirmacao persistida de sucesso agora exige simultaneamente:
+
+1. transporte habilitado;
+2. grant valido para upload;
+3. request local valido;
+4. uma tentativa concluida pelo transporte;
+5. `objectKey` do resultado igual ao grant confiavel;
+6. `sizeBytes` coerente, quando presente;
+7. snapshot persistido ainda igual ao que originou o upload.
+
+Somente depois dessas verificacoes o job passa a `synced`.
+
+A janela entre efeito remoto e persistencia local permanece explicitamente nao
+atomica e devera ser absorvida pela politica de reconciliacao/idempotencia do
+R5.5-E/F.

@@ -1779,3 +1779,65 @@ autorizacao temporaria emitida pelo broker, sem transferir autoridade para o
 cliente.
 
 R5.5-D permanece como etapa separada para transporte e confirmacao persistida.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-D — Evidence Upload + Persisted Confirmation
+
+**Data:** 24/08/2026
+**Branch:** `audit/aud-l2-r5-5-d-evidence-upload-confirmation`
+**Baseline:** `6ea5aaae6cf46734ae559af91448a4b6f2e71936`
+**Tipo:** Orquestracao / plano de dados / confirmacao persistida
+
+### Escopo
+
+- `EvidenceSyncUploadCoordinator`;
+- consumo de `EvidenceSyncGrantPreparation`;
+- uma unica chamada ao `RemoteEvidenceTransport`;
+- validacao de `objectKey`;
+- validacao opcional de `sizeBytes`;
+- releitura fail-closed do job antes de confirmar;
+- persistencia de estado `synced` somente apos sucesso;
+- incremento de `attemptCount` em tentativa bem sucedida;
+- registro de `lastAttemptAt`;
+- limpeza de `nextAttemptAt`.
+
+### Invariantes
+
+- sem retry automatico;
+- sem overwrite de job alterado durante upload;
+- sem `objectKey` fabricado pelo cliente;
+- sem `syncedAt` antes de sucesso remoto;
+- sem alteracao do `SyncService`;
+- sem credenciais permanentes.
+
+### Risco conhecido
+
+Sucesso remoto seguido de falha de persistencia local pode gerar nova tentativa
+posterior. R5.5-E/F deve tratar esse caso com idempotencia/reconciliacao sobre a
+mesma identidade de evidencia e o mesmo `objectKey`.
+
+### Validacao final
+
+- teste focado R5.5-D: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo: 5 caminhos;
+- uma tentativa de transporte por execucao;
+- confirmacao `synced` apenas apos sucesso;
+- protecao contra `objectKey` divergente;
+- protecao contra alteracao concorrente do job;
+- sem retry/backoff automatico.
+
+### Parecer
+
+AUD-L2-R5.5-D: **HOMOLOGADO LOCALMENTE**.
+
+A Plataforma Fenix agora possui o caminho controlado:
+
+fila elegivel -> grant temporario -> uma tentativa de upload -> validacao do
+resultado -> confirmacao persistida.
+
+R5.5-E permanece como etapa separada para politica de retry, backoff,
+conectividade e reconciliacao de falhas apos efeito remoto.

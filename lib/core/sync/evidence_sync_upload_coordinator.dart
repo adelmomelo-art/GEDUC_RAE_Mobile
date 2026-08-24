@@ -4,15 +4,13 @@ import '../storage/remote_evidence_transport.dart';
 import 'evidence_sync_grant_coordinator.dart';
 import 'evidence_sync_job.dart';
 import 'evidence_sync_store.dart';
+import 'evidence_sync_upload_confirmation_exception.dart';
 
 /// Executa uma unica tentativa de upload e confirma o sucesso na fila duravel.
 ///
 /// Nao aplica retry/backoff. Falhas do transporte sao propagadas para a camada
-/// posterior de politica. O job so e marcado como sincronizado depois que:
-///
-/// 1. o transporte confirma sucesso;
-/// 2. o resultado remoto e coerente com o grant;
-/// 3. o snapshot persistido ainda corresponde ao job que foi transferido.
+/// de politica. Falhas depois de um retorno remoto bem-sucedido sao tipadas
+/// para permitir reconciliacao sem fabricar uma nova identidade remota.
 class EvidenceSyncUploadCoordinator {
   EvidenceSyncUploadCoordinator({
     required RemoteEvidenceTransport transport,
@@ -32,6 +30,7 @@ class EvidenceSyncUploadCoordinator {
     final job = preparation.job;
     final grant = preparation.grant;
     final startedAt = _clock().toUtc();
+    final trustedObjectKey = grant.objectKey.trim();
 
     if (!_transport.enabled) {
       throw StateError(
@@ -75,23 +74,40 @@ class EvidenceSyncUploadCoordinator {
     _validarResultado(
       result: result,
       job: job,
-      grantObjectKey: grant.objectKey,
+      trustedObjectKey: trustedObjectKey,
     );
 
-    final persisted = await _store.obter(
-      acaoId: job.acaoId,
-      evidenciaId: job.evidenciaId,
-    );
+    EvidenceSyncJob? persisted;
+    try {
+      persisted = await _store.obter(
+        acaoId: job.acaoId,
+        evidenciaId: job.evidenciaId,
+      );
+    } catch (error) {
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.persistenceFailure,
+        message:
+            'Falha ao reler a fila depois do efeito remoto confirmado.',
+        trustedObjectKey: trustedObjectKey,
+        cause: error,
+      );
+    }
 
     if (persisted == null) {
-      throw StateError(
-        'Job desapareceu da fila apos o upload; confirmacao recusada.',
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.jobMissing,
+        message:
+            'Job desapareceu da fila apos o upload; confirmacao recusada.',
+        trustedObjectKey: trustedObjectKey,
       );
     }
 
     if (!_mesmoSnapshotPersistido(persisted, job)) {
-      throw StateError(
-        'Job mudou durante o upload; confirmacao persistida recusada.',
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.jobChanged,
+        message:
+            'Job mudou durante o upload; confirmacao persistida recusada.',
+        trustedObjectKey: trustedObjectKey,
       );
     }
 
@@ -102,15 +118,30 @@ class EvidenceSyncUploadCoordinator {
       limparNextAttemptAt: true,
       objectKey: result.objectKey.trim(),
       syncedAt: result.syncedAt.toUtc(),
+      limparReconciliationObjectKey: true,
     );
 
     if (!confirmado.valido) {
-      throw StateError(
-        'Resultado de upload nao produz estado sincronizado coerente.',
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.invalidSyncedState,
+        message:
+            'Resultado de upload nao produz estado sincronizado coerente.',
+        trustedObjectKey: trustedObjectKey,
       );
     }
 
-    await _store.salvar(confirmado);
+    try {
+      await _store.salvar(confirmado);
+    } catch (error) {
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.persistenceFailure,
+        message:
+            'Upload confirmado remotamente, mas a persistencia local falhou.',
+        trustedObjectKey: trustedObjectKey,
+        cause: error,
+      );
+    }
+
     return confirmado;
   }
 
@@ -121,20 +152,25 @@ class EvidenceSyncUploadCoordinator {
   void _validarResultado({
     required RemoteEvidenceUploadResult result,
     required EvidenceSyncJob job,
-    required String grantObjectKey,
+    required String trustedObjectKey,
   }) {
     final resultKey = result.objectKey.trim();
-    final trustedKey = grantObjectKey.trim();
 
-    if (resultKey.isEmpty || resultKey != trustedKey) {
-      throw StateError(
-        'objectKey confirmado pelo transporte diverge do grant confiavel.',
+    if (resultKey.isEmpty || resultKey != trustedObjectKey) {
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.objectKeyMismatch,
+        message:
+            'objectKey confirmado pelo transporte diverge do grant confiavel.',
+        trustedObjectKey: trustedObjectKey,
       );
     }
 
     if (result.sizeBytes != null && result.sizeBytes != job.tamanhoBytes) {
-      throw StateError(
-        'Tamanho confirmado pelo transporte diverge do snapshot local.',
+      throw EvidenceSyncConfirmationException(
+        failure: EvidenceSyncConfirmationFailure.sizeMismatch,
+        message:
+            'Tamanho confirmado pelo transporte diverge do snapshot local.',
+        trustedObjectKey: trustedObjectKey,
       );
     }
   }
@@ -153,7 +189,8 @@ class EvidenceSyncUploadCoordinator {
         _sameDate(atual.lastAttemptAt, origem.lastAttemptAt) &&
         _sameDate(atual.nextAttemptAt, origem.nextAttemptAt) &&
         atual.objectKey == origem.objectKey &&
-        _sameDate(atual.syncedAt, origem.syncedAt);
+        _sameDate(atual.syncedAt, origem.syncedAt) &&
+        atual.reconciliationObjectKey == origem.reconciliationObjectKey;
   }
 
   bool _sameDate(DateTime? a, DateTime? b) {

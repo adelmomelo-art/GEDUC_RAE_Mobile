@@ -1841,3 +1841,83 @@ resultado -> confirmacao persistida.
 
 R5.5-E permanece como etapa separada para politica de retry, backoff,
 conectividade e reconciliacao de falhas apos efeito remoto.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-E — Retry, Backoff, Connectivity e Reconciliacao
+
+**Data:** 24/08/2026
+**Branch:** `audit/aud-l2-r5-5-e-retry-reconciliation`
+**Baseline:** `57767c55d16e9dd8a02945d60df3c320f83e3e78`
+**Tipo:** Orquestracao / resiliencia / reconciliacao
+
+### Escopo
+
+- `EvidenceSyncConnectivityProbe`;
+- adaptador `connectivity_plus`;
+- `EvidenceSyncRetryPolicy`;
+- `EvidenceSyncRetryCoordinator`;
+- `EvidenceSyncConfirmationException`;
+- `reconciliationObjectKey` no job duravel;
+- backoff exponencial;
+- limite de tentativas;
+- bloqueio de falhas nao retryable;
+- estabilidade obrigatoria do `objectKey` em reconciliacao;
+- tipagem de falha de persistencia apos efeito remoto.
+
+### Decisoes
+
+1. transporte continua com uma unica tentativa;
+2. sem rede nao incrementa `attemptCount`;
+3. falha retryable incrementa tentativa e agenda `nextAttemptAt`;
+4. falha nao retryable bloqueia;
+5. retry apos possivel efeito remoto preserva chave confiavel;
+6. grant posterior com outra chave bloqueia antes do PUT;
+7. `objectKey` final permanece exclusivo de `synced`;
+8. `SyncService` permanece sem logica de evidencia nesta etapa.
+
+### Backoff padrao
+
+- base: 30 segundos;
+- teto: 30 minutos;
+- maximo: 6 tentativas;
+- sem jitter nesta versao.
+
+### Ajustes durante a validacao
+
+**R1 — const-evaluation**
+
+`EvidenceSyncRetryPolicy` deixou de usar construtor `const`. As comparacoes de
+`Duration` permanecem validadas por asserts em runtime.
+
+**R2 — regressao R5.5-D**
+
+Os testes anteriores do upload coordinator passaram a exigir
+`EvidenceSyncConfirmationException` com os codigos:
+
+- `objectKeyMismatch`;
+- `sizeMismatch`;
+- `jobChanged`.
+
+### Validacao final
+
+- teste legado R5.5-D: aprovado;
+- teste focado R5.5-E: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo: 11 caminhos.
+
+### Parecer
+
+AUD-L2-R5.5-E: **HOMOLOGADO LOCALMENTE**.
+
+A etapa fecha a politica local de resiliencia de evidencias sem violar os
+limites definidos no R5.4/R5.5:
+
+- broker continua fornecendo a identidade remota confiavel;
+- transporte continua sem retry automatico;
+- fila duravel registra tentativa e proxima janela;
+- falhas definitivas sao bloqueadas;
+- efeito remoto incerto preserva a mesma identidade para reconciliacao;
+- sucesso final continua exigindo confirmacao persistida.

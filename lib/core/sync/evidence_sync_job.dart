@@ -21,6 +21,7 @@ class EvidenceSyncJob {
     this.nextAttemptAt,
     this.objectKey,
     this.syncedAt,
+    this.reconciliationObjectKey,
   });
 
   final String acaoId;
@@ -40,6 +41,12 @@ class EvidenceSyncJob {
   final String? objectKey;
   final DateTime? syncedAt;
 
+  /// Chave remota confiavel usada apenas para reconciliar uma tentativa cujo
+  /// efeito remoto pode ter ocorrido sem confirmacao local duravel.
+  ///
+  /// Nunca substitui [objectKey], que continua reservado ao estado [synced].
+  final String? reconciliationObjectKey;
+
   bool get possuiSnapshotValido =>
       acaoId.trim().isNotEmpty &&
       evidenciaId.trim().isNotEmpty &&
@@ -54,19 +61,23 @@ class EvidenceSyncJob {
       case EvidenceSyncJobStatus.pending:
         return objectKey == null &&
             syncedAt == null &&
-            nextAttemptAt == null;
+            nextAttemptAt == null &&
+            reconciliationObjectKey == null;
       case EvidenceSyncJobStatus.retryScheduled:
         return objectKey == null &&
             syncedAt == null &&
-            nextAttemptAt != null;
+            nextAttemptAt != null &&
+            _optionalKeyValida(reconciliationObjectKey);
       case EvidenceSyncJobStatus.synced:
         return objectKey?.trim().isNotEmpty == true &&
             syncedAt != null &&
-            nextAttemptAt == null;
+            nextAttemptAt == null &&
+            reconciliationObjectKey == null;
       case EvidenceSyncJobStatus.blocked:
         return objectKey == null &&
             syncedAt == null &&
-            nextAttemptAt == null;
+            nextAttemptAt == null &&
+            _optionalKeyValida(reconciliationObjectKey);
     }
   }
 
@@ -86,6 +97,8 @@ class EvidenceSyncJob {
     bool limparObjectKey = false,
     DateTime? syncedAt,
     bool limparSyncedAt = false,
+    String? reconciliationObjectKey,
+    bool limparReconciliationObjectKey = false,
   }) {
     return EvidenceSyncJob(
       acaoId: acaoId,
@@ -106,6 +119,9 @@ class EvidenceSyncJob {
           : nextAttemptAt ?? this.nextAttemptAt,
       objectKey: limparObjectKey ? null : objectKey ?? this.objectKey,
       syncedAt: limparSyncedAt ? null : syncedAt ?? this.syncedAt,
+      reconciliationObjectKey: limparReconciliationObjectKey
+          ? null
+          : reconciliationObjectKey ?? this.reconciliationObjectKey,
     );
   }
 
@@ -125,13 +141,16 @@ class EvidenceSyncJob {
       'nextAttemptAt': nextAttemptAt?.toUtc().toIso8601String(),
       'objectKey': objectKey,
       'syncedAt': syncedAt?.toUtc().toIso8601String(),
+      'reconciliationObjectKey': reconciliationObjectKey,
     };
   }
 
   factory EvidenceSyncJob.fromMap(Map<String, dynamic> map) {
     final statusName = map['status']?.toString() ?? '';
 
-    final status = EvidenceSyncJobStatus.values.cast<EvidenceSyncJobStatus?>().firstWhere(
+    final status = EvidenceSyncJobStatus.values
+        .cast<EvidenceSyncJobStatus?>()
+        .firstWhere(
           (value) => value?.name == statusName,
           orElse: () => null,
         );
@@ -159,6 +178,16 @@ class EvidenceSyncJob {
       return parsed;
     }
 
+    String? parseOptionalKey(String key) {
+      final raw = map[key];
+      if (raw == null) {
+        return null;
+      }
+
+      final value = raw.toString();
+      return value.trim().isEmpty ? null : value;
+    }
+
     final item = EvidenceSyncJob(
       acaoId: map['acaoId']?.toString() ?? '',
       evidenciaId: map['evidenciaId']?.toString() ?? '',
@@ -176,8 +205,9 @@ class EvidenceSyncJob {
           : int.tryParse(map['attemptCount']?.toString() ?? '') ?? -1,
       lastAttemptAt: parseOptional('lastAttemptAt')?.toUtc(),
       nextAttemptAt: parseOptional('nextAttemptAt')?.toUtc(),
-      objectKey: map['objectKey']?.toString(),
+      objectKey: parseOptionalKey('objectKey'),
       syncedAt: parseOptional('syncedAt')?.toUtc(),
+      reconciliationObjectKey: parseOptionalKey('reconciliationObjectKey'),
     );
 
     if (!item.valido) {
@@ -186,4 +216,7 @@ class EvidenceSyncJob {
 
     return item;
   }
+
+  static bool _optionalKeyValida(String? value) =>
+      value == null || value.trim().isNotEmpty;
 }

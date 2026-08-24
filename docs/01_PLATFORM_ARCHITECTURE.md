@@ -1720,3 +1720,70 @@ A camada de selecao permanece sem side effects e sem rede.
 O proximo gate, R5.5-C, podera solicitar grant ao broker confiavel, mantendo:
 ACL autoritativa no backend, `objectKey` confiavel no grant e ausencia de
 credenciais permanentes no cliente Flutter.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-C — Evidence Grant Acquisition
+
+**Data:** 21/08/2026
+**Baseline:** `d92200e9c8ac7f00330253a0fbd3a95d83448f5e`
+**Status:** Implementacao local
+
+R5.5-C conecta o plano de orquestracao ao plano de autorizacao, mas ainda nao
+ao plano de dados.
+
+```text
+EvidenceSyncOrchestrator
+        |
+        v
+EvidenceSyncJob elegivel
+        |
+        v
+EvidenceUploadAccessRequest
+        |
+        v
+EvidenceAccessBroker
+        |
+        v
+EvidenceAccessGrant
+        |
+        +--> upload
+        +--> HTTPS
+        +--> expiracao futura
+        +--> objectKey autoritativo
+        |
+        v
+EvidenceSyncGrantPreparation
+```
+
+O contexto `job + grant` existe apenas em memoria e nao altera a fila.
+
+A autorizacao continua pertencendo ao backend. O cliente somente valida se o
+grant recebido e utilizavel para a operacao esperada.
+
+Nenhum transporte HTTP e executado no R5.5-C.
+
+### Homologacao R5.5-C
+
+R5.5-C foi homologado localmente com:
+
+- teste focado aprovado;
+- regressao `test/core/sync` aprovada;
+- `flutter analyze` com 0 issues;
+- `git diff --check` aprovado;
+- escopo final limitado a 5 caminhos.
+
+A etapa confirma a separacao entre:
+
+1. selecao do candidato;
+2. solicitacao do grant;
+3. validacao local do grant;
+4. futura transferencia de dados.
+
+O grant permanece efemero e somente em memoria.
+
+Nenhuma autoridade de ACL, assinatura, `objectKey` ou credencial permanente foi
+movida para o cliente Flutter.
+
+O proximo gate, R5.5-D, fica restrito ao consumo do contexto `job + grant` para
+uma unica tentativa de transporte, sem retry automatico.

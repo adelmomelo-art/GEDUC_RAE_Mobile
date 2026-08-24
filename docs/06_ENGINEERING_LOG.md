@@ -1727,3 +1727,55 @@ para selecionar candidatos de sincronizacao.
 
 R5.5-C fica autorizado apenas como proxima etapa arquitetural, ainda sujeito a
 implementacao, validacao e homologacao separadas.
+
+------------------------------------------------------------------------
+
+## AUD-L2-R5.5-C — Evidence Grant Acquisition
+
+**Data:** 21/08/2026
+**Branch:** `audit/aud-l2-r5-5-c-evidence-grant-acquisition`
+**Baseline:** `d92200e9c8ac7f00330253a0fbd3a95d83448f5e`
+**Tipo:** Orquestracao / fronteira de autorizacao
+
+### Escopo
+
+- `EvidenceSyncGrantCoordinator`;
+- `EvidenceSyncGrantPreparation`;
+- consumo do proximo candidato do R5.5-B;
+- montagem de `EvidenceUploadAccessRequest`;
+- uma chamada ao `requestUploadAccess`;
+- validacao do grant para upload;
+- preservacao do grant somente em memoria;
+- testes de broker desabilitado, expiracao, operacao, HTTPS e objectKey.
+
+### Limites
+
+Nenhum upload e executado e nenhuma fila e alterada nesta etapa.
+
+O cliente nao decide ACL, nao fabrica `objectKey` e nao persiste URL assinada.
+
+### Gate seguinte
+
+R5.5-D podera consumir `EvidenceSyncGrantPreparation` para executar exatamente
+uma chamada ao `RemoteEvidenceTransport` e, somente apos sucesso confirmado,
+persistir `objectKey` e `syncedAt`.
+
+### Validacao final
+
+- teste focado R5.5-C: aprovado;
+- regressao `test/core/sync`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo: 5 caminhos;
+- grant mantido apenas em memoria;
+- nenhum upload ou persistencia de sucesso executado.
+
+### Parecer
+
+AUD-L2-R5.5-C: **HOMOLOGADO LOCALMENTE**.
+
+A Plataforma Fenix agora possui a ponte controlada entre a fila elegivel e a
+autorizacao temporaria emitida pelo broker, sem transferir autoridade para o
+cliente.
+
+R5.5-D permanece como etapa separada para transporte e confirmacao persistida.

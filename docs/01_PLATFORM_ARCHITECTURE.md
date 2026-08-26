@@ -1981,3 +1981,56 @@ Riscos ainda abertos:
 - ausencia de backend remoto real;
 - dependencia futura de semantica idempotente para PUT na mesma chave e mesmo
   snapshot SHA.
+
+## AUD-L2-R5.5-F — Idempotencia e fechamento de integracao
+
+R5.5-F introduz `EvidenceUploadIdentity`, composta por `acaoId`, `evidenciaId`
+e `sha256`.
+
+Requests de upload possuem uma chave logica deterministica de idempotencia,
+mas o cliente continua proibido de fabricar `objectKey`.
+
+Grants usados pelo sync devem ecoar a identidade solicitada. O Grant
+Coordinator falha fechado quando o binding estiver ausente ou divergente.
+
+O backend futuro fica obrigado a preservar a mesma `objectKey` para a mesma
+identidade canonica, inclusive em renovacoes de grant. Essa regra cobre a janela
+em que houve efeito remoto e a persistencia local da reconciliacao tambem
+falhou.
+
+`remoteStorageEnabled=true` permanece bloqueado ate o backend real provar esse
+contrato.
+
+O Retry Coordinator passa a operar em single-flight por instancia. Isso evita
+dois ciclos concorrentes no mesmo processo, sem pretender ser lock distribuido.
+
+### Homologacao R5.5-F
+
+R5.5-F foi homologado localmente com foco em tres garantias:
+
+1. identidade canonica de upload;
+2. binding do grant ao snapshot;
+3. single-flight local.
+
+A identidade canonica e:
+
+`acaoId + evidenciaId + sha256`
+
+A `idempotencyKey` derivada e apenas um identificador logico deterministico.
+Ela nao substitui a `objectKey`, nao autoriza acesso e nao contem credenciais.
+
+O Grant Coordinator exige que o grant de upload ecoe a identidade solicitada.
+Ausencia ou divergencia do binding causa falha fechada antes do transporte.
+
+O backend futuro devera preservar a mesma `objectKey` para a mesma identidade
+canonica. Essa regra e obrigatoria inclusive quando a tentativa anterior pode
+ter produzido efeito remoto sem confirmacao local duravel.
+
+O Retry Coordinator agora opera em single-flight por instancia, impedindo duas
+execucoes simultaneas no mesmo processo.
+
+`remoteStorageEnabled=true` permanece bloqueado ate a prova server-side de:
+
+`acaoId + evidenciaId + sha256 -> mesma objectKey`
+
+e de PUT idempotente para o mesmo snapshot.

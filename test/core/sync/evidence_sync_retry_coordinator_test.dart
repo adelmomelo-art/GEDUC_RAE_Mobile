@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_access_broker.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_access_models.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_remote_operation.dart';
+import 'package:geduc_rae_mobile/core/storage/evidence_upload_identity.dart';
 import 'package:geduc_rae_mobile/core/storage/remote_evidence_models.dart';
 import 'package:geduc_rae_mobile/core/storage/remote_evidence_transport.dart';
 import 'package:geduc_rae_mobile/core/storage/remote_evidence_upload_exception.dart';
@@ -52,6 +55,11 @@ void main() {
         expiresAt: agora.add(const Duration(minutes: 10)),
         objectKey: key,
         requiredHeaders: const {'Content-Type': 'image/jpeg'},
+        uploadIdentity: const EvidenceUploadIdentity(
+          acaoId: 'acao-1',
+          evidenciaId: 'ev-1',
+          sha256: sha,
+        ),
       );
     }
 
@@ -62,6 +70,7 @@ void main() {
       RemoteEvidenceUploadResult? uploadResult,
       Object? uploadError,
       EvidenceSyncRetryPolicy? policy,
+      EvidenceSyncConnectivityProbe? connectivity,
     }) {
       final store = _FakeStore(initial);
       final broker = _FakeBroker(accessGrant ?? grant());
@@ -91,7 +100,7 @@ void main() {
       );
 
       final retryCoordinator = EvidenceSyncRetryCoordinator(
-        connectivity: _FakeConnectivity(connected),
+        connectivity: connectivity ?? _FakeConnectivity(connected),
         grantCoordinator: grantCoordinator,
         uploadCoordinator: uploadCoordinator,
         store: store,
@@ -121,6 +130,31 @@ void main() {
       expect(h.transport.calls, 0);
       expect(h.store.saveCalls, 0);
       expect(h.store.current!.attemptCount, 0);
+    });
+
+    test('single-flight rejeita segundo ciclo enquanto o primeiro esta ativo',
+        () async {
+      final controlled = _ControlledConnectivity();
+      final h = harness(
+        initial: job(),
+        connectivity: controlled,
+      );
+
+      final first = h.coordinator.processarProxima();
+      await controlled.entered.future;
+
+      final second = await h.coordinator.processarProxima();
+
+      expect(second.status, EvidenceSyncCycleStatus.alreadyProcessing);
+      expect(h.broker.calls, 0);
+      expect(h.transport.calls, 0);
+
+      controlled.release.complete();
+      final firstResult = await first;
+
+      expect(firstResult.status, EvidenceSyncCycleStatus.synced);
+      expect(h.broker.calls, 1);
+      expect(h.transport.calls, 1);
     });
 
     test('falha retryable agenda primeira tentativa com 30 segundos',
@@ -295,6 +329,20 @@ class _Harness {
   final _FakeStore store;
   final _FakeBroker broker;
   final _FakeTransport transport;
+}
+
+class _ControlledConnectivity implements EvidenceSyncConnectivityProbe {
+  final Completer<void> entered = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<bool> possuiRede() async {
+    if (!entered.isCompleted) {
+      entered.complete();
+    }
+    await release.future;
+    return true;
+  }
 }
 
 class _FakeConnectivity implements EvidenceSyncConnectivityProbe {

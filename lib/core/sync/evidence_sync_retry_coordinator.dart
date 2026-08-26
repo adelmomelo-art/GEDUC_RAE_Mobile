@@ -10,6 +10,7 @@ import 'evidence_sync_upload_coordinator.dart';
 enum EvidenceSyncCycleStatus {
   noCandidate,
   networkUnavailable,
+  alreadyProcessing,
   synced,
   retryScheduled,
   blocked,
@@ -52,7 +53,24 @@ class EvidenceSyncRetryCoordinator {
   final EvidenceSyncRetryPolicy _policy;
   final DateTime Function() _clock;
 
+  bool _processing = false;
+
   Future<EvidenceSyncCycleResult> processarProxima() async {
+    if (_processing) {
+      return const EvidenceSyncCycleResult(
+        status: EvidenceSyncCycleStatus.alreadyProcessing,
+      );
+    }
+
+    _processing = true;
+    try {
+      return await _processarProximaInterno();
+    } finally {
+      _processing = false;
+    }
+  }
+
+  Future<EvidenceSyncCycleResult> _processarProximaInterno() async {
     if (!await _connectivity.possuiRede()) {
       return const EvidenceSyncCycleResult(
         status: EvidenceSyncCycleStatus.networkUnavailable,

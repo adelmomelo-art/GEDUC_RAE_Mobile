@@ -1,4 +1,5 @@
 import 'evidence_remote_operation.dart';
+import 'evidence_upload_identity.dart';
 
 class EvidenceReadAccessRequest {
   const EvidenceReadAccessRequest({
@@ -27,17 +28,18 @@ class EvidenceUploadAccessRequest {
   final int tamanhoBytes;
   final String sha256;
 
-  bool get valido =>
-      acaoId.trim().isNotEmpty &&
-      evidenciaId.trim().isNotEmpty &&
-      contentType.trim().isNotEmpty &&
-      tamanhoBytes > 0 &&
-      _sha256Valido(sha256);
+  EvidenceUploadIdentity get identity => EvidenceUploadIdentity(
+        acaoId: acaoId,
+        evidenciaId: evidenciaId,
+        sha256: sha256,
+      );
 
-  static bool _sha256Valido(String valor) {
-    final normalizado = valor.trim().toLowerCase();
-    return RegExp(r'^[a-f0-9]{64}$').hasMatch(normalizado);
-  }
+  String get idempotencyKey => identity.idempotencyKey;
+
+  bool get valido =>
+      identity.valido &&
+      contentType.trim().isNotEmpty &&
+      tamanhoBytes > 0;
 }
 
 class EvidenceAccessGrant {
@@ -47,19 +49,15 @@ class EvidenceAccessGrant {
     required this.expiresAt,
     required this.objectKey,
     this.requiredHeaders = const <String, String>{},
+    this.uploadIdentity,
   });
 
   final Uri uri;
   final EvidenceRemoteOperation operation;
   final DateTime expiresAt;
-
-  /// Identificador remoto autorizado pela fronteira confiavel.
-  ///
-  /// O cliente nao deve reconstruir, substituir ou derivar esta chave a partir
-  /// da URL assinada.
   final String objectKey;
-
   final Map<String, String> requiredHeaders;
+  final EvidenceUploadIdentity? uploadIdentity;
 
   bool validoEm(DateTime instante) {
     final agoraUtc = instante.toUtc();
@@ -76,5 +74,19 @@ class EvidenceAccessGrant {
     required DateTime instante,
   }) {
     return operation == operacaoEsperada && validoEm(instante);
+  }
+
+  bool validoUploadPara({
+    required EvidenceUploadIdentity identity,
+    required DateTime instante,
+  }) {
+    final binding = uploadIdentity;
+    return validoPara(
+          operacaoEsperada: EvidenceRemoteOperation.upload,
+          instante: instante,
+        ) &&
+        identity.valido &&
+        binding != null &&
+        binding.equivalenteA(identity);
   }
 }

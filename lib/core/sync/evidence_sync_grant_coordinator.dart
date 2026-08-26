@@ -1,6 +1,5 @@
 import '../storage/evidence_access_broker.dart';
 import '../storage/evidence_access_models.dart';
-import '../storage/evidence_remote_operation.dart';
 import 'evidence_sync_job.dart';
 import 'evidence_sync_orchestrator.dart';
 
@@ -14,10 +13,6 @@ class EvidenceSyncGrantPreparation {
   final EvidenceAccessGrant grant;
 }
 
-/// Coordena somente a aquisicao de autorizacao temporaria para upload.
-///
-/// Esta etapa nao executa transporte, nao persiste grant, nao marca sync e nao
-/// decide ACL. A autoridade permanece no backend representado pelo broker.
 class EvidenceSyncGrantCoordinator {
   EvidenceSyncGrantCoordinator({
     required EvidenceSyncOrchestrator orchestrator,
@@ -38,9 +33,7 @@ class EvidenceSyncGrantCoordinator {
     }
 
     if (!_broker.enabled) {
-      throw StateError(
-        'Broker de acesso remoto a evidencias esta desabilitado.',
-      );
+      throw StateError('Broker de acesso remoto a evidencias esta desabilitado.');
     }
 
     if (!job.valido) {
@@ -66,18 +59,15 @@ class EvidenceSyncGrantCoordinator {
     final grant = await _broker.requestUploadAccess(request);
     final agora = _clock().toUtc();
 
-    if (!grant.validoPara(
-      operacaoEsperada: EvidenceRemoteOperation.upload,
+    if (!grant.validoUploadPara(
+      identity: request.identity,
       instante: agora,
     )) {
       throw StateError(
-        'Broker retornou grant invalido para upload de evidencia.',
+        'Broker retornou grant sem binding valido para o snapshot solicitado.',
       );
     }
 
-    return EvidenceSyncGrantPreparation(
-      job: job,
-      grant: grant,
-    );
+    return EvidenceSyncGrantPreparation(job: job, grant: grant);
   }
 }

@@ -1921,3 +1921,48 @@ limites definidos no R5.4/R5.5:
 - falhas definitivas sao bloqueadas;
 - efeito remoto incerto preserva a mesma identidade para reconciliacao;
 - sucesso final continua exigindo confirmacao persistida.
+
+## AUD-L2-R5.5-F — Fechamento de idempotencia e integracao
+
+**Data:** 26/08/2026
+**Baseline:** `07886ffc59823dbfc3b7cdd754d0a51dff45c979`
+**Branch:** `audit/aud-l2-r5-5-f-idempotency-closure`
+
+Implementado:
+
+- `EvidenceUploadIdentity`;
+- `idempotencyKey` canonica no request;
+- binding de identidade no grant de upload;
+- validacao fail-closed no Grant Coordinator;
+- single-flight local no Retry Coordinator;
+- testes de binding ausente/divergente;
+- teste de concorrencia local.
+
+Regra bloqueante: o backend remoto real deve garantir
+
+`acaoId + evidenciaId + sha256 -> mesma objectKey`
+
+antes de `remoteStorageEnabled` poder ser habilitado.
+
+### Validacao final R5.5-F
+
+- Grant Coordinator: aprovado;
+- Retry Coordinator: aprovado;
+- regressao `test/core/sync`: aprovada;
+- regressao `test/core/storage`: aprovada;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo final: 9 caminhos.
+
+### Parecer
+
+AUD-L2-R5.5-F: **HOMOLOGADO LOCALMENTE**.
+
+Fica registrado como gate bloqueante que o backend remoto devera garantir:
+
+`acaoId + evidenciaId + sha256 -> mesma objectKey autoritativa`
+
+antes da habilitacao de `remoteStorageEnabled`.
+
+O single-flight implementado nesta etapa e local ao processo e nao substitui
+qualquer mecanismo futuro de coordenacao distribuida.

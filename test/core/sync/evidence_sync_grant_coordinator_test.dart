@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_access_broker.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_access_models.dart';
 import 'package:geduc_rae_mobile/core/storage/evidence_remote_operation.dart';
+import 'package:geduc_rae_mobile/core/storage/evidence_upload_identity.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_grant_coordinator.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_job.dart';
 import 'package:geduc_rae_mobile/core/sync/evidence_sync_orchestrator.dart';
@@ -36,6 +37,8 @@ void main() {
       String objectKey = 'evidencias/acao-1/ev-1.jpg',
       String scheme = 'https',
       String host = 'storage.example.test',
+      EvidenceUploadIdentity? uploadIdentity,
+      bool semUploadIdentity = false,
     }) {
       return EvidenceAccessGrant(
         uri: Uri(
@@ -47,6 +50,14 @@ void main() {
         expiresAt: expiresAt ?? agora.add(const Duration(minutes: 5)),
         objectKey: objectKey,
         requiredHeaders: const {'Content-Type': 'image/jpeg'},
+        uploadIdentity: semUploadIdentity
+            ? null
+            : uploadIdentity ??
+                EvidenceUploadIdentity(
+                  acaoId: 'acao-1',
+                  evidenciaId: 'ev-1',
+                  sha256: 'a' * 64,
+                ),
       );
     }
 
@@ -111,6 +122,11 @@ void main() {
         enabled: true,
         grant: uploadGrant(
           objectKey: 'evidencias/acao-77/ev-99.png',
+          uploadIdentity: EvidenceUploadIdentity(
+            acaoId: 'acao-77',
+            evidenciaId: 'ev-99',
+            sha256: 'b' * 64,
+          ),
         ),
       );
 
@@ -130,6 +146,10 @@ void main() {
       expect(request.contentType, 'image/png');
       expect(request.tamanhoBytes, 9876);
       expect(request.sha256, 'b' * 64);
+      expect(
+        request.idempotencyKey,
+        'evidence-upload-v1:acao-77:ev-99:${'b' * 64}',
+      );
       expect(preparation?.job, same(expectedJob));
       expect(
         preparation?.grant.objectKey,
@@ -227,6 +247,56 @@ void main() {
         throwsA(isA<StateError>()),
       );
 
+      expect(store.saveCalls, 0);
+    });
+
+    test('grant sem binding de upload e recusado pelo sync', () async {
+      final store = _FakeEvidenceSyncStore([job()]);
+      final broker = _FakeEvidenceAccessBroker(
+        enabled: true,
+        grant: uploadGrant(semUploadIdentity: true),
+      );
+
+      await expectLater(
+        EvidenceSyncGrantCoordinator(
+          orchestrator: EvidenceSyncOrchestrator(
+            store: store,
+            clock: () => agora,
+          ),
+          broker: broker,
+          clock: () => agora,
+        ).prepararProximaTentativa(),
+        throwsA(isA<StateError>()),
+      );
+      expect(broker.uploadCalls, 1);
+      expect(store.saveCalls, 0);
+    });
+
+    test('grant de outro snapshot e recusado', () async {
+      final store = _FakeEvidenceSyncStore([job()]);
+      final broker = _FakeEvidenceAccessBroker(
+        enabled: true,
+        grant: uploadGrant(
+          uploadIdentity: EvidenceUploadIdentity(
+            acaoId: 'acao-1',
+            evidenciaId: 'ev-1',
+            sha256: 'c' * 64,
+          ),
+        ),
+      );
+
+      await expectLater(
+        EvidenceSyncGrantCoordinator(
+          orchestrator: EvidenceSyncOrchestrator(
+            store: store,
+            clock: () => agora,
+          ),
+          broker: broker,
+          clock: () => agora,
+        ).prepararProximaTentativa(),
+        throwsA(isA<StateError>()),
+      );
+      expect(broker.uploadCalls, 1);
       expect(store.saveCalls, 0);
     });
 

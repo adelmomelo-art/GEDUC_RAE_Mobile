@@ -1,4 +1,4 @@
-# AUD-L2-R5.6-A Ã¢â‚¬â€ Preparation Contract
+# AUD-L2-R5.6-A - Preparation Contract
 
 ## Objetivo
 

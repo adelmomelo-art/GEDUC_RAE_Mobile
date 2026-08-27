@@ -2034,3 +2034,37 @@ execucoes simultaneas no mesmo processo.
 `acaoId + evidenciaId + sha256 -> mesma objectKey`
 
 e de PUT idempotente para o mesmo snapshot.
+
+## AUD-L2-R5.6-A — Preparation Contract
+
+### Fronteira de preparacao
+
+A preparacao de evidencias passa a possuir uma fronteira arquitetural explicita
+entre o original local e os bytes destinados ao upload.
+
+O original permanece preservado como evidencia operacional/auditavel. Qualquer
+transformacao deve produzir um artefato derivado em caminho separado.
+
+### Ordem obrigatoria do snapshot remoto
+
+`original -> prepare -> freeze prepared bytes -> metadata -> identity -> queue`
+
+O SHA-256 usado por `EvidenceUploadIdentity` deve representar exatamente os
+bytes preparados que serao enviados. Calcular o hash antes de compressao,
+resize, conversao ou normalizacao e proibido.
+
+### Guard fail-closed
+
+`EvidencePreparationGuard` rejeita:
+
+- request incompleto;
+- artifact incompleto;
+- artifact associado a outro original;
+- artifact que reutiliza o mesmo caminho do original.
+
+### Limites
+
+R5.6-A nao adiciona biblioteca concreta de compressao, nao altera o
+`EvidenciaStorageService`, nao integra a fila e nao habilita storage remoto.
+
+`remoteStorageEnabled=true` continua bloqueado.

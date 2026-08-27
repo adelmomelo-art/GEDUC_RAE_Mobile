@@ -1,4 +1,4 @@
-# AUD-L2-R5.6-A â€” Preparation Contract
+# AUD-L2-R5.6-A Ã¢â‚¬â€ Preparation Contract
 
 ## Objetivo
 
@@ -83,7 +83,7 @@ Fluxo futuro obrigatorio:
 - R5.6-C: integracao preparation -> metadata -> fila e lifecycle;
 - R5.7: testes integrados/homologacao.
 
-Status: HOMOLOGADO LOCALMENTE - NAO COMMITADO / NAO PUBLICADO.
+Status: HOMOLOGADO E INTEGRADO AO MAIN - PR #57 / MERGE fa6a0dd3f2cef51652a01e8955b2daacc95eb725.
 
 ## Homologacao final
 

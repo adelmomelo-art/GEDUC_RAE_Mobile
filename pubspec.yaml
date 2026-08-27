@@ -37,6 +37,7 @@ dependencies:
   # Fotos
   image_picker: ^1.1.2
 
+  image: 4.9.2
   # Permissões
   permission_handler: ^11.3.1
 

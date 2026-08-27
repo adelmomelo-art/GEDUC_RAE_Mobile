@@ -1966,3 +1966,36 @@ antes da habilitacao de `remoteStorageEnabled`.
 
 O single-flight implementado nesta etapa e local ao processo e nao substitui
 qualquer mecanismo futuro de coordenacao distribuida.
+
+### AUD-L2-R5.6-A — Preparation Contract
+
+Baseline: `4058bab930259ffaa4d862bf4367b236b1caabe4`.
+
+Foi introduzida a fronteira provider-neutral de preparacao de evidencias,
+preservando o original local e exigindo artefato derivado separado antes do
+calculo de SHA-256/tamanho/MIME.
+
+Escopo propositalmente sem compressao concreta, sem alteracao do fluxo
+operacional, sem provider remoto e sem habilitacao de storage.
+
+#### AUD-L2-R5.6-A - Homologacao local
+
+Status: HOMOLOGADO LOCALMENTE - NAO COMMITADO / NAO PUBLICADO.
+
+Gates aprovados:
+
+- EvidencePreparation test;
+- regressao core/storage;
+- flutter analyze com 0 issues;
+- git diff --check;
+- exatamente 6 caminhos no escopo.
+
+Decisao preservada:
+
+`original -> prepare -> metadata -> identity -> queue`
+
+SHA-256, tamanho e MIME destinados ao sync devem representar
+exatamente o artefato preparado. O original local nao deve ser
+sobrescrito ou comprimido in-place.
+
+Proxima etapa autorizavel: AUD-L2-R5.6-B.

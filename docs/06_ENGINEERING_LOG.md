@@ -2084,3 +2084,74 @@ AUD-L2-R5.6-C: **HOMOLOGADO LOCALMENTE PARA PRE-COMMIT**.
 
 A proxima fronteira permitida e o commit controlado, mediante autorizacao
 separada.
+
+<!-- AUD-L2-R5.7-BEGIN -->
+## 2026-08-28 - AUD-L2-R5.7 - Integrated Evidence Tests & Final Homologation
+
+Baseline: `c151d3934c47809f0a788192e365f5e5b3467a89`
+
+Branch: `audit/aud-l2-r5-7-integrated-tests-final-homologation`
+
+### Resultado
+
+R5.7 homologado tecnicamente como pacote exclusivamente de testes, sem
+alteracao de codigo de producao.
+
+Arquivos de teste introduzidos:
+
+- `test/support/evidence/evidence_r5_7_test_harness.dart`;
+- `test/core/integration/evidence_r5_7_happy_path_test.dart`;
+- `test/core/integration/evidence_r5_7_retry_reconciliation_test.dart`;
+- `test/core/integration/evidence_r5_7_fail_closed_test.dart`.
+
+O harness exercita componentes reais de preparacao, enrollment, store,
+orchestrator, grant, upload, retry e pipeline. Somente conectividade, broker,
+transporte e relogio sao doubles controlados.
+
+### Cenarios homologados
+
+- happy path completo ate `synced` + cleanup;
+- preservacao byte a byte do original;
+- metadata/SHA do preparado;
+- persistencia duravel do job;
+- retry com backoff;
+- reconciliation com chave confiavel;
+- idempotency key estavel entre tentativas;
+- rede indisponivel sem efeitos remotos;
+- grant com identity binding divergente;
+- objectKey divergente durante reconciliation;
+- retorno remoto incoerente;
+- conflito concorrente de estado apos efeito remoto;
+- lifecycle recusando remocao fora da raiz preparada.
+
+### Correcoes de homologacao
+
+R1: adicionados imports explicitos de
+`evidence_sync_retry_coordinator.dart` nos tres testes que usam
+`EvidenceSyncCycleStatus`.
+
+R2: removido import nao utilizado de `evidence_sync_store.dart` no harness.
+
+Ambas as correcoes ficaram restritas a teste.
+
+### Gates finais
+
+- Gate 1 - integrados R5.7: APROVADO;
+- Gate 2 - `test/core/storage`: APROVADO;
+- Gate 3 - `test/core/sync`: APROVADO;
+- Gate 4 - `flutter test`: APROVADO;
+- Gate 5 - `flutter analyze`: APROVADO / 0 issues;
+- Gate 6 - `git diff --check`: APROVADO;
+- Gate 7 - escopo final: APROVADO.
+
+### Fronteiras preservadas
+
+- `remoteStorageEnabled=false`;
+- armazenamento local obrigatorio/local-first;
+- zero alteracoes de producao;
+- nenhuma credencial permanente no cliente;
+- backend/R2/B2/Firebase Storage fora do escopo;
+- commit, push, PR e merge nao executados nesta fronteira.
+
+Parecer: AUD-L2-R5.7 HOMOLOGADO TECNICAMENTE E DOCUMENTADO PARA PRE-COMMIT.
+<!-- AUD-L2-R5.7-END -->

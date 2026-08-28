@@ -1999,3 +1999,88 @@ exatamente o artefato preparado. O original local nao deve ser
 sobrescrito ou comprimido in-place.
 
 Proxima etapa autorizavel: AUD-L2-R5.6-B.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.6-C - Pipeline Integration & Artifact Lifecycle
+
+**Data:** 28/08/2026
+**Branch:** `audit/aud-l2-r5-6-c-pipeline-integration-artifact-lifecycle`
+**Baseline:** `66e51c788d7ca40b0fe7b306521c1df13fdbab84`
+**Tipo:** integracao de pipeline / lifecycle local / fail-closed
+**Status:** HOMOLOGADO LOCALMENTE - PRE-COMMIT
+
+### Diagnostico
+
+O fluxo local ja preservava o original e o R5.6-B ja produzia JPEG
+deterministico separado. Faltava conectar esse artefato ao snapshot duravel da
+fila sem misturar metadata do original com metadata do upload.
+
+### Implementacao
+
+Foram introduzidos:
+
+- `ApplicationDocumentsEvidencePreparedPathResolver`;
+- `EvidencePreparedArtifactLifecycle`;
+- `EvidenceUploadEnrollmentCoordinator`;
+- `EvidenceSyncPipelineCoordinator`;
+- quatro suites de testes R5.6-C.
+
+### Contrato consolidado
+
+`original -> prepare -> metadata prepared -> EvidenceSyncJob -> store -> R5.5`
+
+O job duravel passa a ser a fonte local do snapshot destinado ao transporte.
+
+Re-enrollment identico nao reseta `retryScheduled`, `blocked` ou `synced`.
+
+Snapshot divergente para a mesma identidade falha fechado e nao sobrescreve o
+job existente.
+
+Cleanup so ocorre depois de sync duravelmente confirmado. Falha ao remover o
+derivado nao reabre upload.
+
+### Protecao de lifecycle
+
+A remocao e restrita a `.jpg` sob:
+
+`GEDUC/evidence_upload_artifacts/`
+
+Arquivos do original em `GEDUC/evidencias/` ficam fora dessa raiz e sao
+recusados pelo lifecycle.
+
+### Ajuste R1A
+
+O primeiro gate encontrou falha em teste de snapshot divergente.
+
+A implementacao de producao ja executava o cleanup antes do `StateError`.
+O defeito era o teste nao aguardar explicitamente o Future antes de verificar a
+existencia do arquivo.
+
+R1A substituiu o assert assincrono pela forma `await expectLater(...)`.
+
+Nenhum codigo de producao foi alterado no R1A.
+
+### Validacao final pre-commit
+
+```text
+Teste exato R1A:               aprovado
+Testes focais R5.6-C:          aprovados
+Regressao test/core/storage:   aprovada
+Regressao test/core/sync:      aprovada
+flutter test completo:         aprovado
+flutter analyze:               0 issues
+git diff --check:              aprovado
+Escopo final:                  11 caminhos Git
+Commit:                        nao executado
+Push:                          nao executado
+PR:                            nao executado
+remoteStorageEnabled:          inalterado / false
+R5.7:                          nao iniciado
+```
+
+### Parecer
+
+AUD-L2-R5.6-C: **HOMOLOGADO LOCALMENTE PARA PRE-COMMIT**.
+
+A proxima fronteira permitida e o commit controlado, mediante autorizacao
+separada.

@@ -2068,3 +2068,109 @@ R5.6-A nao adiciona biblioteca concreta de compressao, nao altera o
 `EvidenciaStorageService`, nao integra a fila e nao habilita storage remoto.
 
 `remoteStorageEnabled=true` continua bloqueado.
+------------------------------------------------------------------------
+
+## AUD-L2-R5.6-C - Pipeline Integration & Artifact Lifecycle
+
+**Data:** 28/08/2026
+**Baseline:** `66e51c788d7ca40b0fe7b306521c1df13fdbab84`
+**Status:** Homologado localmente - pre-commit
+
+R5.6-C conecta a preparacao deterministica ao snapshot duravel de
+sincronizacao sem alterar a evidencia original.
+
+```text
+EvidenciaModel / original
+          |
+          v
+EvidencePreparer
+          |
+          v
+prepared JPEG imutavel
+          |
+          v
+EvidenceMetadataCalculator
+          |
+          v
+EvidenceSyncJob
+          |
+          v
+EvidenceSyncStore
+          |
+          v
+R5.5
+          |
+          v
+synced duravel
+          |
+          v
+EvidencePreparedArtifactLifecycle
+```
+
+### Separacao de identidades locais
+
+O `EvidenciaModel` continua representando o original operacional/auditavel.
+
+O `EvidenceSyncJob` representa o snapshot exato dos bytes de transporte:
+
+- `localFilePath` = artefato preparado;
+- `contentType` = MIME preparado;
+- `tamanhoBytes` = bytes preparados;
+- `sha256` = hash dos bytes preparados.
+
+E proibido misturar caminho do original com hash/tamanho/MIME do derivado.
+
+### Enrollment
+
+`EvidenceUploadEnrollmentCoordinator` executa:
+
+`prepare -> metadata -> job -> durable store`
+
+antes de qualquer grant ou upload.
+
+Re-enrollment identico preserva o estado duravel existente. Snapshot divergente
+para a mesma identidade falha fechado e nao sobrescreve a fila.
+
+### Path resolver
+
+`ApplicationDocumentsEvidencePreparedPathResolver` usa raiz dedicada:
+
+`GEDUC/evidence_upload_artifacts/{acaoId}/{evidenciaId}/evidence-photo-jpeg-v1.jpg`
+
+O caminho e deterministico e identificadores inseguros sao rejeitados.
+
+### Lifecycle
+
+`EvidencePreparedArtifactLifecycle` so remove arquivos `.jpg` contidos na raiz
+dedicada de artefatos preparados.
+
+O original em `GEDUC/evidencias/...` nao e elegivel para cleanup.
+
+`EvidenceSyncPipelineCoordinator` solicita cleanup somente depois de resultado
+`EvidenceSyncCycleStatus.synced` acompanhado de job em
+`EvidenceSyncJobStatus.synced`.
+
+Falha de cleanup e reportada separadamente e nunca converte um upload
+confirmado em nova tentativa.
+
+### Limites
+
+- `EvidenceSyncOrchestrator`, Grant Coordinator, Upload Coordinator e Retry
+  Coordinator permanecem com suas responsabilidades R5.5;
+- `SyncService` de RAE nao absorve a fila de evidencias;
+- nenhuma composicao produtiva na UI e ativada nesta etapa;
+- `remoteStorageEnabled` permanece `false`;
+- nenhum Worker, R2, B2, Firebase Storage ou segredo entra no cliente;
+- R5.7 permanece separado.
+
+### Homologacao pre-commit
+
+- testes focais R5.6-C: aprovados;
+- regressao `test/core/storage`: aprovada;
+- regressao `test/core/sync`: aprovada;
+- `flutter test` completo: aprovado;
+- `flutter analyze`: 0 issues;
+- `git diff --check`: aprovado;
+- escopo Git: exatamente 11 caminhos;
+- R1A corrigiu exclusivamente sincronizacao de teste async;
+- codigo de producao permaneceu inalterado no R1A.

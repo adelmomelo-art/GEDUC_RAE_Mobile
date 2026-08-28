@@ -2174,3 +2174,77 @@ confirmado em nova tentativa.
 - escopo Git: exatamente 11 caminhos;
 - R1A corrigiu exclusivamente sincronizacao de teste async;
 - codigo de producao permaneceu inalterado no R1A.
+
+<!-- AUD-L2-R5.7-BEGIN -->
+## AUD-L2-R5.7 - Homologacao integrada do subsistema de evidencias
+
+Status: HOMOLOGADO TECNICAMENTE / PRE-COMMIT.
+
+Baseline de abertura: `c151d3934c47809f0a788192e365f5e5b3467a89`.
+
+O R5.7 fecha a validacao transversal dos contratos de evidencias introduzidos
+nas etapas R5.4, R5.5 e R5.6 sem alterar codigo de producao.
+
+A composicao homologada em teste e:
+
+```text
+original local auditavel
+        |
+        v
+DeterministicImageEvidencePreparer
+        |
+        v
+artefato JPEG preparado
+        |
+        v
+EvidenceUploadEnrollmentCoordinator
+        |
+        v
+SharedPreferencesEvidenceSyncStore
+        |
+        v
+EvidenceSyncOrchestrator
+        |
+        v
+EvidenceSyncGrantCoordinator
+        |
+        v
+EvidenceSyncRetryCoordinator
+        |
+        +--> EvidenceSyncUploadCoordinator
+        |          |
+        |          v
+        |    RemoteEvidenceTransport
+        |
+        v
+EvidenceSyncPipelineCoordinator
+        |
+        v
+cleanup somente apos synced duravel
+```
+
+A homologacao integrada prova happy path, persistencia duravel,
+retry/reconciliation, identidade/idempotencia, bloqueio fail-closed,
+confirmacao concorrente e protecao do original.
+
+Somente conectividade, broker, transporte remoto e relogio sao controlados
+como doubles de teste. Os componentes do pipeline de producao sao exercitados
+diretamente.
+
+Invariantes arquiteturais preservadas:
+
+- original local continua obrigatorio e auditavel;
+- artefato preparado e separado do original;
+- snapshot de upload usa SHA-256/tamanho/MIME dos bytes preparados;
+- retry preserva o preparado;
+- cleanup so ocorre depois de `synced` duravel;
+- lifecycle nao pode remover o original;
+- `remoteStorageEnabled` permanece `false`;
+- nenhuma credencial permanente de storage entra no cliente;
+- nenhuma integracao R2/B2/Firebase Storage foi ativada;
+- zero arquivos de producao foram alterados pelo R5.7.
+
+Gates finais homologados: testes integrados R5.7, regressao storage,
+regressao sync, `flutter test` completo, `flutter analyze` com 0 issues,
+`git diff --check` e validacao exata de escopo.
+<!-- AUD-L2-R5.7-END -->

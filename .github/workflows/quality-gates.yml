@@ -170,3 +170,5 @@ jobs:
         run: npm run test:migration:mig001e4
       - name: Test MIG-001E5 rollback recovery
         run: npm run test:migration:mig001e5
+      - name: Test MIG-001E6 full load planner
+        run: npm run test:migration:mig001e6

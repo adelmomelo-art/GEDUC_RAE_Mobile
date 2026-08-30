@@ -165,3 +165,6 @@ jobs:
 
       - name: Test MIG-001E3 migration importer
         run: npm run test:migration:mig001e3
+
+      - name: Test MIG-001E4 controlled pilot
+        run: npm run test:migration:mig001e4

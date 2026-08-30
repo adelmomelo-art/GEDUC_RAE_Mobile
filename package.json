@@ -6,7 +6,8 @@
     "audit:scripts": "npm approve-scripts --allow-scripts-pending",
     "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js\"",
     "test:rules:acl-stage4a": "firebase emulators:exec --only firestore --project geduc-rae-acl001-stage4a-test \"node --test test/firestore_acl001_stage4a.rules.test.js\"",
-    "test:migration:mig001e3": "node --test test/mig001e3_importer.test.mjs test/mig001e3_firestore_rest.test.mjs"
+    "test:migration:mig001e3": "node --test test/mig001e3_importer.test.mjs test/mig001e3_firestore_rest.test.mjs",
+    "test:migration:mig001e4": "node --test test/mig001e4_pilot.test.mjs"
   },
   "allowScripts": {
     "@firebase/util@1.12.1": true,

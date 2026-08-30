@@ -168,3 +168,5 @@ jobs:
 
       - name: Test MIG-001E4 controlled pilot
         run: npm run test:migration:mig001e4
+      - name: Test MIG-001E5 rollback recovery
+        run: npm run test:migration:mig001e5

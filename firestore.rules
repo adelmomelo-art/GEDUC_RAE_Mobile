@@ -252,6 +252,23 @@ service cloud.firestore {
     }
 
     // Toda coleção não inventariada permanece explicitamente bloqueada.
+    // MIG-001E2 - migration collections are server-only.
+    // Flutter/Web clients have no access during migration.
+    match /migration_google_forms_staging/{recordId} {
+      allow read, write: if false;
+    }
+
+    match /migration_batches/{batchId} {
+      allow read, write: if false;
+
+      match /changes/{changeId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /acoes_historicas/{historicalId} {
+      allow read, write: if false;
+    }
     match /{documento=**} {
       allow read, write: if false;
     }

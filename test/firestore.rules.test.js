@@ -345,3 +345,74 @@ test('catálogos de equipe e projeto são mantidos somente pelo admin', async ()
     }),
   );
 });
+test('MIG-001E2 denies client access to migration and historical collections', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    const db = contexto.firestore();
+
+    await db.collection('migration_google_forms_staging').doc('seed').set({
+      recordType: 'migration_staging_google_forms',
+      marker: 'seed',
+    });
+
+    await db.collection('migration_batches').doc('seed').set({
+      batchId: 'seed',
+      status: 'started',
+    });
+
+    await db
+      .collection('migration_batches')
+      .doc('seed')
+      .collection('changes')
+      .doc('change-1')
+      .set({
+        operation: 'CREATE',
+        marker: 'seed',
+      });
+
+    await db.collection('acoes_historicas').doc('seed').set({
+      recordType: 'historico_google_forms',
+      readOnly: true,
+      numeroRAE: null,
+    });
+  });
+
+  const targets = [
+    {
+      collectionPath: 'migration_google_forms_staging',
+      existingId: 'seed',
+      createId: 'novo-staging',
+    },
+    {
+      collectionPath: 'migration_batches',
+      existingId: 'seed',
+      createId: 'novo-batch',
+    },
+    {
+      collectionPath: 'migration_batches/seed/changes',
+      existingId: 'change-1',
+      createId: 'novo-change',
+    },
+    {
+      collectionPath: 'acoes_historicas',
+      existingId: 'seed',
+      createId: 'novo-historico',
+    },
+  ];
+
+  for (const uid of [null, 'admin', 'gestor', 'agente']) {
+    const db = banco(uid);
+
+    for (const target of targets) {
+      const collection = db.collection(target.collectionPath);
+      const existing = collection.doc(target.existingId);
+
+      await assertFails(existing.get());
+      await assertFails(collection.get());
+      await assertFails(
+        collection.doc(target.createId).set({ marker: 'create-denied' }),
+      );
+      await assertFails(existing.update({ marker: 'update-denied' }));
+      await assertFails(existing.delete());
+    }
+  }
+});

@@ -9,7 +9,8 @@
     "test:migration:mig001e3": "node --test test/mig001e3_importer.test.mjs test/mig001e3_firestore_rest.test.mjs",
     "test:migration:mig001e4": "node --test test/mig001e4_pilot.test.mjs",
 
-    "test:migration:mig001e5": "node --test test/mig001e5_recovery.test.mjs"
+    "test:migration:mig001e5": "node --test test/mig001e5_recovery.test.mjs",
+    "test:migration:mig001e6": "node --test test/mig001e6_full_load.test.mjs"
   },
   "allowScripts": {
     "@firebase/util@1.12.1": true,

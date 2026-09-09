@@ -1,0 +1,37 @@
+PLATAFORMA FENIX — AUD-L2-FC1.3
+SUPPLY CHAIN DEPENDENCY REMEDIATION
+
+DATA
+09/09/2026
+
+BASELINE
+c9345e8350533ccb7da831a84070df2d0ed29ee1
+
+BRANCH
+audit/aud-l2-fc1-supply-chain-remediation
+
+ALTERADOS
+package.json
+package-lock.json
+docs/06_ENGINEERING_LOG.md
+
+CRIADOS
+README_AUD-L2-FC1.3.md
+MANIFESTO_AUD-L2-FC1.3.txt
+
+RESULTADO
+firebase-tools 15.30.0
+fast-uri 3.1.7 override
+js-yaml 4.3.2 override
+0 high
+0 critical
+12 moderate
+production audit: 0 vulnerabilities
+Firestore Rules: 22/22
+MIG-001E3: 25/25
+MIG-001E4: 15/15
+MIG-001E5: 16/16
+MIG-001E6: 12/12
+Flutter Analyze: 0 issues
+Flutter Test: 919/919
+git diff --check: PASS

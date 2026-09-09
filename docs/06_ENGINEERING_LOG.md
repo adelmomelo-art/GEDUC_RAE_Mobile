@@ -2155,3 +2155,37 @@ Ambas as correcoes ficaram restritas a teste.
 
 Parecer: AUD-L2-R5.7 HOMOLOGADO TECNICAMENTE E DOCUMENTADO PARA PRE-COMMIT.
 <!-- AUD-L2-R5.7-END -->
+
+---
+
+## 2026-09-09 — AUD-L2-FC1.3 — Supply Chain Dependency Remediation
+
+Durante o fechamento consolidado da Auditoria Lote 2 foi identificado novo
+risco transitivo na toolchain Node: 14 vulnerabilidades, sendo 12 moderate e
+2 high.
+
+O audit de produção comprovou zero vulnerabilidades, restringindo o achado às
+devDependencies de engenharia.
+
+Remediação homologada:
+
+- firebase-tools 15.25.1 -> 15.30.0;
+- fast-uri -> 3.1.7 por override compatível;
+- js-yaml -> 4.3.2 por override compatível;
+- zero high;
+- zero critical;
+- 12 moderate residuais;
+- audit de produção com zero vulnerabilidades;
+- Firestore Rules 22/22;
+- MIG-001E3 25/25;
+- MIG-001E4 15/15;
+- MIG-001E5 16/16;
+- MIG-001E6 12/12;
+- Flutter Test 919/919;
+- Flutter Analyze 0 issues;
+- git diff --check aprovado.
+
+Nenhum código Flutter, regra Firestore, App Check, Storage, RBAC ou identidade
+Android foi alterado.
+
+Status: HOMOLOGADO LOCALMENTE — PRE-COMMIT.

@@ -1,0 +1,40 @@
+PLATAFORMA FENIX
+AUD-L2-FC1.4
+RECONCILIACAO DOCUMENTAL
+
+DATA
+09/09/2026
+
+BASELINE
+0cd1c3dc2c4d37046042c921e41921106a707f77
+
+BRANCH
+audit/aud-l2-fc1-documentation-reconciliation
+
+POLITICA
+Preservar documentos historicos.
+Nao reescrever em massa status PRE-COMMIT ou NAO PUBLICADO.
+README_AUD-L2-FC1.4.md passa a ser a referencia consolidada atual.
+
+CLASSIFICACAO
+DRIFT DOCUMENTAL HISTORICO - NAO BLOQUEANTE
+
+ESTADO
+R1: concluido e publicado
+R2: concluido e publicado
+R3: concluido e publicado
+R4: concluido e publicado
+R5: concluido e publicado na fronteira tecnica
+R6: concluido e publicado
+R7: implementacoes tecnicas incorporadas
+FC1.3: publicado pelo PR 73
+
+PENDENCIAS TRANSFERIDAS
+Android applicationId definitivo
+Firebase App Check Console e enforcement
+Storage remoto, regras e testes
+Homologacao PDF Unicode
+Saneamento da fonte historica
+
+PROXIMO
+AUD-L2-FC1.5 - Parecer Final e Encerramento Formal

@@ -2189,3 +2189,40 @@ Nenhum código Flutter, regra Firestore, App Check, Storage, RBAC ou identidade
 Android foi alterado.
 
 Status: HOMOLOGADO LOCALMENTE — PRE-COMMIT.
+
+---
+
+## 2026-09-09 - AUD-L2-FC1.4 - Reconciliacao Documental
+
+A auditoria documental de fechamento do Lote 2 identificou drift historico em registros PRE-COMMIT / NAO PUBLICADO.
+
+Os documentos historicos foram deliberadamente preservados.
+
+Foi adotada reconciliacao por camada consolidada, sem reescrita em massa dos READMEs de etapa.
+
+Estado consolidado:
+
+- R1: concluido e publicado;
+- R2: concluido e publicado;
+- R3: concluido e publicado;
+- R4: concluido e publicado;
+- R5: concluido e publicado na fronteira tecnica homologada;
+- R6: concluido e publicado;
+- R7: implementacoes tecnicas incorporadas a main, com requisitos produtivos transferidos;
+- AUD-L2-FC1.3: publicado pelo PR #73.
+
+Pendencias transferidas:
+
+- applicationId Android definitivo;
+- Firebase App Check Console/enforcement;
+- Storage remoto, regras e testes;
+- homologacao PDF Unicode;
+- saneamento da fonte historica.
+
+A carga historica permanece SUSPENSA.
+
+Classificacao: DRIFT DOCUMENTAL HISTORICO - NAO BLOQUEANTE.
+
+Documento consolidado oficial: README_AUD-L2-FC1.4.md.
+
+Proxima etapa: AUD-L2-FC1.5 - Parecer Final e Encerramento Formal da Auditoria Lote 2.

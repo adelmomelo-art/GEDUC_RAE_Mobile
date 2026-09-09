@@ -8,7 +8,6 @@
     "test:rules:acl-stage4a": "firebase emulators:exec --only firestore --project geduc-rae-acl001-stage4a-test \"node --test test/firestore_acl001_stage4a.rules.test.js\"",
     "test:migration:mig001e3": "node --test test/mig001e3_importer.test.mjs test/mig001e3_firestore_rest.test.mjs",
     "test:migration:mig001e4": "node --test test/mig001e4_pilot.test.mjs",
-
     "test:migration:mig001e5": "node --test test/mig001e5_recovery.test.mjs",
     "test:migration:mig001e6": "node --test test/mig001e6_full_load.test.mjs"
   },
@@ -20,6 +19,10 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
-    "firebase-tools": "^15.25.1"
+    "firebase-tools": "^15.30.0"
+  },
+  "overrides": {
+    "fast-uri": "3.1.7",
+    "js-yaml": "4.3.2"
   }
 }

@@ -61,7 +61,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAAFn4dunRFlEhtJqytJJMq0ytD_7WhqFk',
-    appId: '1:906308539006:android:8d2c96fe7cc8c6ee97be2f',
+    appId: '1:906308539006:android:f3907c8047a7591497be2f',
     messagingSenderId: '906308539006',
     projectId: 'geduc-rae-mobile',
     storageBucket: 'geduc-rae-mobile.firebasestorage.app',

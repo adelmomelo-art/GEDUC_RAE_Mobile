@@ -1,0 +1,99 @@
+PLATAFORMA FENIX
+RR-001 - RELEASE READINESS - IDENTIDADE ANDROID
+
+DATA: 10/09/2026
+BASELINE: 24bdcab7fb9baf12326bfdaaab7db25f0ec1b84f
+BRANCH: release/rr-001-android-identity
+
+IDENTIDADE ANTERIOR: com.example.geduc_rae_mobile
+IDENTIDADE DEFINITIVA: br.gov.ce.fortaleza.amc.geduc
+
+FIREBASE PROJECT: geduc-rae-mobile
+FIREBASE ANDROID APP NOVO: 1:906308539006:android:f3907c8047a7591497be2f
+FIREBASE ANDROID APP LEGADO: 1:906308539006:android:8d2c96fe7cc8c6ee97be2f
+
+STATUS LOCAL:
+- RR-001A: CONCLUIDA
+- RR-001B: BLUEPRINT APROVADO
+- RR-001C: IMPLEMENTACAO E HOMOLOGACAO LOCAL CONCLUIDAS
+- RR-001C.15A: PREFLIGHT GIT PASS
+- RR-001C.15B: DOCUMENTACAO RECONCILIADA
+
+RESULTADOS:
+- namespace/applicationId/package Kotlin definitivos
+- MainActivity migrada
+- google-services.json oficial reconciliado
+- Firebase Web preservado
+- Firebase App legado preservado para rollback
+- keystore release existente preservada
+- nova keystore nao criada
+- assinatura release validada
+- flutter analyze 0 issues
+- flutter test aprovado
+- APK debug aprovado
+- APK release aprovado
+- package APK validado
+- Login e Home homologados no Samsung SM_A057M
+- persistencia de sessao homologada
+- OpenStreetMap + flutter_map homologados
+- tiles, zoom, arraste e localizacao homologados
+- Google Maps / Maps SDK / MAPS_API_KEY ausentes do runtime/config ativo
+- userAgentPackageName = br.gov.ce.fortaleza.amc.geduc
+- remoteStorageEnabled=false preservado
+- Firestore baseline preservada
+- App Check local preservado
+- segredos locais nao rastreados
+
+PENDENCIAS PRESERVADAS:
+- App Check produtivo / Play Integrity / enforcement: DEFERIDO
+- Firebase Storage produtivo / storage.rules: PENDENTE
+- OBS-REL-001 PDF Unicode: PENDENTE
+- compatibilidade futura Built-in Kotlin/KGP: PENDENTE
+- aviso CupertinoIcons do build release: AVALIAR EM FRENTE PROPRIA
+- migracao historica: SUSPENSA
+
+REGRAS:
+- nao apagar Firebase App legado nesta etapa
+- nao editar manualmente IDs Firebase
+- nao habilitar Storage
+- nao habilitar App Check enforcement
+- nao criar nova chave de assinatura
+- nao reintroduzir Google Maps
+- nao retomar migracao historica
+
+STATUS DE PRODUCAO: NAO AUTORIZADO
+
+FLUXO DE FECHAMENTO PF-ENG:
+CPB / ZIP -> REVISAO -> STAGING -> COMMIT -> PUSH -> PR -> QUALITY GATES -> MERGE -> POS-MERGE
+
+RECONCILIACAO FLUTTERFIRE FINAL:
+- FlutterFire CLI: 1.4.1
+- firebase.json Android: 1:906308539006:android:f3907c8047a7591497be2f
+- firebase.json Web: 1:906308539006:web:c332bfc83131398b97be2f
+- Firestore: PRESERVADO
+- Emulators: PRESERVADOS
+- Storage: NAO HABILITADO
+- firebase_options.dart homologado: PRESERVADO BYTE-A-BYTE
+- google-services.json homologado: PRESERVADO BYTE-A-BYTE
+
+CPB ANTERIOR SHA256: EC6073E934B388BC1D8FCD0FC089E710AE0E4C8817F2A12830CD39A5DB4F8E25
+CPB ANTERIOR STATUS: SUPERSEDIDO - NAO UTILIZAR
+
+ESCOPO DO CPB FINAL:
+- inclui evidence_storage_policy.dart
+- inclui remote_evidence_transport_test.dart
+- gerado somente apos reconciliacao final do firebase.json
+- SHA256 do ZIP registrado externamente apos geracao e auditoria
+
+AUDITORIA INDEPENDENTE CPB:
+- conteudo funcional: PASS
+- identidade Android: PASS
+- Firebase Android/Web: PASS
+- OpenStreetMap: PASS
+- App Check local: PASS
+- Storage desabilitado: PASS
+- segredos/keystore: AUSENTES
+- limpeza de fechamento: NECESSARIA E EXECUTADA
+
+CPB SEGUNDO CANDIDATO SHA256: D981DD1D8FB65E8B857B5874062D86E32711C9D3EA7052F832D6D1A02848B8BA
+CPB SEGUNDO CANDIDATO STATUS: SUPERSEDIDO POR LIMPEZA DE FECHAMENTO

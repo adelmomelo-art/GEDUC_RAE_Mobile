@@ -113,7 +113,7 @@ class _CioTerritorialMapPanelState extends State<CioTerritorialMapPanel> {
                     TileLayer(
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'br.gov.fortaleza.geduc_rae_mobile',
+                      userAgentPackageName: 'br.gov.ce.fortaleza.amc.geduc',
                       maxNativeZoom: 19,
                     ),
                   PolygonLayer(

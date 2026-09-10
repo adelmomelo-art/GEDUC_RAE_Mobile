@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:906308539006:android:f3907c8047a7591497be2f",
+        "android_client_info": {
+          "package_name": "br.gov.ce.fortaleza.amc.geduc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAFn4dunRFlEhtJqytJJMq0ytD_7WhqFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:906308539006:android:8d2c96fe7cc8c6ee97be2f",
         "android_client_info": {
           "package_name": "com.example.geduc_rae_mobile"

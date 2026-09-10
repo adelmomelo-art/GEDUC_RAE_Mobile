@@ -18,7 +18,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.geduc_rae_mobile"
+    namespace = "br.gov.ce.fortaleza.amc.geduc"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.geduc_rae_mobile"
+        applicationId = "br.gov.ce.fortaleza.amc.geduc"
 
         minSdk = 24
         targetSdk = 36

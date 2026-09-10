@@ -148,7 +148,7 @@ class _MapaLocalizacaoWidgetState extends State<MapaLocalizacaoWidget> {
                   TileLayer(
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'br.gov.fortaleza.geduc_rae_mobile',
+                    userAgentPackageName: 'br.gov.ce.fortaleza.amc.geduc',
                     maxNativeZoom: 19,
                   ),
                   if (widget.possuiLocalizacao)

@@ -1,0 +1,42 @@
+# CPB - ChatGPT Package Builder
+# PACOTE=RR-001-ANDROID-IDENTITY
+# DATA=2026-09-10
+# BASELINE=24bdcab7fb9baf12326bfdaaab7db25f0ec1b84f
+# BRANCH=release/rr-001-android-identity
+# IDENTIDADE=br.gov.ce.fortaleza.amc.geduc
+# PRODUCAO=NAO_AUTORIZADA
+# APP_CHECK_PRODUTIVO=DEFERIDO
+# STORAGE_REMOTO=DESABILITADO
+#
+# EXCLUSOES CONTROLADAS - registradas no Git, nao empacotaveis pelo CPB:
+# DELETED=android/app/src/main/kotlin/com/example/geduc_rae_mobile/MainActivity.kt
+# DELETED=android/local.defaults.properties
+# DELETED=android/secrets.defaults.properties
+# DELETED=android/secrets.properties.example
+#
+README_RR-001_ANDROID_IDENTITY.md
+MANIFESTO_RR-001_ANDROID_IDENTITY.txt
+android/app/build.gradle.kts
+android/app/google-services.json
+android/app/src/main/kotlin/br/gov/ce/fortaleza/amc/geduc/MainActivity.kt
+android/app/src/main/AndroidManifest.xml
+android/build.gradle.kts
+android/settings.gradle.kts
+lib/firebase_options.dart
+lib/modules/dashboard/widgets/cio_territorial_map_panel.dart
+lib/modules/localizacao/widgets/mapa_localizacao_widget.dart
+lib/core/security/firebase_app_check_bootstrap.dart
+lib/main.dart
+pubspec.yaml
+test/core/security/firebase_app_check_bootstrap_test.dart
+firebase.json
+firestore.rules
+lib/core/storage/evidence_storage_policy.dart
+test/core/storage/remote_evidence_transport_test.dart
+# FIREBASE_JSON_ANDROID=1:906308539006:android:f3907c8047a7591497be2f
+# FIREBASE_JSON_WEB=1:906308539006:web:c332bfc83131398b97be2f
+# CPB_ANTERIOR_SHA256=EC6073E934B388BC1D8FCD0FC089E710AE0E4C8817F2A12830CD39A5DB4F8E25
+# CPB_ANTERIOR_STATUS=SUPERSEDIDO_NAO_UTILIZAR
+# CPB_CANDIDATO_2_SHA256=D981DD1D8FB65E8B857B5874062D86E32711C9D3EA7052F832D6D1A02848B8BA
+# CPB_CANDIDATO_2_STATUS=SUPERSEDIDO_LIMPEZA_FECHAMENTO
+# CPB_FINAL_SHA256=REGISTRADO_EXTERNAMENTE_APOS_AUDITORIA

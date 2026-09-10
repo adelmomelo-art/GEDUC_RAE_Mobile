@@ -1,4 +1,4 @@
-package com.example.geduc_rae_mobile
+package br.gov.ce.fortaleza.amc.geduc
 
 import io.flutter.embedding.android.FlutterActivity
 

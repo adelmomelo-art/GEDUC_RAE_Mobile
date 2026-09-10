@@ -12,3 +12,13 @@ condition = "AND"
 regexTarget = "line"
 paths = ['^\Qandroid/app/google-services.json\E$']
 regexes = ['"current_key"\s*:\s*"AIza[0-9A-Za-z_-]{35}"']
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Firebase Android client API key in generated google-services.json"
+condition = "AND"
+regexTarget = "line"
+paths = ['^\Qandroid/app/google-services.json\E$']
+regexes = ['"current_key"\s*:\s*"AIza[0-9A-Za-z_-]{35}"']

@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/services/equipe_operacional_service.dart';
+import '../../core/services/projeto_catalog_service.dart';
 import '../../core/services/rae_coordinator_catalog.dart';
 import '../../data/models/membro_equipe_model.dart';
+import '../../data/models/projeto_model.dart';
 import '../../data/models/tipo_acao_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
@@ -16,32 +18,38 @@ class NovaAcaoPage extends StatefulWidget {
   const NovaAcaoPage({
     super.key,
     this.listarMembros,
+    this.listarTiposAcoes,
+    this.listarProjetos,
   });
 
   final Future<List<MembroEquipeModel>> Function()? listarMembros;
+  final Future<List<TipoAcaoModel>> Function()? listarTiposAcoes;
+  final ProjetoCatalogLoader? listarProjetos;
 
   @override
   State<NovaAcaoPage> createState() => _NovaAcaoPageState();
 }
 
 class _NovaAcaoPageState extends State<NovaAcaoPage> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final TextEditingController _nomeAcaoController = TextEditingController();
 
   DateTime dataSelecionada = DateTime.now();
   String? turno;
   TipoAcaoModel? tipoSelecionado;
+  ProjetoModel? projetoSelecionado;
   String? coordenadorId;
   String? coordenadorNome;
   bool acaoPlanejada = true;
   bool carregando = true;
 
   List<TipoAcaoModel> tiposAcoes = [];
+  List<ProjetoModel> projetos = [];
   List<RaeCoordinatorOption> coordenadores = [];
 
   bool get dadosCompletos =>
       turno != null &&
       tipoSelecionado != null &&
+      projetoSelecionado != null &&
       coordenadorId != null &&
       coordenadorNome != null;
 
@@ -49,13 +57,28 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     if (turno == null) {
       return 'Vamos registrar os dados iniciais da ação. Informe a data, o turno e o nome da ação.';
     }
+
     if (tipoSelecionado == null) {
       return 'O turno foi informado. Agora selecione o nome da ação educativa.';
     }
-    if (coordenadorId == null) {
-      return 'Os dados estão quase completos. Informe o coordenador responsável.';
+
+    final projeto = projetoSelecionado;
+
+    if (projeto == null) {
+      return 'Agora selecione o projeto ou ação institucional relacionado a este RAE.';
     }
-    return 'Tudo certo! Confira as informações e avance para a localização.';
+
+    final contexto = projeto.contextoFaixita.trim();
+
+    final orientacaoProjeto = contexto.isEmpty
+        ? 'Projeto ${projeto.nome} selecionado. Ainda não há descrição institucional cadastrada para esta iniciativa.'
+        : '${projeto.nome}: $contexto';
+
+    if (coordenadorId == null) {
+      return '$orientacaoProjeto Agora informe o coordenador responsável.';
+    }
+
+    return '$orientacaoProjeto Confira as informações e avance para a localização.';
   }
 
   @override
@@ -70,19 +93,41 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     super.dispose();
   }
 
+  Future<List<TipoAcaoModel>> _listarTiposAcoes() async {
+    final listarTiposAcoes = widget.listarTiposAcoes;
+
+    if (listarTiposAcoes != null) {
+      return listarTiposAcoes();
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('tipos_acoes')
+        .orderBy('nomeAcao')
+        .get();
+
+    return snapshot.docs
+        .map(
+          (doc) => TipoAcaoModel.fromMap(
+            doc.data(),
+          ),
+        )
+        .toList(growable: false);
+  }
+
   Future<void> carregarDados() async {
     try {
-      final tiposSnapshot =
-          await firestore.collection('tipos_acoes').orderBy('nomeAcao').get();
+      final tiposCarregados = (await _listarTiposAcoes())
+          .where((tipo) => tipo.ativo)
+          .toList(growable: false);
+
+      final projetosCarregados = await ProjetoCatalogService(
+        carregarProjetos: widget.listarProjetos,
+      ).listarAtivos();
+
       final membros = await (widget.listarMembros?.call() ??
           EquipeOperacionalService().listarMembros());
 
       if (!mounted) return;
-
-      final tiposCarregados = tiposSnapshot.docs
-          .map((doc) => TipoAcaoModel.fromMap(doc.data()))
-          .where((tipo) => tipo.ativo)
-          .toList();
 
       final coordenadoresCarregados =
           RaeCoordinatorCatalog.fromMembers(membros);
@@ -94,6 +139,17 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
         for (final tipo in tiposCarregados) {
           if (tipo.nomeAcao.trim() == acao.nomeAcao.trim()) {
             tipoRestaurado = tipo;
+            break;
+          }
+        }
+      }
+
+      ProjetoModel? projetoRestaurado;
+
+      if (acao != null && acao.projetoId.trim().isNotEmpty) {
+        for (final projeto in projetosCarregados) {
+          if (projeto.id.trim() == acao.projetoId.trim()) {
+            projetoRestaurado = projeto;
             break;
           }
         }
@@ -116,6 +172,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
 
       setState(() {
         tiposAcoes = tiposCarregados;
+        projetos = projetosCarregados;
         coordenadores = coordenadoresCarregados;
 
         if (acao != null) {
@@ -123,6 +180,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           turno = acao.turno.trim().isEmpty ? null : acao.turno;
           acaoPlanejada = acao.acaoPlanejada;
           tipoSelecionado = tipoRestaurado;
+          projetoSelecionado = projetoRestaurado;
           coordenadorId = coordenadorIdRestaurado;
           coordenadorNome = coordenadorNomeRestaurado;
 
@@ -169,6 +227,29 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     });
   }
 
+  Future<void> pesquisarProjeto() async {
+    final selecionado = await showModalBottomSheet<ProjetoModel>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _PesquisaProjetoSheet(
+        projetos: projetos,
+      ),
+    );
+
+    if (selecionado == null || !mounted) {
+      return;
+    }
+
+    setState(
+      () => projetoSelecionado = selecionado,
+    );
+
+    context.read<AcaoController>().selecionarProjetoInstitucional(
+          selecionado.id,
+        );
+  }
+
   void avancar() {
     if (turno == null) {
       _mensagem('Informe o turno da ação.');
@@ -176,6 +257,10 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     }
     if (tipoSelecionado == null) {
       _mensagem('Informe o nome da ação.');
+      return;
+    }
+    if (projetoSelecionado == null) {
+      _mensagem('Informe o projeto ou ação institucional.');
       return;
     }
     if (coordenadorId == null || coordenadorNome == null) {
@@ -324,6 +409,33 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                         suffixIcon: Icon(Icons.search),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      key: const Key('projeto-institucional-field'),
+                      onTap: pesquisarProjeto,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Projeto/Ação institucional *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.account_tree_outlined),
+                          suffixIcon: Icon(Icons.search),
+                        ),
+                        child: Text(
+                          projetoSelecionado == null
+                              ? 'Toque para pesquisar'
+                              : projetoSelecionado!.nome,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    if (projetoSelecionado != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${projetoSelecionado!.codigo} • '
+                        '${projetoSelecionado!.categoria}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -732,6 +844,108 @@ class _ResumoItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PesquisaProjetoSheet extends StatefulWidget {
+  const _PesquisaProjetoSheet({
+    required this.projetos,
+  });
+
+  final List<ProjetoModel> projetos;
+
+  @override
+  State<_PesquisaProjetoSheet> createState() => _PesquisaProjetoSheetState();
+}
+
+class _PesquisaProjetoSheetState extends State<_PesquisaProjetoSheet> {
+  final TextEditingController _pesquisaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pesquisaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resultados = ProjetoCatalogService.pesquisarLocal(
+      widget.projetos,
+      _pesquisaController.text,
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        top: 16,
+        right: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+      ),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.75,
+        child: Column(
+          children: [
+            Text(
+              'Selecionar projeto ou ação institucional',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key(
+                'pesquisa-projeto-institucional',
+              ),
+              controller: _pesquisaController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar projeto',
+                hintText: 'Nome, código, categoria, alias ou palavra-chave',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: resultados.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Nenhum projeto institucional encontrado.',
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: resultados.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, index) {
+                        final projeto = resultados[index];
+
+                        final detalhes = <String>[
+                          projeto.codigo,
+                          projeto.categoria,
+                        ]
+                            .where(
+                              (item) => item.trim().isNotEmpty,
+                            )
+                            .join(' • ');
+
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(
+                              Icons.account_tree_outlined,
+                            ),
+                          ),
+                          title: Text(projeto.nome),
+                          subtitle: detalhes.isEmpty ? null : Text(detalhes),
+                          onTap: () => Navigator.of(context).pop(projeto),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,13 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/services/equipe_operacional_service.dart';
+import '../../core/services/rae_coordinator_catalog.dart';
+import '../../data/models/membro_equipe_model.dart';
 import '../../data/models/tipo_acao_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class NovaAcaoPage extends StatefulWidget {
-  const NovaAcaoPage({super.key});
+  const NovaAcaoPage({
+    super.key,
+    this.listarMembros,
+  });
+
+  final Future<List<MembroEquipeModel>> Function()? listarMembros;
 
   @override
   State<NovaAcaoPage> createState() => _NovaAcaoPageState();
@@ -29,7 +37,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
   bool carregando = true;
 
   List<TipoAcaoModel> tiposAcoes = [];
-  List<Map<String, dynamic>> coordenadores = [];
+  List<RaeCoordinatorOption> coordenadores = [];
 
   bool get dadosCompletos =>
       turno != null &&
@@ -66,8 +74,8 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     try {
       final tiposSnapshot =
           await firestore.collection('tipos_acoes').orderBy('nomeAcao').get();
-      final coordenadoresSnapshot =
-          await firestore.collection('coordenadores').orderBy('nome').get();
+      final membros = await (widget.listarMembros?.call() ??
+          EquipeOperacionalService().listarMembros());
 
       if (!mounted) return;
 
@@ -76,10 +84,8 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           .where((tipo) => tipo.ativo)
           .toList();
 
-      final coordenadoresCarregados = coordenadoresSnapshot.docs
-          .map((doc) => doc.data())
-          .where((coord) => coord['ativo'] == true)
-          .toList();
+      final coordenadoresCarregados =
+          RaeCoordinatorCatalog.fromMembers(membros);
 
       final acao = context.read<AcaoController>().acaoAtual;
 
@@ -97,13 +103,14 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       String? coordenadorNomeRestaurado;
 
       if (acao != null && acao.coordenadorId.trim().isNotEmpty) {
-        for (final coordenador in coordenadoresCarregados) {
-          if (coordenador['id'] == acao.coordenadorId) {
-            coordenadorIdRestaurado = acao.coordenadorId;
-            coordenadorNomeRestaurado =
-                (coordenador['nome'] ?? acao.coordenadorNome).toString();
-            break;
-          }
+        final coordenadorRestaurado = RaeCoordinatorCatalog.resolveExisting(
+          coordenadorId: acao.coordenadorId,
+          coordenadores: coordenadoresCarregados,
+        );
+
+        if (coordenadorRestaurado != null) {
+          coordenadorIdRestaurado = coordenadorRestaurado.usuarioId;
+          coordenadorNomeRestaurado = coordenadorRestaurado.nome;
         }
       }
 
@@ -356,20 +363,20 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                       ),
                       items: coordenadores.map((coord) {
                         return DropdownMenuItem<String>(
-                          value: coord['id'],
+                          value: coord.usuarioId,
                           child: Text(
-                            coord['nome'] ?? '',
+                            coord.nome,
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
                       }).toList(),
                       onChanged: (valor) {
                         final selecionado = coordenadores.firstWhere(
-                          (coord) => coord['id'] == valor,
+                          (coord) => coord.usuarioId == valor,
                         );
                         setState(() {
-                          coordenadorId = valor;
-                          coordenadorNome = selecionado['nome'];
+                          coordenadorId = selecionado.usuarioId;
+                          coordenadorNome = selecionado.nome;
                         });
                       },
                     ),

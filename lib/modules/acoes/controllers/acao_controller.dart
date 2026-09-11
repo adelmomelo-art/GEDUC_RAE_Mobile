@@ -271,6 +271,31 @@ class AcaoController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selecionarProjetoInstitucional(
+    String projetoId,
+  ) {
+    if (acaoAtual == null) {
+      criarRascunhoInicial();
+    }
+
+    final projetoNormalizado = projetoId.trim();
+
+    final acao = acaoAtual!;
+
+    if (acao.projetoId == projetoNormalizado) {
+      return;
+    }
+
+    acaoAtual = acao.copyWith(
+      projetoId: projetoNormalizado,
+      aclClassificacaoCompleta: false,
+      aclScopeKey: '',
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
   void preencherLocalizacao({
     required String endereco,
     required String bairro,

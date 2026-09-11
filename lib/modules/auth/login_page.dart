@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../core/config/app_environment.dart';
+import '../../core/version/app_build_info.dart';
 import 'widgets/faixita_card.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,12 +18,40 @@ class _LoginPageState extends State<LoginPage> {
   bool carregando = false;
   bool ocultarSenha = true;
 
+  AppBuildInfo? _buildInfo;
+  bool _buildInfoLoadFailed = false;
+
   static const Color verdeInstitucional = Color(0xFF007A78);
   static const Color laranjaInstitucional = Color(0xFFF37021);
   static const Color azulSuave = Color(0xFFEAF7F7);
 
   static const String fundoLogin = 'assets/images/login_beira_mar.webp';
   static const String faixitaLogin = 'assets/images/faixita_login.png';
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarBuildInfo();
+  }
+
+  Future<void> _carregarBuildInfo() async {
+    try {
+      final info = await AppBuildInfo.load();
+
+      if (!mounted) return;
+
+      setState(() {
+        _buildInfo = info;
+        _buildInfoLoadFailed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _buildInfoLoadFailed = true;
+      });
+    }
+  }
 
   Future<void> fazerLogin() async {
     try {
@@ -506,6 +536,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _versaoCard() {
+    final environment = AppEnvironmentConfig.current;
+    final version = _buildInfo?.versionLabel ??
+        (_buildInfoLoadFailed ? 'não disponível' : 'carregando...');
+    final build = _buildInfo?.buildLabel ??
+        (_buildInfoLoadFailed ? 'não disponível' : 'carregando...');
+
     return Container(
       constraints: const BoxConstraints(minHeight: 86),
       padding: const EdgeInsets.all(14),
@@ -513,10 +549,10 @@ class _LoginPageState extends State<LoginPage> {
         color: Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 22,
             backgroundColor: azulSuave,
             child: Icon(
@@ -524,13 +560,13 @@ class _LoginPageState extends State<LoginPage> {
               color: verdeInstitucional,
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Versão: 0.30.0\n'
-              'Build: CE-030\n'
-              'Ambiente de homologação',
-              style: TextStyle(
+              'Versão: $version\n'
+              'Build: $build\n'
+              'Ambiente: ${AppEnvironmentConfig.label(environment)}',
+              style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
                 fontWeight: FontWeight.w500,
@@ -602,9 +638,11 @@ class _LoginPageState extends State<LoginPage> {
     final itens = [
       _rodapeItem(
         icone: Icons.verified_user_outlined,
-        titulo: 'Ambiente: HOMOLOGAÇÃO',
-        texto:
-            'Os dados inseridos não são compartilhados com o ambiente de produção.',
+        titulo:
+            'Ambiente: ${AppEnvironmentConfig.label(AppEnvironmentConfig.current)}',
+        texto: AppEnvironmentConfig.description(
+          AppEnvironmentConfig.current,
+        ),
       ),
       _rodapeItem(
         icone: Icons.lock_outline,
@@ -640,12 +678,9 @@ class _LoginPageState extends State<LoginPage> {
         final largura = constraints.maxWidth;
         final isWide = largura >= 1050;
         final compacto = largura < 850;
-        final larguraCard = isWide
-            ? 620.0
-            : largura.clamp(320.0, 700.0) - 32;
-        final larguraFaixita = isWide
-            ? 340.0
-            : largura.clamp(320.0, 620.0) - 32;
+        final larguraCard = isWide ? 620.0 : largura.clamp(320.0, 700.0) - 32;
+        final larguraFaixita =
+            isWide ? 340.0 : largura.clamp(320.0, 620.0) - 32;
 
         return SafeArea(
           child: SingleChildScrollView(

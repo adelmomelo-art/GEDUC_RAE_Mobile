@@ -1,0 +1,18 @@
+# REL-VERSION-001 - Versionamento automatico e identificacao de ambiente
+# Baseline: d98b41b4fc812c8af4bb5263cff573613d93d44e
+# Branch: release/rel-version-001-versionamento
+# Version: 1.0.0+2
+# APP_ENV: development | homologacao | production
+# Default: NAO DEFINIDO
+
+BLUEPRINT_REL-VERSION-001.md
+PLANO_REL-VERSION-001.md
+README_REL-VERSION-001.md
+lib/core/config/app_environment.dart
+lib/core/version/app_build_info.dart
+lib/modules/auth/login_page.dart
+pubspec.yaml
+pubspec.lock
+test/core/config/app_environment_test.dart
+test/core/version/app_build_info_test.dart
+tools/manifestos/REL-VERSION-001.txt

@@ -31,8 +31,6 @@ class NovaAcaoPage extends StatefulWidget {
 }
 
 class _NovaAcaoPageState extends State<NovaAcaoPage> {
-  final TextEditingController _nomeAcaoController = TextEditingController();
-
   DateTime dataSelecionada = DateTime.now();
   String? turno;
   TipoAcaoModel? tipoSelecionado;
@@ -48,18 +46,13 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
 
   bool get dadosCompletos =>
       turno != null &&
-      tipoSelecionado != null &&
       projetoSelecionado != null &&
       coordenadorId != null &&
       coordenadorNome != null;
 
   String get mensagemFaxita {
     if (turno == null) {
-      return 'Vamos registrar os dados iniciais da ação. Informe a data, o turno e o nome da ação.';
-    }
-
-    if (tipoSelecionado == null) {
-      return 'O turno foi informado. Agora selecione o nome da ação educativa.';
+      return 'Vamos registrar os dados iniciais da ação. Informe a data, o turno e o projeto ou ação institucional.';
     }
 
     final projeto = projetoSelecionado;
@@ -85,12 +78,6 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
   void initState() {
     super.initState();
     carregarDados();
-  }
-
-  @override
-  void dispose() {
-    _nomeAcaoController.dispose();
-    super.dispose();
   }
 
   Future<List<TipoAcaoModel>> _listarTiposAcoes() async {
@@ -155,6 +142,16 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
         }
       }
 
+      if (projetoRestaurado != null) {
+        tipoRestaurado = _tipoCompatibilidadeProjeto(
+          projetoRestaurado,
+          catalogoLegado: tiposCarregados,
+          legadoPreferido: tipoRestaurado,
+          publicoEstimadoAtual: acao?.publicoEstimado ?? 0,
+          publicoMinimoAtual: acao?.publicoMinimo ?? 0,
+        );
+      }
+
       String? coordenadorIdRestaurado;
       String? coordenadorNomeRestaurado;
 
@@ -183,8 +180,6 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           projetoSelecionado = projetoRestaurado;
           coordenadorId = coordenadorIdRestaurado;
           coordenadorNome = coordenadorNomeRestaurado;
-
-          _nomeAcaoController.text = tipoRestaurado?.nomeAcao ?? acao.nomeAcao;
         }
 
         carregando = false;
@@ -211,20 +206,48 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     setState(() => dataSelecionada = data);
   }
 
-  Future<void> pesquisarTipoAcao() async {
-    final selecionado = await showModalBottomSheet<TipoAcaoModel>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => _PesquisaTipoAcaoSheet(tiposAcoes: tiposAcoes),
+  TipoAcaoModel _tipoCompatibilidadeProjeto(
+    ProjetoModel projeto, {
+    required Iterable<TipoAcaoModel> catalogoLegado,
+    TipoAcaoModel? legadoPreferido,
+    required int publicoEstimadoAtual,
+    required int publicoMinimoAtual,
+  }) {
+    TipoAcaoModel? legado = legadoPreferido;
+
+    if (legado == null) {
+      final nomesProjeto = <String>[
+        projeto.nome,
+        ...projeto.aliases,
+      ].map((item) => item.trim().toLowerCase()).toList();
+
+      for (final tipo in catalogoLegado) {
+        final nomeTipo = tipo.nomeAcao.trim().toLowerCase();
+
+        final corresponde = nomesProjeto.any(
+          (nomeProjeto) =>
+              nomeProjeto == nomeTipo ||
+              nomeProjeto.endsWith(' $nomeTipo') ||
+              nomeTipo.endsWith(' $nomeProjeto'),
+        );
+
+        if (corresponde) {
+          legado = tipo;
+          break;
+        }
+      }
+    }
+
+    return TipoAcaoModel(
+      id: legado?.id ?? projeto.id,
+      nomeAcao: projeto.nome,
+      tipoAcao: projeto.categoria,
+      publicoEstimadoPadrao:
+          legado?.publicoEstimadoPadrao ?? publicoEstimadoAtual,
+      publicoMinimoPadrao: legado?.publicoMinimoPadrao ?? publicoMinimoAtual,
+      materiaisSugeridos: legado?.materiaisSugeridos ?? const <String>[],
+      ativo: true,
     );
-
-    if (selecionado == null || !mounted) return;
-
-    setState(() {
-      tipoSelecionado = selecionado;
-      _nomeAcaoController.text = selecionado.nomeAcao;
-    });
   }
 
   Future<void> pesquisarProjeto() async {
@@ -241,9 +264,19 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       return;
     }
 
-    setState(
-      () => projetoSelecionado = selecionado,
+    final acaoAtual = context.read<AcaoController>().acaoAtual;
+
+    final tipoCompatibilidade = _tipoCompatibilidadeProjeto(
+      selecionado,
+      catalogoLegado: tiposAcoes,
+      publicoEstimadoAtual: acaoAtual?.publicoEstimado ?? 0,
+      publicoMinimoAtual: acaoAtual?.publicoMinimo ?? 0,
     );
+
+    setState(() {
+      projetoSelecionado = selecionado;
+      tipoSelecionado = tipoCompatibilidade;
+    });
 
     context.read<AcaoController>().selecionarProjetoInstitucional(
           selecionado.id,
@@ -255,10 +288,7 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       _mensagem('Informe o turno da ação.');
       return;
     }
-    if (tipoSelecionado == null) {
-      _mensagem('Informe o nome da ação.');
-      return;
-    }
+
     if (projetoSelecionado == null) {
       _mensagem('Informe o projeto ou ação institucional.');
       return;
@@ -268,13 +298,16 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       return;
     }
 
+    final projeto = projetoSelecionado!;
+    final tipoCompatibilidade = tipoSelecionado!;
+
     context.read<AcaoController>().preencherDadosAcao(
           dataAcao: dataSelecionada,
           turno: turno!,
-          nomeAcao: tipoSelecionado!.nomeAcao,
-          tipoAcao: tipoSelecionado!.tipoAcao,
-          publicoEstimado: tipoSelecionado!.publicoEstimadoPadrao,
-          publicoMinimo: tipoSelecionado!.publicoMinimoPadrao,
+          nomeAcao: projeto.nome,
+          tipoAcao: projeto.categoria,
+          publicoEstimado: tipoCompatibilidade.publicoEstimadoPadrao,
+          publicoMinimo: tipoCompatibilidade.publicoMinimoPadrao,
           acaoPlanejada: acaoPlanejada,
           coordenadorId: coordenadorId,
           coordenadorNome: coordenadorNome,
@@ -395,19 +428,6 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                             value: 'Madrugada', child: Text('Madrugada')),
                       ],
                       onChanged: (valor) => setState(() => turno = valor),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nomeAcaoController,
-                      readOnly: true,
-                      onTap: pesquisarTipoAcao,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome da ação *',
-                        hintText: 'Toque para pesquisar',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.campaign_outlined),
-                        suffixIcon: Icon(Icons.search),
-                      ),
                     ),
                     const SizedBox(height: 16),
                     InkWell(
@@ -699,12 +719,12 @@ class _ResumoCard extends StatelessWidget {
               ),
               _ResumoItem(
                 icone: Icons.campaign_outlined,
-                rotulo: 'Nome da ação',
+                rotulo: 'Projeto / Ação institucional',
                 valor: tipo.nomeAcao,
               ),
               _ResumoItem(
                 icone: Icons.category_outlined,
-                rotulo: 'Tipo',
+                rotulo: 'Categoria',
                 valor: tipo.tipoAcao,
               ),
             ];

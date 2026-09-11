@@ -30,10 +30,10 @@ class AdminModuleCatalog {
     AdminModule(
       id: 'tipos-acoes',
       titulo: 'Tipos de Ações',
-      descricao: 'Administre os tipos de ações educativas disponíveis.',
+      descricao: 'Legado interno — substituído pelo catálogo institucional.',
       icone: Icons.assignment_outlined,
       rota: AppRoutes.tiposAcoesPath,
-      status: AdminModuleStatus.emEvolucao,
+      status: AdminModuleStatus.indisponivel,
       permissao: Permission.gerenciarTiposAcoes,
     ),
     AdminModule(

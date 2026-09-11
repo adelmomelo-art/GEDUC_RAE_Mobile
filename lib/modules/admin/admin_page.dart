@@ -10,8 +10,9 @@ class AdminPage extends StatelessWidget {
     String titulo,
     String subtitulo,
     String rota,
-    Color cor,
-  ) {
+    Color cor, {
+    bool habilitado = true,
+  }) {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
@@ -28,10 +29,15 @@ class AdminPage extends StatelessWidget {
           ),
         ),
         subtitle: Text(subtitulo),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: () {
-          context.go(rota);
-        },
+        trailing: Icon(
+          habilitado ? Icons.arrow_forward_ios : Icons.lock_outline,
+        ),
+        enabled: habilitado,
+        onTap: habilitado
+            ? () {
+                context.go(rota);
+              }
+            : null,
       ),
     );
   }
@@ -80,9 +86,10 @@ class AdminPage extends StatelessWidget {
             context,
             Icons.assignment,
             'Tipos de ações',
-            'Configurar metas padrão',
+            'Legado interno — substituído pelo catálogo institucional',
             '/tipos-acoes',
             Colors.green,
+            habilitado: false,
           ),
           menu(
             context,

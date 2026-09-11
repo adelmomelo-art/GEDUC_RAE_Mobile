@@ -156,15 +156,34 @@ service cloud.firestore {
       return request.resource.data.keys().hasAll([
           'nome',
           'codigo',
+          'categoria',
+          'descricao',
+          'objetivo',
+          'publicoAlvo',
+          'palavrasChave',
+          'aliases',
           'regionalIds',
           'equipeIds',
+          'ordem',
           'ativo'
         ])
         && request.resource.data.nome is string
         && request.resource.data.nome.size() > 0
         && request.resource.data.codigo is string
+        && request.resource.data.codigo.size() > 0
+        && request.resource.data.categoria is string
+        && request.resource.data.categoria.size() > 0
+        && request.resource.data.descricao is string
+        && request.resource.data.objetivo is string
+        && request.resource.data.publicoAlvo is string
+        && request.resource.data.palavrasChave is list
+        && request.resource.data.aliases is list
+        // Compatibilidade legada. Listas vazias sao validas e nao
+        // representam vinculo operacional obrigatorio do RAE.
         && request.resource.data.regionalIds is list
         && request.resource.data.equipeIds is list
+        && request.resource.data.ordem is int
+        && request.resource.data.ordem >= 0
         && request.resource.data.ativo is bool;
     }
 

@@ -370,20 +370,38 @@ class AcaoController extends ChangeNotifier {
     required int equipeTerceirizada,
     required List<String> agenteEquipeIds,
     required List<String> agenteEquipeNomes,
+    List<String> agenteEquipeUserIds = const <String>[],
     required List<String> terceirizadoEquipeIds,
     required List<String> terceirizadoEquipeNomes,
+    List<String> terceirizadoEquipeUserIds = const <String>[],
     required List<String> materialUtilizadoIds,
     required bool coberturaMidia,
   }) {
     if (acaoAtual == null) criarRascunhoInicial();
+
+    final agentesCanonicos = agenteEquipeUserIds
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final terceirizadosCanonicos = terceirizadoEquipeUserIds
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
 
     acaoAtual = acaoAtual!.copyWith(
       agentesTransito: agentesTransito,
       equipeTerceirizada: equipeTerceirizada,
       agenteEquipeIds: agenteEquipeIds,
       agenteEquipeNomes: agenteEquipeNomes,
+      agenteEquipeUserIds: agentesCanonicos,
       terceirizadoEquipeIds: terceirizadoEquipeIds,
       terceirizadoEquipeNomes: terceirizadoEquipeNomes,
+      terceirizadoEquipeUserIds: terceirizadosCanonicos,
       materialUtilizadoIds: materialUtilizadoIds,
       coberturaMidia: coberturaMidia,
     );

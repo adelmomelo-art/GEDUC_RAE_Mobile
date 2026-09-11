@@ -118,8 +118,16 @@ class AcaoModel {
   final int equipeTerceirizada;
   final List<String> agenteEquipeIds;
   final List<String> agenteEquipeNomes;
+
+  /// Identidades canônicas dos usuários que integraram a equipe da ação.
+  ///
+  /// [agenteEquipeIds] e [terceirizadoEquipeIds] continuam preservando os
+  /// identificadores dos documentos da Equipe Operacional para histórico e UI.
+  final List<String> agenteEquipeUserIds;
+
   final List<String> terceirizadoEquipeIds;
   final List<String> terceirizadoEquipeNomes;
+  final List<String> terceirizadoEquipeUserIds;
   final List<String> materialUtilizadoIds;
   final bool coberturaMidia;
 
@@ -226,8 +234,10 @@ class AcaoModel {
     this.equipeTerceirizada = 0,
     this.agenteEquipeIds = const [],
     this.agenteEquipeNomes = const [],
+    this.agenteEquipeUserIds = const [],
     this.terceirizadoEquipeIds = const [],
     this.terceirizadoEquipeNomes = const [],
+    this.terceirizadoEquipeUserIds = const [],
     this.materialUtilizadoIds = const [],
     this.coberturaMidia = false,
     this.houveParticipacaoOutroOrgao = false,
@@ -298,8 +308,10 @@ class AcaoModel {
     int? equipeTerceirizada,
     List<String>? agenteEquipeIds,
     List<String>? agenteEquipeNomes,
+    List<String>? agenteEquipeUserIds,
     List<String>? terceirizadoEquipeIds,
     List<String>? terceirizadoEquipeNomes,
+    List<String>? terceirizadoEquipeUserIds,
     List<String>? materialUtilizadoIds,
     bool? coberturaMidia,
     bool? houveParticipacaoOutroOrgao,
@@ -373,10 +385,13 @@ class AcaoModel {
       equipeTerceirizada: equipeTerceirizada ?? this.equipeTerceirizada,
       agenteEquipeIds: agenteEquipeIds ?? this.agenteEquipeIds,
       agenteEquipeNomes: agenteEquipeNomes ?? this.agenteEquipeNomes,
+      agenteEquipeUserIds: agenteEquipeUserIds ?? this.agenteEquipeUserIds,
       terceirizadoEquipeIds:
           terceirizadoEquipeIds ?? this.terceirizadoEquipeIds,
       terceirizadoEquipeNomes:
           terceirizadoEquipeNomes ?? this.terceirizadoEquipeNomes,
+      terceirizadoEquipeUserIds:
+          terceirizadoEquipeUserIds ?? this.terceirizadoEquipeUserIds,
       materialUtilizadoIds: materialUtilizadoIds ?? this.materialUtilizadoIds,
       coberturaMidia: coberturaMidia ?? this.coberturaMidia,
       houveParticipacaoOutroOrgao:
@@ -451,8 +466,10 @@ class AcaoModel {
         'equipeTerceirizada': equipeTerceirizada,
         'agenteEquipeIds': agenteEquipeIds,
         'agenteEquipeNomes': agenteEquipeNomes,
+        'agenteEquipeUserIds': agenteEquipeUserIds,
         'terceirizadoEquipeIds': terceirizadoEquipeIds,
         'terceirizadoEquipeNomes': terceirizadoEquipeNomes,
+        'terceirizadoEquipeUserIds': terceirizadoEquipeUserIds,
         'materialUtilizadoIds': materialUtilizadoIds,
         'coberturaMidia': coberturaMidia,
         'houveParticipacaoOutroOrgao': houveParticipacaoOutroOrgao,
@@ -533,8 +550,10 @@ class AcaoModel {
       equipeTerceirizada: _inteiro(map['equipeTerceirizada']),
       agenteEquipeIds: _listaTexto(map['agenteEquipeIds']),
       agenteEquipeNomes: _listaTexto(map['agenteEquipeNomes']),
+      agenteEquipeUserIds: _listaTexto(map['agenteEquipeUserIds']),
       terceirizadoEquipeIds: _listaTexto(map['terceirizadoEquipeIds']),
       terceirizadoEquipeNomes: _listaTexto(map['terceirizadoEquipeNomes']),
+      terceirizadoEquipeUserIds: _listaTexto(map['terceirizadoEquipeUserIds']),
       materialUtilizadoIds: _listaTexto(map['materialUtilizadoIds']),
       coberturaMidia: _booleano(map['coberturaMidia']),
       houveParticipacaoOutroOrgao:

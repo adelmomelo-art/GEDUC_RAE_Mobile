@@ -2279,3 +2279,46 @@ Conclusao:
 PARECER FAVORAVEL AO ENCERRAMENTO FORMAL DA AUDITORIA LOTE 2.
 
 Proxima frente: SEGURANCA E RELEASE READINESS.
+
+## 2026-09-12 15:14:52 -03:00 — SEC-R2-002A — Evidence Worker Backend R2
+
+Data: 2026-09-12 15:14:52 -03:00
+Sprint: SEC-R2-002A — A.1 a A.6A-R1
+Branch: security/sec-r2-002a-backend-r2
+Tipo: implementação de segurança backend
+Resumo: criação e homologação do Evidence Worker R2.
+
+Decisões:
+
+- contrato de evidências separado do cliente Flutter;
+- ACL explícita;
+- caller e autor tratados como identidades distintas;
+- capability HMAC-SHA256 com expiração;
+- chave HMAC mínima de 256 bits;
+- ArrayBuffer explícito nas chamadas WebCrypto;
+- remoteStorageEnabled preservado como false.
+
+Validação:
+
+- capability: 7/7;
+- suíte consolidada: 47/47;
+- typecheck: PASS;
+- Flutter Analyze: PASS, 0 issues;
+- git diff check: PASS;
+- homologação funcional: APROVADA.
+
+Documentos relacionados:
+
+- docs/SEC-R2-002A_BLUEPRINT.md;
+- docs/01_PLATFORM_ARCHITECTURE.md;
+- README_SEC-R2-002A.md;
+- tools/manifestos/SEC-R2-002A-A6A-HOMOLOGADO.txt.
+
+Próxima ação:
+
+- publicar a branch;
+- abrir PR contra main;
+- aguardar quality gates remotos;
+- não ativar Storage produtivo nesta fronteira.
+
+<!-- SEC-R2-002A-A6A-END -->

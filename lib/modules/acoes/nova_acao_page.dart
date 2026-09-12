@@ -4,50 +4,74 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/services/equipe_operacional_service.dart';
+import '../../core/services/projeto_catalog_service.dart';
+import '../../core/services/rae_coordinator_catalog.dart';
+import '../../data/models/membro_equipe_model.dart';
+import '../../data/models/projeto_model.dart';
 import '../../data/models/tipo_acao_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
 
 class NovaAcaoPage extends StatefulWidget {
-  const NovaAcaoPage({super.key});
+  const NovaAcaoPage({
+    super.key,
+    this.listarMembros,
+    this.listarTiposAcoes,
+    this.listarProjetos,
+  });
+
+  final Future<List<MembroEquipeModel>> Function()? listarMembros;
+  final Future<List<TipoAcaoModel>> Function()? listarTiposAcoes;
+  final ProjetoCatalogLoader? listarProjetos;
 
   @override
   State<NovaAcaoPage> createState() => _NovaAcaoPageState();
 }
 
 class _NovaAcaoPageState extends State<NovaAcaoPage> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final TextEditingController _nomeAcaoController = TextEditingController();
-
   DateTime dataSelecionada = DateTime.now();
   String? turno;
   TipoAcaoModel? tipoSelecionado;
+  ProjetoModel? projetoSelecionado;
   String? coordenadorId;
   String? coordenadorNome;
   bool acaoPlanejada = true;
   bool carregando = true;
 
   List<TipoAcaoModel> tiposAcoes = [];
-  List<Map<String, dynamic>> coordenadores = [];
+  List<ProjetoModel> projetos = [];
+  List<RaeCoordinatorOption> coordenadores = [];
 
   bool get dadosCompletos =>
       turno != null &&
-      tipoSelecionado != null &&
+      projetoSelecionado != null &&
       coordenadorId != null &&
       coordenadorNome != null;
 
   String get mensagemFaxita {
     if (turno == null) {
-      return 'Vamos registrar os dados iniciais da ação. Informe a data, o turno e o nome da ação.';
+      return 'Vamos registrar os dados iniciais da ação. Informe a data, o turno e o projeto ou ação institucional.';
     }
-    if (tipoSelecionado == null) {
-      return 'O turno foi informado. Agora selecione o nome da ação educativa.';
+
+    final projeto = projetoSelecionado;
+
+    if (projeto == null) {
+      return 'Agora selecione o projeto ou ação institucional relacionado a este RAE.';
     }
+
+    final contexto = projeto.contextoFaixita.trim();
+
+    final orientacaoProjeto = contexto.isEmpty
+        ? 'Projeto ${projeto.nome} selecionado. Ainda não há descrição institucional cadastrada para esta iniciativa.'
+        : '${projeto.nome}: $contexto';
+
     if (coordenadorId == null) {
-      return 'Os dados estão quase completos. Informe o coordenador responsável.';
+      return '$orientacaoProjeto Agora informe o coordenador responsável.';
     }
-    return 'Tudo certo! Confira as informações e avance para a localização.';
+
+    return '$orientacaoProjeto Confira as informações e avance para a localização.';
   }
 
   @override
@@ -56,30 +80,44 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     carregarDados();
   }
 
-  @override
-  void dispose() {
-    _nomeAcaoController.dispose();
-    super.dispose();
+  Future<List<TipoAcaoModel>> _listarTiposAcoes() async {
+    final listarTiposAcoes = widget.listarTiposAcoes;
+
+    if (listarTiposAcoes != null) {
+      return listarTiposAcoes();
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('tipos_acoes')
+        .orderBy('nomeAcao')
+        .get();
+
+    return snapshot.docs
+        .map(
+          (doc) => TipoAcaoModel.fromMap(
+            doc.data(),
+          ),
+        )
+        .toList(growable: false);
   }
 
   Future<void> carregarDados() async {
     try {
-      final tiposSnapshot =
-          await firestore.collection('tipos_acoes').orderBy('nomeAcao').get();
-      final coordenadoresSnapshot =
-          await firestore.collection('coordenadores').orderBy('nome').get();
+      final tiposCarregados = (await _listarTiposAcoes())
+          .where((tipo) => tipo.ativo)
+          .toList(growable: false);
+
+      final projetosCarregados = await ProjetoCatalogService(
+        carregarProjetos: widget.listarProjetos,
+      ).listarAtivos();
+
+      final membros = await (widget.listarMembros?.call() ??
+          EquipeOperacionalService().listarMembros());
 
       if (!mounted) return;
 
-      final tiposCarregados = tiposSnapshot.docs
-          .map((doc) => TipoAcaoModel.fromMap(doc.data()))
-          .where((tipo) => tipo.ativo)
-          .toList();
-
-      final coordenadoresCarregados = coordenadoresSnapshot.docs
-          .map((doc) => doc.data())
-          .where((coord) => coord['ativo'] == true)
-          .toList();
+      final coordenadoresCarregados =
+          RaeCoordinatorCatalog.fromMembers(membros);
 
       final acao = context.read<AcaoController>().acaoAtual;
 
@@ -93,22 +131,45 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
         }
       }
 
-      String? coordenadorIdRestaurado;
-      String? coordenadorNomeRestaurado;
+      ProjetoModel? projetoRestaurado;
 
-      if (acao != null && acao.coordenadorId.trim().isNotEmpty) {
-        for (final coordenador in coordenadoresCarregados) {
-          if (coordenador['id'] == acao.coordenadorId) {
-            coordenadorIdRestaurado = acao.coordenadorId;
-            coordenadorNomeRestaurado =
-                (coordenador['nome'] ?? acao.coordenadorNome).toString();
+      if (acao != null && acao.projetoId.trim().isNotEmpty) {
+        for (final projeto in projetosCarregados) {
+          if (projeto.id.trim() == acao.projetoId.trim()) {
+            projetoRestaurado = projeto;
             break;
           }
         }
       }
 
+      if (projetoRestaurado != null) {
+        tipoRestaurado = _tipoCompatibilidadeProjeto(
+          projetoRestaurado,
+          catalogoLegado: tiposCarregados,
+          legadoPreferido: tipoRestaurado,
+          publicoEstimadoAtual: acao?.publicoEstimado ?? 0,
+          publicoMinimoAtual: acao?.publicoMinimo ?? 0,
+        );
+      }
+
+      String? coordenadorIdRestaurado;
+      String? coordenadorNomeRestaurado;
+
+      if (acao != null && acao.coordenadorId.trim().isNotEmpty) {
+        final coordenadorRestaurado = RaeCoordinatorCatalog.resolveExisting(
+          coordenadorId: acao.coordenadorId,
+          coordenadores: coordenadoresCarregados,
+        );
+
+        if (coordenadorRestaurado != null) {
+          coordenadorIdRestaurado = coordenadorRestaurado.usuarioId;
+          coordenadorNomeRestaurado = coordenadorRestaurado.nome;
+        }
+      }
+
       setState(() {
         tiposAcoes = tiposCarregados;
+        projetos = projetosCarregados;
         coordenadores = coordenadoresCarregados;
 
         if (acao != null) {
@@ -116,10 +177,9 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
           turno = acao.turno.trim().isEmpty ? null : acao.turno;
           acaoPlanejada = acao.acaoPlanejada;
           tipoSelecionado = tipoRestaurado;
+          projetoSelecionado = projetoRestaurado;
           coordenadorId = coordenadorIdRestaurado;
           coordenadorNome = coordenadorNomeRestaurado;
-
-          _nomeAcaoController.text = tipoRestaurado?.nomeAcao ?? acao.nomeAcao;
         }
 
         carregando = false;
@@ -146,20 +206,81 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
     setState(() => dataSelecionada = data);
   }
 
-  Future<void> pesquisarTipoAcao() async {
-    final selecionado = await showModalBottomSheet<TipoAcaoModel>(
+  TipoAcaoModel _tipoCompatibilidadeProjeto(
+    ProjetoModel projeto, {
+    required Iterable<TipoAcaoModel> catalogoLegado,
+    TipoAcaoModel? legadoPreferido,
+    required int publicoEstimadoAtual,
+    required int publicoMinimoAtual,
+  }) {
+    TipoAcaoModel? legado = legadoPreferido;
+
+    if (legado == null) {
+      final nomesProjeto = <String>[
+        projeto.nome,
+        ...projeto.aliases,
+      ].map((item) => item.trim().toLowerCase()).toList();
+
+      for (final tipo in catalogoLegado) {
+        final nomeTipo = tipo.nomeAcao.trim().toLowerCase();
+
+        final corresponde = nomesProjeto.any(
+          (nomeProjeto) =>
+              nomeProjeto == nomeTipo ||
+              nomeProjeto.endsWith(' $nomeTipo') ||
+              nomeTipo.endsWith(' $nomeProjeto'),
+        );
+
+        if (corresponde) {
+          legado = tipo;
+          break;
+        }
+      }
+    }
+
+    return TipoAcaoModel(
+      id: legado?.id ?? projeto.id,
+      nomeAcao: projeto.nome,
+      tipoAcao: projeto.categoria,
+      publicoEstimadoPadrao:
+          legado?.publicoEstimadoPadrao ?? publicoEstimadoAtual,
+      publicoMinimoPadrao: legado?.publicoMinimoPadrao ?? publicoMinimoAtual,
+      materiaisSugeridos: legado?.materiaisSugeridos ?? const <String>[],
+      ativo: true,
+    );
+  }
+
+  Future<void> pesquisarProjeto() async {
+    final selecionado = await showModalBottomSheet<ProjetoModel>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _PesquisaTipoAcaoSheet(tiposAcoes: tiposAcoes),
+      builder: (_) => _PesquisaProjetoSheet(
+        projetos: projetos,
+      ),
     );
 
-    if (selecionado == null || !mounted) return;
+    if (selecionado == null || !mounted) {
+      return;
+    }
+
+    final acaoAtual = context.read<AcaoController>().acaoAtual;
+
+    final tipoCompatibilidade = _tipoCompatibilidadeProjeto(
+      selecionado,
+      catalogoLegado: tiposAcoes,
+      publicoEstimadoAtual: acaoAtual?.publicoEstimado ?? 0,
+      publicoMinimoAtual: acaoAtual?.publicoMinimo ?? 0,
+    );
 
     setState(() {
-      tipoSelecionado = selecionado;
-      _nomeAcaoController.text = selecionado.nomeAcao;
+      projetoSelecionado = selecionado;
+      tipoSelecionado = tipoCompatibilidade;
     });
+
+    context.read<AcaoController>().selecionarProjetoInstitucional(
+          selecionado.id,
+        );
   }
 
   void avancar() {
@@ -167,8 +288,9 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       _mensagem('Informe o turno da ação.');
       return;
     }
-    if (tipoSelecionado == null) {
-      _mensagem('Informe o nome da ação.');
+
+    if (projetoSelecionado == null) {
+      _mensagem('Informe o projeto ou ação institucional.');
       return;
     }
     if (coordenadorId == null || coordenadorNome == null) {
@@ -176,13 +298,16 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
       return;
     }
 
+    final projeto = projetoSelecionado!;
+    final tipoCompatibilidade = tipoSelecionado!;
+
     context.read<AcaoController>().preencherDadosAcao(
           dataAcao: dataSelecionada,
           turno: turno!,
-          nomeAcao: tipoSelecionado!.nomeAcao,
-          tipoAcao: tipoSelecionado!.tipoAcao,
-          publicoEstimado: tipoSelecionado!.publicoEstimadoPadrao,
-          publicoMinimo: tipoSelecionado!.publicoMinimoPadrao,
+          nomeAcao: projeto.nome,
+          tipoAcao: projeto.categoria,
+          publicoEstimado: tipoCompatibilidade.publicoEstimadoPadrao,
+          publicoMinimo: tipoCompatibilidade.publicoMinimoPadrao,
           acaoPlanejada: acaoPlanejada,
           coordenadorId: coordenadorId,
           coordenadorNome: coordenadorNome,
@@ -305,18 +430,32 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                       onChanged: (valor) => setState(() => turno = valor),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nomeAcaoController,
-                      readOnly: true,
-                      onTap: pesquisarTipoAcao,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome da ação *',
-                        hintText: 'Toque para pesquisar',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.campaign_outlined),
-                        suffixIcon: Icon(Icons.search),
+                    InkWell(
+                      key: const Key('projeto-institucional-field'),
+                      onTap: pesquisarProjeto,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Projeto/Ação institucional *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.account_tree_outlined),
+                          suffixIcon: Icon(Icons.search),
+                        ),
+                        child: Text(
+                          projetoSelecionado == null
+                              ? 'Toque para pesquisar'
+                              : projetoSelecionado!.nome,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
+                    if (projetoSelecionado != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${projetoSelecionado!.codigo} • '
+                        '${projetoSelecionado!.categoria}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -356,20 +495,20 @@ class _NovaAcaoPageState extends State<NovaAcaoPage> {
                       ),
                       items: coordenadores.map((coord) {
                         return DropdownMenuItem<String>(
-                          value: coord['id'],
+                          value: coord.usuarioId,
                           child: Text(
-                            coord['nome'] ?? '',
+                            coord.nome,
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
                       }).toList(),
                       onChanged: (valor) {
                         final selecionado = coordenadores.firstWhere(
-                          (coord) => coord['id'] == valor,
+                          (coord) => coord.usuarioId == valor,
                         );
                         setState(() {
-                          coordenadorId = valor;
-                          coordenadorNome = selecionado['nome'];
+                          coordenadorId = selecionado.usuarioId;
+                          coordenadorNome = selecionado.nome;
                         });
                       },
                     ),
@@ -580,12 +719,12 @@ class _ResumoCard extends StatelessWidget {
               ),
               _ResumoItem(
                 icone: Icons.campaign_outlined,
-                rotulo: 'Nome da ação',
+                rotulo: 'Projeto / Ação institucional',
                 valor: tipo.nomeAcao,
               ),
               _ResumoItem(
                 icone: Icons.category_outlined,
-                rotulo: 'Tipo',
+                rotulo: 'Categoria',
                 valor: tipo.tipoAcao,
               ),
             ];
@@ -725,6 +864,108 @@ class _ResumoItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PesquisaProjetoSheet extends StatefulWidget {
+  const _PesquisaProjetoSheet({
+    required this.projetos,
+  });
+
+  final List<ProjetoModel> projetos;
+
+  @override
+  State<_PesquisaProjetoSheet> createState() => _PesquisaProjetoSheetState();
+}
+
+class _PesquisaProjetoSheetState extends State<_PesquisaProjetoSheet> {
+  final TextEditingController _pesquisaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pesquisaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resultados = ProjetoCatalogService.pesquisarLocal(
+      widget.projetos,
+      _pesquisaController.text,
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        top: 16,
+        right: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+      ),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.75,
+        child: Column(
+          children: [
+            Text(
+              'Selecionar projeto ou ação institucional',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key(
+                'pesquisa-projeto-institucional',
+              ),
+              controller: _pesquisaController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar projeto',
+                hintText: 'Nome, código, categoria, alias ou palavra-chave',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: resultados.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Nenhum projeto institucional encontrado.',
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: resultados.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, index) {
+                        final projeto = resultados[index];
+
+                        final detalhes = <String>[
+                          projeto.codigo,
+                          projeto.categoria,
+                        ]
+                            .where(
+                              (item) => item.trim().isNotEmpty,
+                            )
+                            .join(' • ');
+
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(
+                              Icons.account_tree_outlined,
+                            ),
+                          ),
+                          title: Text(projeto.nome),
+                          subtitle: detalhes.isEmpty ? null : Text(detalhes),
+                          onTap: () => Navigator.of(context).pop(projeto),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

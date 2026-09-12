@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/security/access_scope.dart';
 import '../../core/security/authorization_service.dart';
 import '../../core/security/rae_identity_resolver.dart';
-import '../../core/security/rae_scope_resolver.dart';
+import '../../core/security/rae_operational_scope_resolver.dart';
 import '../../core/services/equipe_operacional_service.dart';
-import '../../core/services/rae_scope_catalog_service.dart';
-import '../../data/models/equipe_model.dart';
 import '../../data/models/membro_equipe_model.dart';
-import '../../data/models/projeto_model.dart';
 import '../../shared/widgets/journey/fenix_journey_header.dart';
 import '../../shared/widgets/layout/fenix_app_bar.dart';
 import '../acoes/controllers/acao_controller.dart';
@@ -20,16 +16,10 @@ class RecursosOperacionaisPage extends StatefulWidget {
     super.key,
     this.listarMembros,
     this.responsavelUserId,
-    this.escopoAcesso,
-    this.listarEquipes,
-    this.listarProjetos,
   });
 
   final Future<List<MembroEquipeModel>> Function()? listarMembros;
   final String? responsavelUserId;
-  final AccessScope? escopoAcesso;
-  final Future<List<EquipeModel>> Function()? listarEquipes;
-  final Future<List<ProjetoModel>> Function()? listarProjetos;
 
   @override
   State<RecursosOperacionaisPage> createState() =>
@@ -42,9 +32,6 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
   final Map<String, String> _nomesPersistidos = <String, String>{};
 
   List<MembroEquipeModel> _membros = const <MembroEquipeModel>[];
-  List<EquipeModel> _equipesAcl = const <EquipeModel>[];
-  List<ProjetoModel> _projetosAcl = const <ProjetoModel>[];
-  bool _catalogosAclProntos = false;
 
   String? _coordenadorMembroId;
   bool _coordenadorResolvidoPorFallbackNome = false;
@@ -124,7 +111,6 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
     }
 
     _carregarEquipe();
-    _carregarCatalogosAcl();
   }
 
   Future<void> _carregarEquipe() async {
@@ -189,34 +175,6 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
     }
   }
 
-  Future<void> _carregarCatalogosAcl() async {
-    try {
-      final equipes = widget.listarEquipes != null
-          ? await widget.listarEquipes!.call()
-          : await RaeScopeCatalogService().listarEquipes();
-
-      final projetos = widget.listarProjetos != null
-          ? await widget.listarProjetos!.call()
-          : await RaeScopeCatalogService().listarProjetos();
-
-      if (!mounted) {
-        return;
-      }
-
-      _equipesAcl = equipes;
-      _projetosAcl = projetos;
-      _catalogosAclProntos = true;
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      _equipesAcl = const <EquipeModel>[];
-      _projetosAcl = const <ProjetoModel>[];
-      _catalogosAclProntos = false;
-    }
-  }
-
   String _resolverResponsavelUserId() {
     final injetado = widget.responsavelUserId?.trim() ?? '';
 
@@ -228,20 +186,6 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
       return context.read<AuthorizationService>().usuarioAtual?.id.trim() ?? '';
     } on ProviderNotFoundException {
       return '';
-    }
-  }
-
-  AccessScope _resolverEscopoAcesso() {
-    final injetado = widget.escopoAcesso;
-
-    if (injetado != null) {
-      return injetado;
-    }
-
-    try {
-      return context.read<AuthorizationService>().escopoAtual;
-    } on ProviderNotFoundException {
-      return AccessScope();
     }
   }
 
@@ -287,6 +231,19 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
 
   List<String> _nomesDos(Set<String> ids) =>
       ids.map(_nomeDo).toList(growable: false)..sort();
+
+  List<String> _usuarioIdsCanonicos(Set<String> ids) {
+    final usuarios = ids
+        .map(_membro)
+        .whereType<MembroEquipeModel>()
+        .map((membro) => membro.usuarioId.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false)
+      ..sort();
+
+    return usuarios;
+  }
 
   int get _agentes =>
       _registroLegadoSemNomes ? _agentesLegado : _agenteIds.length;
@@ -364,6 +321,14 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
     final terceirizadosIds = _terceirizadoIds.toList(growable: false)
       ..sort((a, b) => _nomeDo(a).compareTo(_nomeDo(b)));
 
+    final agenteUserIds = _registroLegadoSemNomes
+        ? const <String>[]
+        : _usuarioIdsCanonicos(_agenteIds);
+
+    final terceirizadoUserIds = _registroLegadoSemNomes
+        ? const <String>[]
+        : _usuarioIdsCanonicos(_terceirizadoIds);
+
     final controller = context.read<AcaoController>();
 
     controller.preencherRecursosOperacionais(
@@ -373,11 +338,13 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
       agenteEquipeNomes: _registroLegadoSemNomes
           ? const <String>[]
           : agentesIds.map(_nomeDo).toList(growable: false),
+      agenteEquipeUserIds: agenteUserIds,
       terceirizadoEquipeIds:
           _registroLegadoSemNomes ? const <String>[] : terceirizadosIds,
       terceirizadoEquipeNomes: _registroLegadoSemNomes
           ? const <String>[]
           : terceirizadosIds.map(_nomeDo).toList(growable: false),
+      terceirizadoEquipeUserIds: terceirizadoUserIds,
       materialUtilizadoIds: materialUtilizadoIds.toList(),
       coberturaMidia: coberturaMidia,
     );
@@ -405,31 +372,29 @@ class _RecursosOperacionaisPageState extends State<RecursosOperacionaisPage> {
       }
     }
 
-    if (!_catalogosAclProntos) {
-      return;
-    }
-
     final acao = controller.acaoAtual;
 
     if (acao == null) {
       return;
     }
 
-    final escopo = _resolverEscopoAcesso();
+    final membrosCanonicos = <String>{
+      ...agenteUserIds,
+      ...terceirizadoUserIds,
+    }.toList(growable: false)
+      ..sort();
 
-    final resolucao = RaeScopeResolver.resolve(
+    final resolucao = RaeOperationalScopeResolver.resolve(
+      acaoId: acao.id,
       regionalId: acao.regionalId,
-      regionalIdsPermitidas: escopo.regionalIds,
       coordenadorUserId: coordenadorUserIdResolvido,
-      equipeIdsPermitidas: escopo.equipeIds,
-      projetoIdsPermitidos: escopo.projetoIds,
-      equipes: _equipesAcl,
-      projetos: _projetosAcl,
+      projetoId: acao.projetoId,
+      membroUserIds: membrosCanonicos,
     );
 
     controller.vincularEscopoAcl(
-      equipeId: resolucao.resolvido ? resolucao.equipeId : '',
-      projetoId: resolucao.resolvido ? resolucao.projetoId : '',
+      equipeId: resolucao.equipeId,
+      projetoId: resolucao.projetoId,
     );
   }
 

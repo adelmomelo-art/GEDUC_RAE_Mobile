@@ -70,7 +70,20 @@ async function semear() {
     });
     await db.collection('regionais').doc('regional-1').set({ nomeRegional: 'Teste', ativo: true });
     await db.collection('equipes').doc('equipe-1').set({ nome: 'Equipe Teste', ativo: true });
-    await db.collection('projetos').doc('projeto-1').set({ nome: 'Projeto Teste', ativo: true });
+    await db.collection('projetos').doc('projeto-1').set({
+      nome: 'Projeto Teste',
+      codigo: 'PRJ-TESTE',
+      categoria: 'Ação Educativa',
+      descricao: '',
+      objetivo: '',
+      publicoAlvo: '',
+      palavrasChave: [],
+      aliases: [],
+      regionalIds: [],
+      equipeIds: [],
+      ordem: 1,
+      ativo: true,
+    });
     await db.collection('materiais').doc('material-1').set({ nomeMaterial: 'Teste' });
     await db.collection('acoes').doc('acao-1').set({ status: 'rascunho' });
     await db.collection('contadores').doc('rae_2026').set({ ultimoNumero: 1 });
@@ -322,26 +335,84 @@ test('catálogos de equipe e projeto são mantidos somente pelo admin', async ()
     await assertSucceeds(banco(uid).collection('equipes').get());
     await assertSucceeds(banco(uid).collection('projetos').get());
   }
+
   await assertFails(
     banco('gestor').collection('equipes').doc('equipe-2').set({
       nome: 'Equipe 2', codigo: 'E2', regionalIds: [], membroIds: [],
       coordenadorUserIds: [], ativo: true,
     }),
   );
+
   await assertSucceeds(
     banco('admin').collection('equipes').doc('equipe-2').set({
       nome: 'Equipe 2', codigo: 'E2', regionalIds: [], membroIds: [],
       coordenadorUserIds: [], ativo: true,
     }),
   );
+
   await assertFails(
     banco('admin').collection('equipes').doc('equipe-invalida').set({
       nome: '', ativo: true,
     }),
   );
+
+  const projetoInstitucional = {
+    nome: 'Projeto Institucional',
+    codigo: 'AE-001',
+    categoria: 'Ação Educativa',
+    descricao: 'Descrição institucional controlada.',
+    objetivo: 'Promover educação para o trânsito.',
+    publicoAlvo: 'Comunidade',
+    palavrasChave: ['educação', 'trânsito'],
+    aliases: ['Projeto Educativo'],
+    regionalIds: [],
+    equipeIds: [],
+    ordem: 1,
+    ativo: true,
+  };
+
+  await assertFails(
+    banco('gestor')
+      .collection('projetos')
+      .doc('projeto-institucional')
+      .set(projetoInstitucional),
+  );
+
+  await assertSucceeds(
+    banco('admin')
+      .collection('projetos')
+      .doc('projeto-institucional')
+      .set(projetoInstitucional),
+  );
+
   await assertFails(
     banco('admin').collection('projetos').doc('projeto-invalido').set({
-      nome: 'Projeto sem vínculos', ativo: true,
+      nome: 'Projeto incompleto',
+      codigo: 'INV-001',
+      ativo: true,
+    }),
+  );
+
+  await assertFails(
+    banco('admin').collection('projetos').doc('projeto-sem-categoria').set({
+      ...projetoInstitucional,
+      categoria: '',
+    }),
+  );
+
+  await assertFails(
+    banco('admin').collection('projetos').doc('projeto-sem-codigo').set({
+      ...projetoInstitucional,
+      codigo: '',
+    }),
+  );
+
+  await assertFails(
+    banco('admin').collection('projetos').doc('projeto-tipos-invalidos').set({
+      ...projetoInstitucional,
+      palavrasChave: 'educação',
+      aliases: 'apelido',
+      ordem: '1',
     }),
   );
 });

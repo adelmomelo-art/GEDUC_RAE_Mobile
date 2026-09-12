@@ -271,6 +271,31 @@ class AcaoController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selecionarProjetoInstitucional(
+    String projetoId,
+  ) {
+    if (acaoAtual == null) {
+      criarRascunhoInicial();
+    }
+
+    final projetoNormalizado = projetoId.trim();
+
+    final acao = acaoAtual!;
+
+    if (acao.projetoId == projetoNormalizado) {
+      return;
+    }
+
+    acaoAtual = acao.copyWith(
+      projetoId: projetoNormalizado,
+      aclClassificacaoCompleta: false,
+      aclScopeKey: '',
+    );
+
+    unawaited(_salvarRascunhoAtual());
+    notifyListeners();
+  }
+
   void preencherLocalizacao({
     required String endereco,
     required String bairro,
@@ -370,20 +395,38 @@ class AcaoController extends ChangeNotifier {
     required int equipeTerceirizada,
     required List<String> agenteEquipeIds,
     required List<String> agenteEquipeNomes,
+    List<String> agenteEquipeUserIds = const <String>[],
     required List<String> terceirizadoEquipeIds,
     required List<String> terceirizadoEquipeNomes,
+    List<String> terceirizadoEquipeUserIds = const <String>[],
     required List<String> materialUtilizadoIds,
     required bool coberturaMidia,
   }) {
     if (acaoAtual == null) criarRascunhoInicial();
+
+    final agentesCanonicos = agenteEquipeUserIds
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final terceirizadosCanonicos = terceirizadoEquipeUserIds
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
 
     acaoAtual = acaoAtual!.copyWith(
       agentesTransito: agentesTransito,
       equipeTerceirizada: equipeTerceirizada,
       agenteEquipeIds: agenteEquipeIds,
       agenteEquipeNomes: agenteEquipeNomes,
+      agenteEquipeUserIds: agentesCanonicos,
       terceirizadoEquipeIds: terceirizadoEquipeIds,
       terceirizadoEquipeNomes: terceirizadoEquipeNomes,
+      terceirizadoEquipeUserIds: terceirizadosCanonicos,
       materialUtilizadoIds: materialUtilizadoIds,
       coberturaMidia: coberturaMidia,
     );

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geduc_rae_mobile/core/security/access_scope.dart';
 import 'package:geduc_rae_mobile/data/models/acao_model.dart';
-import 'package:geduc_rae_mobile/data/models/equipe_model.dart';
 import 'package:geduc_rae_mobile/data/models/membro_equipe_model.dart';
-import 'package:geduc_rae_mobile/data/models/projeto_model.dart';
 import 'package:geduc_rae_mobile/modules/acoes/controllers/acao_controller.dart';
 import 'package:geduc_rae_mobile/modules/recursos/recursos_operacionais_page.dart';
 import 'package:geduc_rae_mobile/repositories/acao_repository.dart';
@@ -43,44 +40,11 @@ MembroEquipeModel _membro({
   );
 }
 
-EquipeModel _equipeAcl({
-  required String id,
-  required List<String> regionalIds,
-  required List<String> coordenadorUserIds,
-  bool ativo = true,
-}) {
-  return EquipeModel(
-    id: id,
-    nome: 'Equipe $id',
-    regionalIds: regionalIds,
-    coordenadorUserIds: coordenadorUserIds,
-    ativo: ativo,
-  );
-}
-
-ProjetoModel _projetoAcl({
-  required String id,
-  required List<String> regionalIds,
-  required List<String> equipeIds,
-  bool ativo = true,
-}) {
-  return ProjetoModel(
-    id: id,
-    nome: 'Projeto $id',
-    regionalIds: regionalIds,
-    equipeIds: equipeIds,
-    ativo: ativo,
-  );
-}
-
 Future<({AcaoController controller, _FakeAcaoRepository repository})>
     _pumpPagina(
   WidgetTester tester, {
   required Future<List<MembroEquipeModel>> Function() listarMembros,
   required AcaoModel acao,
-  AccessScope? escopoAcesso,
-  Future<List<EquipeModel>> Function()? listarEquipes,
-  Future<List<ProjetoModel>> Function()? listarProjetos,
 }) async {
   final repository = _FakeAcaoRepository();
 
@@ -96,9 +60,6 @@ Future<({AcaoController controller, _FakeAcaoRepository repository})>
         builder: (_, __) => RecursosOperacionaisPage(
           listarMembros: listarMembros,
           responsavelUserId: 'usuario-responsavel-teste',
-          escopoAcesso: escopoAcesso ?? AccessScope(),
-          listarEquipes: listarEquipes ?? () async => const <EquipeModel>[],
-          listarProjetos: listarProjetos ?? () async => const <ProjetoModel>[],
         ),
       ),
       GoRoute(
@@ -696,221 +657,164 @@ void main() {
   );
 
   testWidgets(
-    'resolução ACL única grava equipeId e projetoId',
+    'equipe do RAE usa usuarioIds canonicos sem AccessScope',
     (tester) async {
       final coordenadorCanonico = _membro(
         id: 'coord-operacional-1',
         usuarioId: 'usuario-coordenador-1',
-        nome: 'Coordenadora Canônica',
+        nome: 'Coordenadora Canonica',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+      );
+
+      final agenteCanonico = _membro(
+        id: 'agente-operacional-1',
+        usuarioId: 'usuario-agente-1',
+        nome: 'Agente Canonico',
+        vinculo: VinculoOperacional.agente,
+      );
+
+      final acao = criarAcaoTeste(
+        coordenadorId: 'coord-operacional-1',
+        coordenadorNome: 'Coordenadora Canonica',
+        agenteEquipeIds: const <String>[
+          'agente-operacional-1',
+        ],
+        agenteEquipeNomes: const <String>[
+          'Agente Canonico',
+        ],
+        materialUtilizadoIds: const <String>[
+          'material_cone',
+        ],
+      ).copyWith(
+        regionalId: 'regional-1',
+        projetoId: 'projeto-1',
+      );
+
+      final resultado = await _pumpPagina(
+        tester,
+        listarMembros: () async => <MembroEquipeModel>[
+          coordenadorCanonico,
+          agenteCanonico,
+        ],
+        acao: acao,
+      );
+
+      await tester.tap(find.text('Voltar'));
+      await tester.pumpAndSettle();
+
+      expect(
+        resultado.controller.acaoAtual!.agenteEquipeUserIds,
+        containsAll(<String>[
+          'usuario-coordenador-1',
+          'usuario-agente-1',
+        ]),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.equipeId,
+        matches(RegExp(r'^rae_team_[a-f0-9]{24}$')),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.projetoId,
+        'projeto-1',
+      );
+    },
+  );
+
+  testWidgets(
+    'projeto ausente preserva identidade da equipe dinamica',
+    (tester) async {
+      final coordenadorCanonico = _membro(
+        id: 'coord-operacional-1',
+        usuarioId: 'usuario-coordenador-1',
+        nome: 'Coordenadora Canonica',
         vinculo: VinculoOperacional.agente,
         podeCoordenar: true,
       );
 
       final acao = criarAcaoTeste(
         coordenadorId: 'coord-operacional-1',
-        coordenadorNome: 'Coordenadora Canônica',
-        materialUtilizadoIds: const ['material_cone'],
+        coordenadorNome: 'Coordenadora Canonica',
+        materialUtilizadoIds: const <String>[
+          'material_cone',
+        ],
       ).copyWith(
         regionalId: 'regional-1',
+        projetoId: '',
       );
 
       final resultado = await _pumpPagina(
         tester,
-        listarMembros: () async => [coordenadorCanonico],
+        listarMembros: () async => <MembroEquipeModel>[
+          coordenadorCanonico,
+        ],
         acao: acao,
-        escopoAcesso: AccessScope(
-          regionalIds: const ['regional-1'],
-          equipeIds: const ['equipe-1'],
-          projetoIds: const ['projeto-1'],
-        ),
-        listarEquipes: () async => [
-          _equipeAcl(
-            id: 'equipe-1',
-            regionalIds: const ['regional-1'],
-            coordenadorUserIds: const ['usuario-coordenador-1'],
-          ),
-        ],
-        listarProjetos: () async => [
-          _projetoAcl(
-            id: 'projeto-1',
-            regionalIds: const ['regional-1'],
-            equipeIds: const ['equipe-1'],
-          ),
-        ],
       );
 
       await tester.tap(find.text('Voltar'));
       await tester.pumpAndSettle();
 
-      expect(resultado.controller.acaoAtual!.equipeId, 'equipe-1');
-      expect(resultado.controller.acaoAtual!.projetoId, 'projeto-1');
+      expect(
+        resultado.controller.acaoAtual!.equipeId,
+        matches(RegExp(r'^rae_team_[a-f0-9]{24}$')),
+      );
+
+      expect(
+        resultado.controller.acaoAtual!.projetoId,
+        isEmpty,
+      );
+
       expect(
         resultado.controller.acaoAtual!.aclClassificacaoCompleta,
         isFalse,
       );
-      expect(resultado.controller.acaoAtual!.aclScopeKey, isEmpty);
     },
   );
 
   testWidgets(
-    'ambiguidade de equipe não grava classificação de escopo',
+    'identidade canonica ausente impede gerar equipe ACL',
     (tester) async {
-      final coordenadorCanonico = _membro(
-        id: 'coord-operacional-1',
-        usuarioId: 'usuario-coordenador-1',
-        nome: 'Coordenadora Canônica',
+      final coordenadorSemUsuario = _membro(
+        id: 'coord-sem-usuario',
+        usuarioId: '',
+        nome: 'Coordenador Legado',
         vinculo: VinculoOperacional.agente,
         podeCoordenar: true,
       );
 
       final acao = criarAcaoTeste(
-        coordenadorId: 'coord-operacional-1',
-        coordenadorNome: 'Coordenadora Canônica',
-        materialUtilizadoIds: const ['material_cone'],
+        coordenadorId: 'coord-sem-usuario',
+        coordenadorNome: 'Coordenador Legado',
+        materialUtilizadoIds: const <String>[
+          'material_cone',
+        ],
       ).copyWith(
         regionalId: 'regional-1',
-        equipeId: 'equipe-antiga',
-        projetoId: 'projeto-antigo',
+        projetoId: 'projeto-1',
       );
 
       final resultado = await _pumpPagina(
         tester,
-        listarMembros: () async => [coordenadorCanonico],
+        listarMembros: () async => <MembroEquipeModel>[
+          coordenadorSemUsuario,
+        ],
         acao: acao,
-        escopoAcesso: AccessScope(
-          regionalIds: const ['regional-1'],
-          equipeIds: const ['equipe-1', 'equipe-2'],
-          projetoIds: const ['projeto-1'],
-        ),
-        listarEquipes: () async => [
-          _equipeAcl(
-            id: 'equipe-1',
-            regionalIds: const ['regional-1'],
-            coordenadorUserIds: const ['usuario-coordenador-1'],
-          ),
-          _equipeAcl(
-            id: 'equipe-2',
-            regionalIds: const ['regional-1'],
-            coordenadorUserIds: const ['usuario-coordenador-1'],
-          ),
-        ],
-        listarProjetos: () async => [
-          _projetoAcl(
-            id: 'projeto-1',
-            regionalIds: const ['regional-1'],
-            equipeIds: const ['equipe-1'],
-          ),
-        ],
       );
 
       await tester.tap(find.text('Voltar'));
       await tester.pumpAndSettle();
 
-      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
-      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
-    },
-  );
-
-  testWidgets(
-    'escopo vazio não grava classificação de escopo',
-    (tester) async {
-      final coordenadorCanonico = _membro(
-        id: 'coord-operacional-1',
-        usuarioId: 'usuario-coordenador-1',
-        nome: 'Coordenadora Canônica',
-        vinculo: VinculoOperacional.agente,
-        podeCoordenar: true,
+      expect(
+        resultado.controller.acaoAtual!.coordenadorUserId,
+        isEmpty,
       );
 
-      final acao = criarAcaoTeste(
-        coordenadorId: 'coord-operacional-1',
-        coordenadorNome: 'Coordenadora Canônica',
-        materialUtilizadoIds: const ['material_cone'],
-      ).copyWith(
-        regionalId: 'regional-1',
-        equipeId: 'equipe-antiga',
-        projetoId: 'projeto-antigo',
+      expect(
+        resultado.controller.acaoAtual!.equipeId,
+        isEmpty,
       );
-
-      final resultado = await _pumpPagina(
-        tester,
-        listarMembros: () async => [coordenadorCanonico],
-        acao: acao,
-        escopoAcesso: AccessScope(),
-        listarEquipes: () async => [
-          _equipeAcl(
-            id: 'equipe-1',
-            regionalIds: const ['regional-1'],
-            coordenadorUserIds: const ['usuario-coordenador-1'],
-          ),
-        ],
-        listarProjetos: () async => [
-          _projetoAcl(
-            id: 'projeto-1',
-            regionalIds: const ['regional-1'],
-            equipeIds: const ['equipe-1'],
-          ),
-        ],
-      );
-
-      await tester.tap(find.text('Voltar'));
-      await tester.pumpAndSettle();
-
-      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
-      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
-    },
-  );
-  testWidgets(
-    'regional fora do AccessScope limpa equipe e projeto',
-    (tester) async {
-      final coordenadorCanonico = _membro(
-        id: 'coord-operacional-r1',
-        usuarioId: 'usuario-coordenador-r1',
-        nome: 'Coordenadora R1',
-        vinculo: VinculoOperacional.agente,
-        podeCoordenar: true,
-      );
-
-      final acao = criarAcaoTeste(
-        coordenadorId: 'coord-operacional-r1',
-        coordenadorNome: 'Coordenadora R1',
-        materialUtilizadoIds: const ['material_cone'],
-      ).copyWith(
-        regionalId: 'regional-1',
-        equipeId: 'equipe-antiga',
-        projetoId: 'projeto-antigo',
-      );
-
-      final resultado = await _pumpPagina(
-        tester,
-        listarMembros: () async => [coordenadorCanonico],
-        acao: acao,
-        escopoAcesso: AccessScope(
-          regionalIds: const ['regional-2'],
-          equipeIds: const ['equipe-1'],
-          projetoIds: const ['projeto-1'],
-        ),
-        listarEquipes: () async => [
-          _equipeAcl(
-            id: 'equipe-1',
-            regionalIds: const ['regional-1'],
-            coordenadorUserIds: const ['usuario-coordenador-r1'],
-          ),
-        ],
-        listarProjetos: () async => [
-          _projetoAcl(
-            id: 'projeto-1',
-            regionalIds: const ['regional-1'],
-            equipeIds: const ['equipe-1'],
-          ),
-        ],
-      );
-
-      await tester.tap(find.text('Voltar'));
-      await tester.pumpAndSettle();
-
-      expect(resultado.controller.acaoAtual!.equipeId, isEmpty);
-      expect(resultado.controller.acaoAtual!.projetoId, isEmpty);
     },
   );
 }

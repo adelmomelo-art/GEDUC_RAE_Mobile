@@ -109,8 +109,13 @@ void main() {
         'amc-kids',
       );
 
+      final campoProjeto = find.byKey(const Key('projeto-institucional-field'));
+
       expect(
-        find.text('AMC Kids'),
+        find.descendant(
+          of: campoProjeto,
+          matching: find.text('AMC Kids'),
+        ),
         findsOneWidget,
       );
 
@@ -218,13 +223,15 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Sem tipo selecionado, a Faixita continua respeitando
-      // a ordem da jornada e nao antecipa informacao.
+      // Com o projeto institucional restaurado, a Faixita nao solicita
+      // mais o campo legado de nome da acao educativa.
       expect(
-        find.textContaining(
-          'Agora selecione o nome da ação educativa',
-        ),
-        findsOneWidget,
+        controller.acaoAtual!.projetoId,
+        'amc-kids',
+      );
+      expect(
+        find.textContaining('nome da ação educativa'),
+        findsNothing,
       );
     },
   );

@@ -15,6 +15,7 @@ void main() {
     EvidenceSyncJob job({
       String acaoId = 'acao-1',
       String evidenciaId = 'ev-1',
+      String autorUserId = 'user-1',
       String contentType = 'image/jpeg',
       int tamanhoBytes = 2048,
       String? sha256,
@@ -26,7 +27,7 @@ void main() {
         contentType: contentType,
         tamanhoBytes: tamanhoBytes,
         sha256: sha256 ?? 'a' * 64,
-        autorUserId: 'user-1',
+        autorUserId: autorUserId,
         createdAt: DateTime.utc(2026, 8, 21, 18),
       );
     }
@@ -113,6 +114,7 @@ void main() {
       final expectedJob = job(
         acaoId: 'acao-77',
         evidenciaId: 'ev-99',
+        autorUserId: 'captor-77',
         contentType: 'image/png',
         tamanhoBytes: 9876,
         sha256: 'b' * 64,
@@ -143,6 +145,7 @@ void main() {
       expect(request, isNotNull);
       expect(request!.acaoId, 'acao-77');
       expect(request.evidenciaId, 'ev-99');
+      expect(request.autorUserId, 'captor-77');
       expect(request.contentType, 'image/png');
       expect(request.tamanhoBytes, 9876);
       expect(request.sha256, 'b' * 64);

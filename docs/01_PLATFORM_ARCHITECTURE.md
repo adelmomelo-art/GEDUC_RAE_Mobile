@@ -2248,3 +2248,16 @@ Gates finais homologados: testes integrados R5.7, regressao storage,
 regressao sync, `flutter test` completo, `flutter analyze` com 0 issues,
 `git diff --check` e validacao exata de escopo.
 <!-- AUD-L2-R5.7-END -->
+
+<!-- SEC-R2-002A-EVIDENCE-WORKER -->
+## SEC-R2-002A — Evidence Worker Backend R2
+
+Foi introduzida a fronteira backend/evidence-worker para evolução
+controlada do armazenamento remoto de evidências.
+
+A fronteira inclui contrato HTTP, validação de evidências, ACL,
+autenticação do caller e capability HMAC-SHA256 com identidade,
+autoria, escopo e expiração vinculados.
+
+A implementação não ativa publicação produtiva e não altera a
+invariante remoteStorageEnabled=false no cliente Flutter.

@@ -17,6 +17,7 @@ class EvidenceUploadAccessRequest {
   const EvidenceUploadAccessRequest({
     required this.acaoId,
     required this.evidenciaId,
+    required this.autorUserId,
     required this.contentType,
     required this.tamanhoBytes,
     required this.sha256,
@@ -24,6 +25,7 @@ class EvidenceUploadAccessRequest {
 
   final String acaoId;
   final String evidenciaId;
+  final String autorUserId;
   final String contentType;
   final int tamanhoBytes;
   final String sha256;
@@ -38,6 +40,7 @@ class EvidenceUploadAccessRequest {
 
   bool get valido =>
       identity.valido &&
+      autorUserId.trim().isNotEmpty &&
       contentType.trim().isNotEmpty &&
       tamanhoBytes > 0;
 }

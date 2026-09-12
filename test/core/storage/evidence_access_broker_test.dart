@@ -32,6 +32,7 @@ void main() {
       const request = EvidenceUploadAccessRequest(
         acaoId: 'rae-001',
         evidenciaId: 'evidencia-001',
+        autorUserId: 'user-1',
         contentType: 'image/jpeg',
         tamanhoBytes: 3,
         sha256: sha,
@@ -40,10 +41,24 @@ void main() {
       expect(request.valido, isTrue);
     });
 
+    test('rejeita autorUserId vazio', () {
+      const request = EvidenceUploadAccessRequest(
+        acaoId: 'rae-001',
+        evidenciaId: 'evidencia-001',
+        autorUserId: ' ',
+        contentType: 'image/jpeg',
+        tamanhoBytes: 3,
+        sha256: sha,
+      );
+
+      expect(request.valido, isFalse);
+    });
+
     test('rejeita tamanho nao positivo', () {
       const request = EvidenceUploadAccessRequest(
         acaoId: 'rae-001',
         evidenciaId: 'evidencia-001',
+        autorUserId: 'user-1',
         contentType: 'image/jpeg',
         tamanhoBytes: 0,
         sha256: sha,
@@ -56,6 +71,7 @@ void main() {
       const request = EvidenceUploadAccessRequest(
         acaoId: 'rae-001',
         evidenciaId: 'evidencia-001',
+        autorUserId: 'user-1',
         contentType: 'image/jpeg',
         tamanhoBytes: 3,
         sha256: 'abc',
@@ -191,6 +207,7 @@ void main() {
       const request = EvidenceUploadAccessRequest(
         acaoId: 'rae-001',
         evidenciaId: 'evidencia-001',
+        autorUserId: 'user-1',
         contentType: 'image/jpeg',
         tamanhoBytes: 3,
         sha256: 'ba7816bf8f01cfea414140de5dae2223'

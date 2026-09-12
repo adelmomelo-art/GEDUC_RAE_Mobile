@@ -45,6 +45,7 @@ class EvidenceSyncGrantCoordinator {
     final request = EvidenceUploadAccessRequest(
       acaoId: job.acaoId,
       evidenciaId: job.evidenciaId,
+      autorUserId: job.autorUserId,
       contentType: job.contentType,
       tamanhoBytes: job.tamanhoBytes,
       sha256: job.sha256,

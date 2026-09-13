@@ -2261,3 +2261,34 @@ autoria, escopo e expiração vinculados.
 
 A implementação não ativa publicação produtiva e não altera a
 invariante remoteStorageEnabled=false no cliente Flutter.
+
+<!-- SEC-R2-002A-A6B-GRANT -->
+### SEC-R2-002A.6B - Emissao do upload grant
+
+A fronteira de controle do Evidence Worker passa a emitir um grant de upload
+somente depois de quatro validacoes server-side:
+
+1. Firebase ID Token do caller;
+2. contrato fechado da requisicao;
+3. ACL autoritativa sobre o RAE;
+4. vinculo autoritativo de `autorUserId`.
+
+O caller autenticado e o autor da evidencia permanecem identidades distintas.
+O backend nao presume igualdade entre elas e falha fechado quando a fonte de
+vinculo do autor nega ou fica indisponivel.
+
+O grant retornado e compativel com `EvidenceAccessGrant` e contem URI HTTPS,
+operacao de upload, expiracao UTC, `objectKey`, headers obrigatorios e
+`uploadIdentity`. A `objectKey` e a chave de idempotencia sao derivadas no
+backend.
+
+A capability HMAC-SHA256 vincula caller, autor, RAE, evidencia, MIME, tamanho,
+SHA-256, objectKey, emissao e expiracao. O TTL nunca ultrapassa 300 segundos.
+
+Fronteiras preservadas:
+
+- o endpoint PUT permanece fail-closed;
+- os bytes ainda nao sao recebidos ou validados;
+- nenhum R2 Binding, bucket, secret ou deploy e criado;
+- `remoteStorageEnabled=false` permanece obrigatorio.
+<!-- SEC-R2-002A-A6B-GRANT-END -->

@@ -127,9 +127,11 @@ Nenhuma credencial R2 no Flutter ou APK.
 - habilitar armazenamento remoto;
 - alterar remoteStorageEnabled.
 
-## Proxima subetapa
+## Estado das subetapas
 
-SEC-R2-002A.2 - scaffold local do Worker e testes, ainda sem recursos Cloudflare reais.
+- A.1 a A.6A: homologadas e integradas na `main` pelo PR #80;
+- A.6B: homologada localmente para emissao do upload grant;
+- proxima fronteira: A.6C, validacao do PUT e dos bytes recebidos.
 
 <!-- SEC-R2-002A-A6A-HOMOLOGADO -->
 ## Registro de implementação — A.1 a A.6A
@@ -147,3 +149,30 @@ SEC-R2-002A.2 - scaffold local do Worker e testes, ainda sem recursos Cloudflare
 - Flutter Analyze: PASS, 0 issues.
 - Git diff check: PASS.
 - Correção WebCrypto R1 homologada sem cast inseguro.
+
+## Continuidade apos PR #80
+
+- A.1 a A.6A integradas na `main` pelo merge
+  `38682e679144d0b0c05439b698cce8ca049d7111`;
+- A.6B conecta o pipeline ja homologado para emitir o grant;
+- endpoint PUT, R2, secrets, deploy e feature flag permanecem fora do escopo.
+
+<!-- SEC-R2-002A-A6B-HOMOLOGADO -->
+## Registro de implementacao - A.6B
+
+- Status: implementado e homologado localmente em 2026-09-13.
+- Branch: `security/sec-r2-002a-6b-grant-capability`.
+- Baseline: `38682e679144d0b0c05439b698cce8ca049d7111`.
+- Grant emitido somente apos autenticacao, contrato e ACL.
+- Verificacao autoritativa de `autorUserId` obrigatoria e fail-closed.
+- Caller autenticado e autor da evidencia permanecem identidades distintas.
+- Capability HMAC-SHA256 com TTL maximo de 300 segundos.
+- `objectKey` e chave de idempotencia derivadas no backend.
+- Response compativel com `EvidenceAccessGrant` do Flutter.
+- Testes focados: 23/23.
+- Suite Evidence Worker: 57/57.
+- Flutter Test: 971/971.
+- TypeScript typecheck e Flutter Analyze: PASS.
+- PUT/R2 permanece `501` e `remoteStorageEnabled=false`.
+- Nenhum deploy, bucket, binding ou secret executado.
+<!-- SEC-R2-002A-A6B-END -->

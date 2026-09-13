@@ -17,11 +17,16 @@ import {
   EvidenceGrantError,
   type EvidenceUploadGrantIssuer,
 } from "./evidence_grant";
+import {
+  EvidenceUploadValidationError,
+  type EvidenceUploadValidator,
+} from "./evidence_upload";
 
 export interface WorkerDependencies {
   firebaseIdTokenVerifier: FirebaseIdTokenVerifier;
   evidenceAclDataSource: EvidenceAclDataSource;
   evidenceUploadGrantIssuer: EvidenceUploadGrantIssuer;
+  evidenceUploadValidator?: EvidenceUploadValidator;
 }
 
 const disabledFirebaseIdTokenVerifier: FirebaseIdTokenVerifier = {
@@ -45,6 +50,15 @@ const disabledEvidenceUploadGrantIssuer: EvidenceUploadGrantIssuer = {
     throw new EvidenceGrantError(
       "grant_unavailable",
       "Emissor de grant nao configurado.",
+    );
+  },
+};
+
+const disabledEvidenceUploadValidator: EvidenceUploadValidator = {
+  async validate(): Promise<never> {
+    throw new EvidenceUploadValidationError(
+      "validator_unavailable",
+      "Validador de upload nao configurado.",
     );
   },
 };
@@ -86,7 +100,74 @@ function methodNotAllowed(allow: string): Response {
 function notImplemented(): Response {
   return jsonResponse(501, {
     error: "not_implemented",
-    code: "SEC_R2_002A_FAIL_CLOSED",
+    code: "SEC_R2_002A_6C_STORAGE_FAIL_CLOSED",
+  });
+}
+
+function uploadValidationErrorResponse(
+  error: EvidenceUploadValidationError,
+): Response {
+  if (
+    error.code === "invalid_capability" ||
+    error.code === "expired_capability"
+  ) {
+    return jsonResponse(
+      401,
+      {
+        error: "unauthorized",
+        code: error.code,
+      },
+      {
+        "www-authenticate": "Capability",
+      },
+    );
+  }
+
+  if (error.code === "validator_unavailable") {
+    return jsonResponse(503, {
+      error: "service_unavailable",
+      code: error.code,
+    });
+  }
+
+  if (error.code === "payload_too_large") {
+    return jsonResponse(413, {
+      error: "payload_too_large",
+      code: error.code,
+    });
+  }
+
+  if (
+    error.code === "unsupported_content_type" ||
+    error.code === "content_encoding_not_allowed" ||
+    error.code === "invalid_jpeg_signature"
+  ) {
+    return jsonResponse(415, {
+      error: "unsupported_media_type",
+      code: error.code,
+    });
+  }
+
+  if (error.code === "idempotency_mismatch") {
+    return jsonResponse(409, {
+      error: "conflict",
+      code: error.code,
+    });
+  }
+
+  if (
+    error.code === "size_mismatch" ||
+    error.code === "hash_mismatch"
+  ) {
+    return jsonResponse(422, {
+      error: "unprocessable_content",
+      code: error.code,
+    });
+  }
+
+  return jsonResponse(400, {
+    error: "invalid_upload",
+    code: error.code,
   });
 }
 
@@ -218,6 +299,30 @@ export async function handleRequest(
 
     if (request.method !== "PUT") {
       return methodNotAllowed("PUT");
+    }
+
+    if (url.search.length > 0) {
+      return jsonResponse(400, {
+        error: "invalid_upload",
+        code: "unexpected_query",
+      });
+    }
+
+    const uploadValidator =
+      dependencies.evidenceUploadValidator ??
+      disabledEvidenceUploadValidator;
+
+    try {
+      await uploadValidator.validate(capability, request);
+    } catch (error) {
+      if (error instanceof EvidenceUploadValidationError) {
+        return uploadValidationErrorResponse(error);
+      }
+
+      return jsonResponse(503, {
+        error: "service_unavailable",
+        code: "upload_validation_unavailable",
+      });
     }
 
     return notImplemented();

@@ -1,5 +1,7 @@
 import type { EvidenceUploadGrantRequest } from "./evidence_contract";
 
+export const maximumEvidenceCapabilityTtlSeconds = 300;
+
 export interface EvidenceUploadCapabilityClaims {
   v: 1;
   purpose: "evidence-upload";
@@ -294,6 +296,30 @@ export async function verifyEvidenceUploadCapability(
   }
 
   const nowSeconds = Math.floor(now.getTime() / 1000);
+
+  if (!Number.isSafeInteger(nowSeconds)) {
+    throw new EvidenceCapabilityError(
+      "invalid_clock",
+      "Relogio de validacao invalido.",
+    );
+  }
+
+  if (
+    parsed.expiresAt - parsed.issuedAt >
+    maximumEvidenceCapabilityTtlSeconds
+  ) {
+    throw new EvidenceCapabilityError(
+      "invalid_claims",
+      "TTL da capability excede o limite permitido.",
+    );
+  }
+
+  if (nowSeconds < parsed.issuedAt) {
+    throw new EvidenceCapabilityError(
+      "not_yet_valid",
+      "Capability ainda nao e valida.",
+    );
+  }
 
   if (nowSeconds >= parsed.expiresAt) {
     throw new EvidenceCapabilityError(

@@ -2292,3 +2292,46 @@ Fronteiras preservadas:
 - nenhum R2 Binding, bucket, secret ou deploy e criado;
 - `remoteStorageEnabled=false` permanece obrigatorio.
 <!-- SEC-R2-002A-A6B-GRANT-END -->
+
+<!-- SEC-R2-002A-A6C-PUT-VALIDATION -->
+### SEC-R2-002A.6C - Validacao do PUT e dos bytes
+
+O plano de dados do Evidence Worker passa a validar a capability e o corpo real
+antes de qualquer porta de persistencia.
+
+Fluxo arquitetural homologado:
+
+```text
+PUT + capability HMAC
+        |
+        v
+validacao temporal e canonica
+        |
+        v
+headers + objectKey + idempotencia
+        |
+        v
+stream limitado a 10 MiB
+        |
+        v
+assinatura JPEG + SHA-256 real
+        |
+        v
+501 fail-closed sem persistencia
+```
+
+Invariantes:
+
+- `callerUid` e `autorUserId` permanecem identidades distintas;
+- TTL da capability nunca ultrapassa 300 segundos;
+- capabilities futuras ou expiradas sao rejeitadas;
+- `objectKey` e idempotencia sao recalculadas no backend;
+- tamanho e hash representam exatamente os bytes recebidos;
+- corpos parciais, codificados ou acima do limite sao rejeitados;
+- nenhum R2 Binding, bucket, secret ou deploy foi introduzido;
+- `remoteStorageEnabled=false` permanece obrigatorio.
+
+A validacao bem sucedida nao constitui autorizacao de armazenamento. A porta
+privada de persistencia e o contrato de idempotencia contra R2 pertencem a
+SEC-R2-002A.6D.
+<!-- SEC-R2-002A-A6C-PUT-VALIDATION-END -->

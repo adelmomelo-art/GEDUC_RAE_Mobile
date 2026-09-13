@@ -74,8 +74,36 @@ Identificacao:
 - Baseline: `38682e679144d0b0c05439b698cce8ca049d7111`;
 - Infraestrutura Cloudflare produtiva: nao criada;
 - Deploy, bucket, binding e secrets: nao executados.
+- PR #81: integrado;
+- Merge SHA: `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`;
+- Branches local e remota: removidas apos o merge.
+
+## Homologacao A.6C
+
+SEC-R2-002A.6C implementa a validacao integral da capability e dos bytes no PUT:
+
+- rejeicao de capability expirada, futura ou com TTL acima de 300 segundos;
+- limite operacional de 10 MiB aplicado no grant e no stream;
+- `Content-Type`, idempotencia e tamanho vinculados ao contrato assinado;
+- `objectKey` recalculada server-side;
+- assinatura JPEG e SHA-256 real dos bytes recebidos;
+- testes focados: 53/53;
+- suite Evidence Worker: 80/80;
+- TypeScript typecheck: PASS;
+- Flutter Test e Flutter Analyze: PASS;
+- hashes, registrants, diff check e escopo: PASS.
+
+Mesmo apos uma validacao completa, o endpoint retorna `501` e nao persiste os
+bytes. Bucket, binding, secret, deploy, idempotencia contra R2 e habilitacao de
+`remoteStorageEnabled` permanecem fora desta subetapa.
+
+Baseline A.6C:
+
+- `main`: `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`;
+- branch: `security/sec-r2-002a-6c-put-validation`;
+- status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
 
 ## Proxima fronteira
 
-SEC-R2-002A.6C - validacao da capability e do contrato de bytes no endpoint
-PUT, ainda sem habilitacao produtiva.
+SEC-R2-002A.6D - contrato de idempotencia e porta privada de persistencia R2,
+ainda sem provisionamento produtivo.

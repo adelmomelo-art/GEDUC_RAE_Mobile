@@ -7,6 +7,8 @@ export interface EvidenceUploadGrantRequest {
   sha256: string;
 }
 
+export const maximumEvidenceUploadBytes = 10 * 1024 * 1024;
+
 export class EvidenceContractError extends Error {
   constructor(
     public readonly code: string,
@@ -112,6 +114,13 @@ export function parseEvidenceUploadGrantRequest(
     throw new EvidenceContractError(
       "invalid_size",
       "tamanhoBytes deve ser inteiro positivo.",
+    );
+  }
+
+  if (input.tamanhoBytes > maximumEvidenceUploadBytes) {
+    throw new EvidenceContractError(
+      "payload_too_large",
+      `tamanhoBytes excede o limite de ${maximumEvidenceUploadBytes} bytes.`,
     );
   }
 

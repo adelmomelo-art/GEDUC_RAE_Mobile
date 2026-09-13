@@ -1,6 +1,7 @@
 import {
   buildEvidenceUploadCapabilityClaims,
   issueEvidenceUploadCapability,
+  maximumEvidenceCapabilityTtlSeconds,
 } from "./evidence_capability";
 import {
   buildEvidenceIdempotencyKey,
@@ -63,8 +64,6 @@ export interface HmacEvidenceUploadGrantIssuerOptions {
   ttlSeconds?: number;
 }
 
-const maximumTtlSeconds = 300;
-
 function normalizePublicOrigin(value: string): string {
   let url: URL;
 
@@ -99,11 +98,11 @@ function validateTtl(value: number): number {
   if (
     !Number.isSafeInteger(value) ||
     value <= 0 ||
-    value > maximumTtlSeconds
+    value > maximumEvidenceCapabilityTtlSeconds
   ) {
     throw new EvidenceGrantError(
       "invalid_grant_configuration",
-      `TTL deve ser inteiro entre 1 e ${maximumTtlSeconds} segundos.`,
+      `TTL deve ser inteiro entre 1 e ${maximumEvidenceCapabilityTtlSeconds} segundos.`,
     );
   }
 
@@ -123,7 +122,9 @@ export class HmacEvidenceUploadGrantIssuer
     this.authorBindingVerifier = options.authorBindingVerifier;
     this.publicOrigin = normalizePublicOrigin(options.publicBaseUrl);
     this.now = options.now ?? (() => new Date());
-    this.ttlSeconds = validateTtl(options.ttlSeconds ?? maximumTtlSeconds);
+    this.ttlSeconds = validateTtl(
+      options.ttlSeconds ?? maximumEvidenceCapabilityTtlSeconds,
+    );
   }
 
   async issue(

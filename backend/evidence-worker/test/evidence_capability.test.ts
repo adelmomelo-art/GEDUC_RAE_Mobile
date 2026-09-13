@@ -149,6 +149,73 @@ describe("SEC-R2-002A.6 - upload capability", () => {
     });
   });
 
+  it("rejeita capability emitida no futuro", async () => {
+    const signingKey = await key();
+    const claims = buildEvidenceUploadCapabilityClaims(
+      request(),
+      "uid-chamador-1",
+      `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+      new Date("2026-09-12T18:01:00.000Z"),
+      new Date("2026-09-12T18:02:00.000Z"),
+    );
+    const token = await issueEvidenceUploadCapability(
+      claims,
+      signingKey,
+    );
+
+    await expect(
+      verifyEvidenceUploadCapability(token, signingKey, now),
+    ).rejects.toMatchObject({
+      code: "not_yet_valid",
+    });
+  });
+
+  it("rejeita capability com TTL superior a cinco minutos", async () => {
+    const signingKey = await key();
+    const claims = buildEvidenceUploadCapabilityClaims(
+      request(),
+      "uid-chamador-1",
+      `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+      now,
+      new Date("2026-09-12T18:05:01.000Z"),
+    );
+    const token = await issueEvidenceUploadCapability(
+      claims,
+      signingKey,
+    );
+
+    await expect(
+      verifyEvidenceUploadCapability(token, signingKey, now),
+    ).rejects.toMatchObject({
+      code: "invalid_claims",
+    });
+  });
+
+  it("rejeita relogio de validacao invalido", async () => {
+    const signingKey = await key();
+    const claims = buildEvidenceUploadCapabilityClaims(
+      request(),
+      "uid-chamador-1",
+      `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+      now,
+      expires,
+    );
+    const token = await issueEvidenceUploadCapability(
+      claims,
+      signingKey,
+    );
+
+    await expect(
+      verifyEvidenceUploadCapability(
+        token,
+        signingKey,
+        new Date(Number.NaN),
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_clock",
+    });
+  });
+
   it("rejeita expiracao anterior ou igual a emissao", () => {
     expect(() =>
       buildEvidenceUploadCapabilityClaims(

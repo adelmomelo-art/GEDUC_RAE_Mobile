@@ -13,10 +13,15 @@ import {
   parseEvidenceUploadGrantRequest,
   type EvidenceUploadGrantRequest,
 } from "./evidence_contract";
+import {
+  EvidenceGrantError,
+  type EvidenceUploadGrantIssuer,
+} from "./evidence_grant";
 
 export interface WorkerDependencies {
   firebaseIdTokenVerifier: FirebaseIdTokenVerifier;
   evidenceAclDataSource: EvidenceAclDataSource;
+  evidenceUploadGrantIssuer: EvidenceUploadGrantIssuer;
 }
 
 const disabledFirebaseIdTokenVerifier: FirebaseIdTokenVerifier = {
@@ -35,9 +40,19 @@ const disabledEvidenceAclDataSource: EvidenceAclDataSource = {
   },
 };
 
+const disabledEvidenceUploadGrantIssuer: EvidenceUploadGrantIssuer = {
+  async issue(): Promise<never> {
+    throw new EvidenceGrantError(
+      "grant_unavailable",
+      "Emissor de grant nao configurado.",
+    );
+  },
+};
+
 const defaultDependencies: WorkerDependencies = {
   firebaseIdTokenVerifier: disabledFirebaseIdTokenVerifier,
   evidenceAclDataSource: disabledEvidenceAclDataSource,
+  evidenceUploadGrantIssuer: disabledEvidenceUploadGrantIssuer,
 };
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -46,7 +61,7 @@ const jsonHeaders = {
 
 function jsonResponse(
   status: number,
-  body: Record<string, unknown>,
+  body: unknown,
   extraHeaders: Record<string, string> = {},
 ): Response {
   return new Response(JSON.stringify(body), {
@@ -161,7 +176,33 @@ export async function handleRequest(
       });
     }
 
-    return notImplemented();
+    try {
+      const grant = await dependencies.evidenceUploadGrantIssuer.issue(
+        uploadRequest,
+        caller.uid,
+      );
+
+      return jsonResponse(200, grant);
+    } catch (error) {
+      if (error instanceof EvidenceGrantError) {
+        if (error.code === "author_binding_denied") {
+          return jsonResponse(403, {
+            error: "forbidden",
+            code: error.code,
+          });
+        }
+
+        return jsonResponse(503, {
+          error: "service_unavailable",
+          code: error.code,
+        });
+      }
+
+      return jsonResponse(503, {
+        error: "service_unavailable",
+        code: "grant_unavailable",
+      });
+    }
   }
 
   const uploadPrefix = "/v1/evidencias/upload/";

@@ -9,6 +9,12 @@ import {
   handleRequest,
   type WorkerDependencies,
 } from "../src/index";
+import {
+  EvidenceGrantError,
+  type EvidenceUploadGrant,
+  type EvidenceUploadGrantIssuer,
+} from "../src/evidence_grant";
+import type { EvidenceUploadGrantRequest } from "../src/evidence_contract";
 
 class FakeVerifier implements FirebaseIdTokenVerifier {
   lastToken: string | null = null;
@@ -62,6 +68,43 @@ class FakeAclDataSource implements EvidenceAclDataSource {
   }
 }
 
+class FakeGrantIssuer implements EvidenceUploadGrantIssuer {
+  error: Error | null = null;
+  lastRequest: EvidenceUploadGrantRequest | null = null;
+  lastCallerUid: string | null = null;
+
+  readonly grant: EvidenceUploadGrant = {
+    uri: "https://evidence.fenix.test/v1/evidencias/upload/token-demo",
+    operation: "upload",
+    expiresAt: "2026-09-12T18:05:00.000Z",
+    objectKey: `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+    requiredHeaders: {
+      "Content-Type": "image/jpeg",
+      "X-Fenix-Idempotency-Key":
+        `evidence-upload-v1:acao-77:ev-99:${"a".repeat(64)}`,
+    },
+    uploadIdentity: {
+      acaoId: "acao-77",
+      evidenciaId: "ev-99",
+      sha256: "a".repeat(64),
+    },
+  };
+
+  async issue(
+    uploadRequest: EvidenceUploadGrantRequest,
+    callerUid: string,
+  ): Promise<EvidenceUploadGrant> {
+    this.lastRequest = uploadRequest;
+    this.lastCallerUid = callerUid;
+
+    if (this.error !== null) {
+      throw this.error;
+    }
+
+    return this.grant;
+  }
+}
+
 async function request(
   path: string,
   method = "GET",
@@ -69,6 +112,7 @@ async function request(
   authorization: string | null = "Bearer test-token",
   verifier: FirebaseIdTokenVerifier = new FakeVerifier(),
   dataSource: EvidenceAclDataSource = new FakeAclDataSource(),
+  grantIssuer: EvidenceUploadGrantIssuer = new FakeGrantIssuer(),
 ): Promise<Response> {
   const headers = new Headers();
 
@@ -83,6 +127,7 @@ async function request(
   const dependencies: WorkerDependencies = {
     firebaseIdTokenVerifier: verifier,
     evidenceAclDataSource: dataSource,
+    evidenceUploadGrantIssuer: grantIssuer,
   };
 
   return handleRequest(
@@ -95,7 +140,7 @@ async function request(
   );
 }
 
-describe("SEC-R2-002A Worker fail-closed", () => {
+describe("SEC-R2-002A Worker", () => {
   it("responde health sem habilitar storage remoto", async () => {
     const response = await request("/health");
 
@@ -111,7 +156,8 @@ describe("SEC-R2-002A Worker fail-closed", () => {
     });
   });
 
-  it("mantem grant valido bloqueado apos validar contrato", async () => {
+  it("emite grant valido apos autenticacao, contrato e ACL", async () => {
+    const grantIssuer = new FakeGrantIssuer();
     const response = await request(
       "/v1/evidencias/upload-grant",
       "POST",
@@ -123,15 +169,82 @@ describe("SEC-R2-002A Worker fail-closed", () => {
         tamanhoBytes: 9876,
         sha256: "a".repeat(64),
       }),
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      grantIssuer,
     );
 
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(grantIssuer.lastCallerUid).toBe("uid-operacional-001");
+    expect(grantIssuer.lastRequest).toMatchObject({
+      autorUserId: "captor-77",
+      acaoId: "acao-77",
+      evidenciaId: "ev-99",
+    });
 
     const body = await response.json();
 
-    expect(body).toEqual({
-      error: "not_implemented",
-      code: "SEC_R2_002A_FAIL_CLOSED",
+    expect(body).toEqual(grantIssuer.grant);
+  });
+
+  it("nega grant quando vinculo autoritativo do autor falha", async () => {
+    const grantIssuer = new FakeGrantIssuer();
+    grantIssuer.error = new EvidenceGrantError(
+      "author_binding_denied",
+      "autor negado",
+    );
+
+    const response = await request(
+      "/v1/evidencias/upload-grant",
+      "POST",
+      JSON.stringify({
+        acaoId: "acao-77",
+        evidenciaId: "ev-99",
+        autorUserId: "captor-sem-vinculo",
+        contentType: "image/jpeg",
+        tamanhoBytes: 9876,
+        sha256: "a".repeat(64),
+      }),
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      grantIssuer,
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "forbidden",
+      code: "author_binding_denied",
+    });
+  });
+
+  it("falha fechado quando emissor de grant fica indisponivel", async () => {
+    const grantIssuer = new FakeGrantIssuer();
+    grantIssuer.error = new Error("falha interna sensivel");
+
+    const response = await request(
+      "/v1/evidencias/upload-grant",
+      "POST",
+      JSON.stringify({
+        acaoId: "acao-77",
+        evidenciaId: "ev-99",
+        autorUserId: "captor-77",
+        contentType: "image/jpeg",
+        tamanhoBytes: 9876,
+        sha256: "a".repeat(64),
+      }),
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      grantIssuer,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "service_unavailable",
+      code: "grant_unavailable",
     });
   });
 

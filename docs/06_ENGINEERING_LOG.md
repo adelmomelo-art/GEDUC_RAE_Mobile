@@ -2322,3 +2322,41 @@ Próxima ação:
 - não ativar Storage produtivo nesta fronteira.
 
 <!-- SEC-R2-002A-A6A-END -->
+
+## 2026-09-13 - SEC-R2-002A.6B - Emissao do upload grant
+
+Sprint: SEC-R2-002A.6B-R3
+Branch: `security/sec-r2-002a-6b-grant-capability`
+Baseline: `38682e679144d0b0c05439b698cce8ca049d7111`
+Tipo: implementacao de seguranca backend
+Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT
+
+Implementacao:
+
+- novo contrato `evidence_grant.ts`;
+- emissao integrada apos autenticacao, contrato e ACL;
+- verificacao autoritativa obrigatoria de `autorUserId`;
+- caller e autor preservados como identidades distintas;
+- `objectKey` e idempotencia derivadas server-side;
+- capability HMAC-SHA256 com TTL maximo de 300 segundos;
+- response compativel com `EvidenceAccessGrant`;
+- falhas do emissor tratadas sem vazamento de erro interno.
+
+Validacao:
+
+- testes focados A.6B: 23/23;
+- suite Evidence Worker: 57/57;
+- TypeScript typecheck: PASS;
+- Flutter Test: 971/971;
+- Flutter Analyze: PASS, 0 issues;
+- hashes, registrants, diff check e escopo: PASS.
+
+Fronteiras preservadas:
+
+- PUT/R2 permanece fail-closed;
+- `remoteStorageEnabled=false`;
+- nenhum deploy, bucket, binding ou secret;
+- merge depende de autorizacao especifica apos quality gates remotos.
+
+Proxima fronteira tecnica: SEC-R2-002A.6C.
+<!-- SEC-R2-002A-A6B-LOG-END -->

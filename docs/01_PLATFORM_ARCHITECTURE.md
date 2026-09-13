@@ -2335,3 +2335,44 @@ A validacao bem sucedida nao constitui autorizacao de armazenamento. A porta
 privada de persistencia e o contrato de idempotencia contra R2 pertencem a
 SEC-R2-002A.6D.
 <!-- SEC-R2-002A-A6C-PUT-VALIDATION-END -->
+
+<!-- SEC-R2-002A-A6D-IDEMPOTENCY-PORT -->
+### SEC-R2-002A.6D - Idempotencia e porta privada de persistencia
+
+Depois da validacao integral da capability e dos bytes, o Worker usa uma
+fronteira provider-neutral antes de qualquer armazenamento produtivo.
+
+Fluxo arquitetural homologado:
+
+```text
+ValidatedEvidenceUpload
+        |
+        v
+AtomicEvidenceUploadPersister
+        |
+        v
+EvidencePrivateStoragePort.createIfAbsent
+        |
+        +--> created: HTTP 201
+        +--> identidade igual: HTTP 200
+        +--> identidade divergente: HTTP 409
+        +--> porta ausente/falha: HTTP 503
+```
+
+Invariantes:
+
+- a unica operacao de escrita admitida e `createIfAbsent`;
+- nao existe sequencia vulneravel `HEAD` seguida de `PUT`;
+- `objectKey`, RAE, evidencia, autor, MIME, tamanho, SHA-256 e idempotencia
+  formam a identidade imutavel do objeto;
+- `callerUid` permanece separado de `autorUserId` para auditoria;
+- repeticao integralmente identica nao regrava o objeto;
+- qualquer divergencia impede sobrescrita silenciosa;
+- respostas nao expoem URL, credencial ou detalhe interno do storage;
+- o default produtivo nao instala adapter e responde `503` fail-closed;
+- nenhum R2 Binding, bucket, secret ou deploy foi introduzido;
+- `remoteStorageEnabled=false` permanece obrigatorio.
+
+A implementacao de um adapter Cloudflare R2 e o wiring produtivo pertencem a
+uma fronteira posterior e exigem autorizacao especifica.
+<!-- SEC-R2-002A-A6D-IDEMPOTENCY-PORT-END -->

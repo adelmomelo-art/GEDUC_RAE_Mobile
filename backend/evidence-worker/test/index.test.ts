@@ -14,6 +14,11 @@ import {
   type EvidenceUploadGrant,
   type EvidenceUploadGrantIssuer,
 } from "../src/evidence_grant";
+import {
+  EvidencePersistenceError,
+  type EvidenceUploadPersistenceResult,
+  type EvidenceUploadPersister,
+} from "../src/evidence_persistence";
 import type { EvidenceUploadGrantRequest } from "../src/evidence_contract";
 import type { EvidenceUploadCapabilityClaims } from "../src/evidence_capability";
 import {
@@ -146,6 +151,33 @@ class FakeUploadValidator implements EvidenceUploadValidator {
   }
 }
 
+class FakeUploadPersister implements EvidenceUploadPersister {
+  error: Error | null = null;
+  lastUpload: Awaited<
+    ReturnType<EvidenceUploadValidator["validate"]>
+  > | null = null;
+  result: EvidenceUploadPersistenceResult = {
+    status: "created",
+    objectKey: `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+    sha256: "a".repeat(64),
+    tamanhoBytes: 3,
+  };
+
+  async persist(
+    upload: Awaited<
+      ReturnType<EvidenceUploadValidator["validate"]>
+    >,
+  ): Promise<EvidenceUploadPersistenceResult> {
+    this.lastUpload = upload;
+
+    if (this.error !== null) {
+      throw this.error;
+    }
+
+    return this.result;
+  }
+}
+
 async function request(
   path: string,
   method = "GET",
@@ -156,6 +188,7 @@ async function request(
   grantIssuer: EvidenceUploadGrantIssuer = new FakeGrantIssuer(),
   uploadValidator?: EvidenceUploadValidator,
   extraHeaders: Record<string, string> = {},
+  uploadPersister?: EvidenceUploadPersister,
 ): Promise<Response> {
   const headers = new Headers();
 
@@ -176,6 +209,7 @@ async function request(
     evidenceAclDataSource: dataSource,
     evidenceUploadGrantIssuer: grantIssuer,
     evidenceUploadValidator: uploadValidator,
+    evidenceUploadPersister: uploadPersister,
   };
 
   return handleRequest(
@@ -465,8 +499,9 @@ describe("SEC-R2-002A Worker", () => {
     });
   });
 
-  it("mantem upload bloqueado", async () => {
+  it("persiste upload validado pela porta privada", async () => {
     const uploadValidator = new FakeUploadValidator();
+    const uploadPersister = new FakeUploadPersister();
     const response = await request(
       "/v1/evidencias/upload/capability-demo",
       "PUT",
@@ -480,14 +515,132 @@ describe("SEC-R2-002A Worker", () => {
         "content-type": "image/jpeg",
         "x-fenix-idempotency-key": "idempotency-demo",
       },
+      uploadPersister,
     );
 
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(201);
     expect(await response.json()).toEqual({
-      error: "not_implemented",
-      code: "SEC_R2_002A_6C_STORAGE_FAIL_CLOSED",
+      status: "created",
+      operation: "upload",
+      objectKey: uploadPersister.result.objectKey,
+      sha256: "a".repeat(64),
+      tamanhoBytes: 3,
+      idempotent: false,
     });
     expect(uploadValidator.lastCapability).toBe("capability-demo");
+    expect(uploadPersister.lastUpload).not.toBeNull();
+    expect(uploadPersister.lastUpload!.claims.callerUid).toBe(
+      "uid-operacional-001",
+    );
+    expect(uploadPersister.lastUpload!.claims.autorUserId).toBe(
+      "captor-77",
+    );
+  });
+
+  it("retorna sucesso idempotente sem expor URL de storage", async () => {
+    const uploadValidator = new FakeUploadValidator();
+    const uploadPersister = new FakeUploadPersister();
+    uploadPersister.result = {
+      ...uploadPersister.result,
+      status: "already_exists",
+    };
+
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+      {
+        "content-type": "image/jpeg",
+        "x-fenix-idempotency-key": "idempotency-demo",
+      },
+      uploadPersister,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "already_exists",
+      operation: "upload",
+      objectKey: uploadPersister.result.objectKey,
+      sha256: "a".repeat(64),
+      tamanhoBytes: 3,
+      idempotent: true,
+    });
+  });
+
+  it("falha fechado quando porta de persistencia nao esta configurada", async () => {
+    const uploadValidator = new FakeUploadValidator();
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "service_unavailable",
+      code: "storage_unavailable",
+    });
+  });
+
+  it("mapeia conflito de objeto sem sobrescrita", async () => {
+    const uploadPersister = new FakeUploadPersister();
+    uploadPersister.error = new EvidencePersistenceError(
+      "object_conflict",
+      "metadado interno divergente",
+    );
+
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      new FakeUploadValidator(),
+      {},
+      uploadPersister,
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "conflict",
+      code: "object_conflict",
+    });
+  });
+
+  it("mapeia indisponibilidade de storage sem vazar detalhe interno", async () => {
+    const uploadPersister = new FakeUploadPersister();
+    uploadPersister.error = new Error("credencial R2 interna");
+
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      new FakeUploadValidator(),
+      {},
+      uploadPersister,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "service_unavailable",
+      code: "storage_unavailable",
+    });
   });
 
   it("falha fechado quando validador do PUT nao esta configurado", async () => {

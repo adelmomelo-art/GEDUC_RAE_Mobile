@@ -1,0 +1,19 @@
+# SEC-R2-002A.6D - Idempotencia e porta privada homologadas
+# Data: 2026-09-13
+# Branch: security/sec-r2-002a-6d-idempotency-port
+# Baseline: 987ae5a534b9bff1b1299cd437822052a688713c
+# CPB compativel: uma rota relativa por linha.
+
+README_SEC-R2-002A.md
+backend/evidence-worker/src/evidence_persistence.ts
+backend/evidence-worker/src/index.ts
+backend/evidence-worker/test/evidence_persistence.test.ts
+backend/evidence-worker/test/index.test.ts
+docs/01_PLATFORM_ARCHITECTURE.md
+docs/06_ENGINEERING_LOG.md
+docs/SEC-R2-002A_6C_BLUEPRINT.md
+docs/SEC-R2-002A_6C_PLANO.md
+docs/SEC-R2-002A_6D_BLUEPRINT.md
+docs/SEC-R2-002A_6D_PLANO.md
+docs/SEC-R2-002A_BLUEPRINT.md
+tools/manifestos/SEC-R2-002A-A6D-HOMOLOGADO.txt

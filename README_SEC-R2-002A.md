@@ -101,9 +101,53 @@ Baseline A.6C:
 
 - `main`: `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`;
 - branch: `security/sec-r2-002a-6c-put-validation`;
+- PR #82: integrado;
+- merge SHA: `987ae5a534b9bff1b1299cd437822052a688713c`;
+- branches local e remota: removidas;
+- status: HOMOLOGADO, INTEGRADO E ENCERRADO.
+
+## Implementacao A.6D
+
+SEC-R2-002A.6D adiciona a fronteira atomica entre o upload validado e uma
+futura implementacao privada de armazenamento:
+
+- contrato `EvidencePrivateStoragePort` sem dependencia do provedor;
+- criacao obrigatoria por `createIfAbsent`;
+- nenhuma sequencia vulneravel `HEAD` + `PUT`;
+- identidade persistida com object key, RAE, evidencia, autor, MIME, tamanho,
+  SHA-256 e idempotencia derivados server-side;
+- caller preservado separadamente para auditoria;
+- objeto identico existente retorna sucesso idempotente sem regravacao;
+- qualquer divergencia retorna conflito e proibe sobrescrita silenciosa;
+- porta ausente ou falha retorna `503 storage_unavailable`;
+- respostas de sucesso nao expoem URL ou detalhe do storage;
+- testes focados: 53/53;
+- suite Evidence Worker: 99/99;
+- TypeScript typecheck: PASS.
+
+A porta produtiva continua ausente. Nenhum adapter R2, bucket, binding, secret
+ou deploy e introduzido, e `remoteStorageEnabled=false` permanece obrigatorio.
+
+Baseline A.6D:
+
+- `main`: `987ae5a534b9bff1b1299cd437822052a688713c`;
+- branch: `security/sec-r2-002a-6d-idempotency-port`;
+- teste focado A.6D: 53/53;
+- suite Evidence Worker: 99/99;
+- TypeScript typecheck: PASS;
+- Flutter Test: PASS;
+- Flutter Analyze: PASS, 0 issues;
+- registrants EOL: CLEAN;
+- hashes, diff check e escopo: PASS;
+- `createIfAbsent`: PASS;
+- idempotencia integral e bloqueio de sobrescrita: PASS;
+- porta produtiva ausente: `503` fail-closed;
+- R2 adapter/binding: ausentes;
+- `remoteStorageEnabled=false`;
 - status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
 
 ## Proxima fronteira
 
-SEC-R2-002A.6D - contrato de idempotencia e porta privada de persistencia R2,
-ainda sem provisionamento produtivo.
+SEC-R2-002A.6E - adapter Cloudflare R2 e wiring de infraestrutura,
+condicionados a uma autorizacao posterior e ainda sem provisionamento
+produtivo.

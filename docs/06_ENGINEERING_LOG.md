@@ -2400,3 +2400,43 @@ Fronteiras preservadas:
 
 Proxima fronteira tecnica: SEC-R2-002A.6D.
 <!-- SEC-R2-002A-A6C-LOG-END -->
+
+## 2026-09-13 - SEC-R2-002A.6D - Idempotencia e porta privada
+
+Sprint: SEC-R2-002A.6D
+Branch: `security/sec-r2-002a-6d-idempotency-port`
+Baseline: `987ae5a534b9bff1b1299cd437822052a688713c`
+Tipo: implementacao de seguranca backend
+Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT
+
+Implementacao:
+
+- contrato provider-neutral `EvidencePrivateStoragePort`;
+- criacao atomica obrigatoria por `createIfAbsent`;
+- ausencia deliberada de sequencia `HEAD` + `PUT`;
+- `AtomicEvidenceUploadPersister` apos o validador A.6C;
+- identidade imutavel derivada server-side;
+- caller e autor preservados como identidades distintas;
+- sucesso `201` para criacao e `200` para repeticao identica;
+- conflito `409` para qualquer divergencia;
+- porta ausente ou indisponivel em `503` fail-closed;
+- respostas sem URL ou detalhe interno do storage.
+
+Validacao:
+
+- testes focados A.6D: 53/53;
+- suite Evidence Worker: 99/99;
+- TypeScript typecheck: PASS;
+- Flutter Test: PASS;
+- Flutter Analyze: PASS, 0 issues;
+- registrants EOL, hashes, diff check e escopo: PASS.
+
+Fronteiras preservadas:
+
+- adapter e R2 Binding ausentes;
+- `remoteStorageEnabled=false`;
+- nenhum deploy, bucket, binding ou secret;
+- merge depende de autorizacao especifica apos seis quality gates remotos.
+
+Proxima fronteira tecnica: SEC-R2-002A.6E.
+<!-- SEC-R2-002A-A6D-LOG-END -->

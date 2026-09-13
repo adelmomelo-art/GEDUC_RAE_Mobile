@@ -78,3 +78,13 @@ Homologacao local concluida em 2026-09-13:
 O fechamento autorizado pode documentar, criar manifesto, commitar, publicar a
 branch e abrir o Pull Request. O merge depende de autorizacao especifica apos
 os quality gates remotos.
+
+## Integracao
+
+- PR #82: merged;
+- quality gates: 6/6 PASS;
+- merge SHA: `987ae5a534b9bff1b1299cd437822052a688713c`;
+- `main` local e remota: sincronizadas;
+- branches local e remota: removidas;
+- working tree: limpa;
+- nenhum deploy, bucket, binding ou secret executado.

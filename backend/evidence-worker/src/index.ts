@@ -18,7 +18,12 @@ import {
   type EvidenceUploadGrantIssuer,
 } from "./evidence_grant";
 import {
+  EvidencePersistenceError,
+  type EvidenceUploadPersister,
+} from "./evidence_persistence";
+import {
   EvidenceUploadValidationError,
+  type ValidatedEvidenceUpload,
   type EvidenceUploadValidator,
 } from "./evidence_upload";
 
@@ -27,6 +32,7 @@ export interface WorkerDependencies {
   evidenceAclDataSource: EvidenceAclDataSource;
   evidenceUploadGrantIssuer: EvidenceUploadGrantIssuer;
   evidenceUploadValidator?: EvidenceUploadValidator;
+  evidenceUploadPersister?: EvidenceUploadPersister;
 }
 
 const disabledFirebaseIdTokenVerifier: FirebaseIdTokenVerifier = {
@@ -63,6 +69,15 @@ const disabledEvidenceUploadValidator: EvidenceUploadValidator = {
   },
 };
 
+const disabledEvidenceUploadPersister: EvidenceUploadPersister = {
+  async persist(): Promise<never> {
+    throw new EvidencePersistenceError(
+      "persistence_unavailable",
+      "Porta privada de persistencia nao configurada.",
+    );
+  },
+};
+
 const defaultDependencies: WorkerDependencies = {
   firebaseIdTokenVerifier: disabledFirebaseIdTokenVerifier,
   evidenceAclDataSource: disabledEvidenceAclDataSource,
@@ -95,13 +110,6 @@ function methodNotAllowed(allow: string): Response {
     },
     { allow },
   );
-}
-
-function notImplemented(): Response {
-  return jsonResponse(501, {
-    error: "not_implemented",
-    code: "SEC_R2_002A_6C_STORAGE_FAIL_CLOSED",
-  });
 }
 
 function uploadValidationErrorResponse(
@@ -168,6 +176,22 @@ function uploadValidationErrorResponse(
   return jsonResponse(400, {
     error: "invalid_upload",
     code: error.code,
+  });
+}
+
+function persistenceErrorResponse(
+  error: EvidencePersistenceError,
+): Response {
+  if (error.code === "object_conflict") {
+    return jsonResponse(409, {
+      error: "conflict",
+      code: error.code,
+    });
+  }
+
+  return jsonResponse(503, {
+    error: "service_unavailable",
+    code: "storage_unavailable",
   });
 }
 
@@ -312,8 +336,13 @@ export async function handleRequest(
       dependencies.evidenceUploadValidator ??
       disabledEvidenceUploadValidator;
 
+    let validatedUpload: ValidatedEvidenceUpload;
+
     try {
-      await uploadValidator.validate(capability, request);
+      validatedUpload = await uploadValidator.validate(
+        capability,
+        request,
+      );
     } catch (error) {
       if (error instanceof EvidenceUploadValidationError) {
         return uploadValidationErrorResponse(error);
@@ -325,7 +354,32 @@ export async function handleRequest(
       });
     }
 
-    return notImplemented();
+    const uploadPersister =
+      dependencies.evidenceUploadPersister ??
+      disabledEvidenceUploadPersister;
+
+    try {
+      const result = await uploadPersister.persist(validatedUpload);
+      const idempotent = result.status === "already_exists";
+
+      return jsonResponse(idempotent ? 200 : 201, {
+        status: result.status,
+        operation: "upload",
+        objectKey: result.objectKey,
+        sha256: result.sha256,
+        tamanhoBytes: result.tamanhoBytes,
+        idempotent,
+      });
+    } catch (error) {
+      if (error instanceof EvidencePersistenceError) {
+        return persistenceErrorResponse(error);
+      }
+
+      return jsonResponse(503, {
+        error: "service_unavailable",
+        code: "storage_unavailable",
+      });
+    }
   }
 
   return jsonResponse(404, {

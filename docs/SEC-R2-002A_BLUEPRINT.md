@@ -131,7 +131,8 @@ Nenhuma credencial R2 no Flutter ou APK.
 
 - A.1 a A.6A: homologadas e integradas na `main` pelo PR #80;
 - A.6B: homologada e integrada na `main` pelo PR #81;
-- A.6C: implementada e homologada localmente para pre-commit.
+- A.6C: homologada e integrada na `main` pelo PR #82;
+- A.6D: implementada e homologada localmente para pre-commit.
 
 <!-- SEC-R2-002A-A6A-HOMOLOGADO -->
 ## Registro de implementação — A.1 a A.6A
@@ -195,5 +196,29 @@ Nenhuma credencial R2 no Flutter ou APK.
 - Persistencia R2 permanece ausente e o PUT valido termina em `501`.
 - `remoteStorageEnabled=false` permanece inalterado.
 - Nenhum bucket, binding, secret ou deploy pertence a A.6C.
-- Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+- PR #82 integrado pelo merge
+  `987ae5a534b9bff1b1299cd437822052a688713c`.
+- Status: HOMOLOGADO, INTEGRADO E ENCERRADO.
 <!-- SEC-R2-002A-A6C-HOMOLOGADO-END -->
+
+<!-- SEC-R2-002A-A6D-HOMOLOGADO -->
+## Registro de implementacao - A.6D
+
+- Baseline: merge `987ae5a534b9bff1b1299cd437822052a688713c`.
+- Branch: `security/sec-r2-002a-6d-idempotency-port`.
+- Porta privada desacoplada de provedor.
+- Criacao atomica obrigatoria por `createIfAbsent`.
+- Caller e autor permanecem identidades distintas.
+- Identidade existente integralmente equivalente produz sucesso idempotente.
+- Qualquer divergencia produz conflito sem sobrescrita.
+- Ausencia ou falha da porta produz `503` fail-closed.
+- Nenhuma URL ou detalhe de storage e devolvido ao cliente.
+- Testes focados: 53/53.
+- Suite Evidence Worker: 99/99.
+- TypeScript typecheck: PASS.
+- Flutter Test e Flutter Analyze: PASS.
+- Registrants EOL, hashes, diff check e escopo: PASS.
+- R2 Binding, bucket, secret e deploy: ausentes.
+- `remoteStorageEnabled=false` permanece inalterado.
+- Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+<!-- SEC-R2-002A-A6D-HOMOLOGADO-END -->

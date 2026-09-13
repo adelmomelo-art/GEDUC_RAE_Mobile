@@ -111,4 +111,10 @@ Resultado em 2026-09-13:
 - `remoteStorageEnabled=false`;
 - nenhum deploy, bucket, binding ou secret executado.
 
-Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+Status: HOMOLOGADO, INTEGRADO E ENCERRADO.
+
+- PR #82: merged;
+- merge na `main`:
+  `987ae5a534b9bff1b1299cd437822052a688713c`;
+- branches local e remota: removidas;
+- working tree apos fechamento: limpa.

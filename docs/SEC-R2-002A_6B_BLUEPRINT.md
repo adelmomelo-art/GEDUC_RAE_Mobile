@@ -93,7 +93,7 @@ PUT, ainda sem habilitacao produtiva.
 
 ## Homologacao
 
-Status em 2026-09-13: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+Status em 2026-09-13: HOMOLOGADO, INTEGRADO E ENCERRADO.
 
 - testes focados: 23/23;
 - suite Evidence Worker: 57/57;
@@ -104,3 +104,8 @@ Status em 2026-09-13: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
 - registrants EOL: CLEAN;
 - PUT/R2: fail-closed;
 - armazenamento remoto: desabilitado.
+- PR #81: merged;
+- merge na `main`:
+  `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`;
+- branches local e remota: removidas;
+- working tree apos fechamento: limpa.

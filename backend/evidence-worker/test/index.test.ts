@@ -15,6 +15,11 @@ import {
   type EvidenceUploadGrantIssuer,
 } from "../src/evidence_grant";
 import type { EvidenceUploadGrantRequest } from "../src/evidence_contract";
+import type { EvidenceUploadCapabilityClaims } from "../src/evidence_capability";
+import {
+  EvidenceUploadValidationError,
+  type EvidenceUploadValidator,
+} from "../src/evidence_upload";
 
 class FakeVerifier implements FirebaseIdTokenVerifier {
   lastToken: string | null = null;
@@ -105,6 +110,42 @@ class FakeGrantIssuer implements EvidenceUploadGrantIssuer {
   }
 }
 
+class FakeUploadValidator implements EvidenceUploadValidator {
+  error: Error | null = null;
+  lastCapability: string | null = null;
+  lastRequest: Request | null = null;
+
+  async validate(capability: string, request: Request) {
+    this.lastCapability = capability;
+    this.lastRequest = request;
+
+    if (this.error !== null) {
+      throw this.error;
+    }
+
+    const claims: EvidenceUploadCapabilityClaims = {
+      v: 1,
+      purpose: "evidence-upload",
+      callerUid: "uid-operacional-001",
+      autorUserId: "captor-77",
+      acaoId: "acao-77",
+      evidenciaId: "ev-99",
+      contentType: "image/jpeg",
+      tamanhoBytes: 3,
+      sha256: "a".repeat(64),
+      objectKey: `evidencias/v1/acao-77/ev-99/${"a".repeat(64)}.jpg`,
+      issuedAt: 1789264800,
+      expiresAt: 1789265100,
+    };
+
+    return {
+      claims,
+      bytes: Uint8Array.from([1, 2, 3]).buffer,
+      sha256: claims.sha256,
+    };
+  }
+}
+
 async function request(
   path: string,
   method = "GET",
@@ -113,6 +154,8 @@ async function request(
   verifier: FirebaseIdTokenVerifier = new FakeVerifier(),
   dataSource: EvidenceAclDataSource = new FakeAclDataSource(),
   grantIssuer: EvidenceUploadGrantIssuer = new FakeGrantIssuer(),
+  uploadValidator?: EvidenceUploadValidator,
+  extraHeaders: Record<string, string> = {},
 ): Promise<Response> {
   const headers = new Headers();
 
@@ -124,10 +167,15 @@ async function request(
     headers.set("authorization", authorization);
   }
 
+  for (const [name, value] of Object.entries(extraHeaders)) {
+    headers.set(name, value);
+  }
+
   const dependencies: WorkerDependencies = {
     firebaseIdTokenVerifier: verifier,
     evidenceAclDataSource: dataSource,
     evidenceUploadGrantIssuer: grantIssuer,
+    evidenceUploadValidator: uploadValidator,
   };
 
   return handleRequest(
@@ -418,12 +466,114 @@ describe("SEC-R2-002A Worker", () => {
   });
 
   it("mantem upload bloqueado", async () => {
+    const uploadValidator = new FakeUploadValidator();
     const response = await request(
       "/v1/evidencias/upload/capability-demo",
       "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+      {
+        "content-type": "image/jpeg",
+        "x-fenix-idempotency-key": "idempotency-demo",
+      },
     );
 
     expect(response.status).toBe(501);
+    expect(await response.json()).toEqual({
+      error: "not_implemented",
+      code: "SEC_R2_002A_6C_STORAGE_FAIL_CLOSED",
+    });
+    expect(uploadValidator.lastCapability).toBe("capability-demo");
+  });
+
+  it("falha fechado quando validador do PUT nao esta configurado", async () => {
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo",
+      "PUT",
+      "abc",
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "service_unavailable",
+      code: "validator_unavailable",
+    });
+  });
+
+  it("mapeia capability invalida sem expor detalhe criptografico", async () => {
+    const uploadValidator = new FakeUploadValidator();
+    uploadValidator.error = new EvidenceUploadValidationError(
+      "invalid_capability",
+      "assinatura interna divergente",
+    );
+
+    const response = await request(
+      "/v1/evidencias/upload/capability-forjada",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("www-authenticate")).toBe("Capability");
+    expect(await response.json()).toEqual({
+      error: "unauthorized",
+      code: "invalid_capability",
+    });
+  });
+
+  it("mapeia divergencia dos bytes como conteudo nao processavel", async () => {
+    const uploadValidator = new FakeUploadValidator();
+    uploadValidator.error = new EvidenceUploadValidationError(
+      "hash_mismatch",
+      "hash interno divergente",
+    );
+
+    const response = await request(
+      "/v1/evidencias/upload/capability-valida",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+    );
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error: "unprocessable_content",
+      code: "hash_mismatch",
+    });
+  });
+
+  it("rejeita query adicional no endpoint de upload", async () => {
+    const uploadValidator = new FakeUploadValidator();
+    const response = await request(
+      "/v1/evidencias/upload/capability-demo?forjada=1",
+      "PUT",
+      "abc",
+      "Bearer test-token",
+      new FakeVerifier(),
+      new FakeAclDataSource(),
+      new FakeGrantIssuer(),
+      uploadValidator,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "invalid_upload",
+      code: "unexpected_query",
+    });
+    expect(uploadValidator.lastCapability).toBeNull();
   });
 
   it("rejeita metodo incorreto no grant", async () => {

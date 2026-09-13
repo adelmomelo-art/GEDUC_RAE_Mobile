@@ -2360,3 +2360,43 @@ Fronteiras preservadas:
 
 Proxima fronteira tecnica: SEC-R2-002A.6C.
 <!-- SEC-R2-002A-A6B-LOG-END -->
+
+## 2026-09-13 - SEC-R2-002A.6C - Validacao do PUT e dos bytes
+
+Sprint: SEC-R2-002A.6C
+Branch: `security/sec-r2-002a-6c-put-validation`
+Baseline: `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`
+Tipo: implementacao de seguranca backend
+Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT
+
+Implementacao:
+
+- verificacao independente de TTL maximo, expiracao e emissao futura;
+- limite operacional compartilhado de 10 MiB;
+- validacao de Content-Type, idempotencia e Content-Length quando presente;
+- bloqueio de Content-Range e codificacao transformadora;
+- leitura do stream limitada ao tamanho autorizado;
+- conferencia da assinatura JPEG;
+- SHA-256 recalculado sobre os bytes reais;
+- comparacao canonica da objectKey derivada server-side;
+- respostas HTTP fail-closed sem vazamento de detalhes internos.
+
+Validacao:
+
+- testes focados A.6C: 53/53;
+- suite Evidence Worker: 80/80;
+- TypeScript typecheck: PASS;
+- Flutter Test: PASS;
+- Flutter Analyze: PASS, 0 issues;
+- registrants EOL, hashes, diff check e escopo: PASS.
+
+Fronteiras preservadas:
+
+- PUT validado termina em `501` sem persistencia;
+- R2 Binding ausente;
+- `remoteStorageEnabled=false`;
+- nenhum deploy, bucket, binding ou secret;
+- merge depende de autorizacao especifica apos quality gates remotos.
+
+Proxima fronteira tecnica: SEC-R2-002A.6D.
+<!-- SEC-R2-002A-A6C-LOG-END -->

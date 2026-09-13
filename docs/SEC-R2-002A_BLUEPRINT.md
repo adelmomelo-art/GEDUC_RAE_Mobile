@@ -130,8 +130,8 @@ Nenhuma credencial R2 no Flutter ou APK.
 ## Estado das subetapas
 
 - A.1 a A.6A: homologadas e integradas na `main` pelo PR #80;
-- A.6B: homologada localmente para emissao do upload grant;
-- proxima fronteira: A.6C, validacao do PUT e dos bytes recebidos.
+- A.6B: homologada e integrada na `main` pelo PR #81;
+- A.6C: implementada e homologada localmente para pre-commit.
 
 <!-- SEC-R2-002A-A6A-HOMOLOGADO -->
 ## Registro de implementação — A.1 a A.6A
@@ -160,7 +160,7 @@ Nenhuma credencial R2 no Flutter ou APK.
 <!-- SEC-R2-002A-A6B-HOMOLOGADO -->
 ## Registro de implementacao - A.6B
 
-- Status: implementado e homologado localmente em 2026-09-13.
+- Status: implementado, homologado e integrado em 2026-09-13.
 - Branch: `security/sec-r2-002a-6b-grant-capability`.
 - Baseline: `38682e679144d0b0c05439b698cce8ca049d7111`.
 - Grant emitido somente apos autenticacao, contrato e ACL.
@@ -175,4 +175,25 @@ Nenhuma credencial R2 no Flutter ou APK.
 - TypeScript typecheck e Flutter Analyze: PASS.
 - PUT/R2 permanece `501` e `remoteStorageEnabled=false`.
 - Nenhum deploy, bucket, binding ou secret executado.
+- PR #81 integrado pelo merge
+  `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`.
 <!-- SEC-R2-002A-A6B-END -->
+
+<!-- SEC-R2-002A-A6C-HOMOLOGADO -->
+## Registro de implementacao - A.6C
+
+- Baseline: merge `4ed6dadd1dc0ba9362874b62d1a13de49dc61f28`.
+- Branch: `security/sec-r2-002a-6c-put-validation`.
+- Capability rejeita emissao futura e TTL acima de 300 segundos.
+- Limite operacional compartilhado: 10 MiB.
+- PUT valida MIME, idempotencia, tamanho, JPEG e SHA-256 reais.
+- `objectKey` e novamente derivada e comparada server-side.
+- Testes focados: 53/53.
+- Suite Evidence Worker: 80/80.
+- TypeScript typecheck, Flutter Test e Flutter Analyze: PASS.
+- Registrants EOL, hashes, diff check e escopo: PASS.
+- Persistencia R2 permanece ausente e o PUT valido termina em `501`.
+- `remoteStorageEnabled=false` permanece inalterado.
+- Nenhum bucket, binding, secret ou deploy pertence a A.6C.
+- Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+<!-- SEC-R2-002A-A6C-HOMOLOGADO-END -->

@@ -3,6 +3,7 @@ import {
   buildEvidenceIdempotencyKey,
   buildEvidenceObjectKey,
   EvidenceContractError,
+  maximumEvidenceUploadBytes,
   parseEvidenceUploadGrantRequest,
 } from "../src/evidence_contract";
 
@@ -113,6 +114,16 @@ describe("SEC-R2-002A.3 - evidence contract", () => {
     );
 
     expect(error.code).toBe("invalid_size");
+  });
+
+  it("rejeita tamanho superior ao limite operacional", () => {
+    const error = contractError(
+      validRequest({
+        tamanhoBytes: maximumEvidenceUploadBytes + 1,
+      }),
+    );
+
+    expect(error.code).toBe("payload_too_large");
   });
 
   it("rejeita autorUserId vazio", () => {

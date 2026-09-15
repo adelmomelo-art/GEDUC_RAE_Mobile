@@ -1,0 +1,22 @@
+# SEC-R2-002A.6E - Manifesto homologado
+# Data: 2026-09-15 12:22:43 -03:00
+# Branch: security/sec-r2-002a-6e-r2-adapter
+# Baseline: 34d71d540fd12ba2f04c24124e9c02910c25e069
+# CPB compativel: uma rota relativa por linha.
+
+backend/evidence-worker/src/evidence_persistence.ts
+backend/evidence-worker/src/index.ts
+backend/evidence-worker/src/r2_evidence_storage.ts
+backend/evidence-worker/test/evidence_persistence.test.ts
+backend/evidence-worker/test/index.test.ts
+backend/evidence-worker/test/r2_evidence_storage.test.ts
+docs/01_PLATFORM_ARCHITECTURE.md
+docs/06_ENGINEERING_LOG.md
+docs/SEC-R2-002A_6D_BLUEPRINT.md
+docs/SEC-R2-002A_6D_PLANO.md
+docs/SEC-R2-002A_6E_BLUEPRINT.md
+docs/SEC-R2-002A_6E_HOMOLOGACAO.md
+docs/SEC-R2-002A_6E_PLANO.md
+docs/SEC-R2-002A_BLUEPRINT.md
+README_SEC-R2-002A.md
+tools/manifestos/SEC-R2-002A-A6E-HOMOLOGADO.txt

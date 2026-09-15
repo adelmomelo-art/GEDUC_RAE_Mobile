@@ -26,6 +26,10 @@ import {
   type ValidatedEvidenceUpload,
   type EvidenceUploadValidator,
 } from "./evidence_upload";
+import {
+  createR2EvidenceUploadPersister,
+  type EvidenceWorkerR2Bindings,
+} from "./r2_evidence_storage";
 
 export interface WorkerDependencies {
   firebaseIdTokenVerifier: FirebaseIdTokenVerifier;
@@ -388,7 +392,20 @@ export async function handleRequest(
 }
 
 export default {
-  fetch(request: Request): Promise<Response> {
-    return handleRequest(request);
+  fetch(
+    request: Request,
+    env: EvidenceWorkerR2Bindings = {},
+  ): Promise<Response> {
+    const evidenceUploadPersister =
+      createR2EvidenceUploadPersister(env);
+
+    if (evidenceUploadPersister === undefined) {
+      return handleRequest(request);
+    }
+
+    return handleRequest(request, {
+      ...defaultDependencies,
+      evidenceUploadPersister,
+    });
   },
 };

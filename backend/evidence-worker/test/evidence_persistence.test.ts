@@ -191,6 +191,19 @@ describe("SEC-R2-002A.6D - idempotencia e porta privada", () => {
     });
   });
 
+  it("mapeia conflito explicito da porta sem sobrescrita", async () => {
+    const storage = new FakePrivateStorage();
+    storage.result = {
+      status: "conflict",
+    };
+    const persister = new AtomicEvidenceUploadPersister(storage);
+
+    await expect(persister.persist(upload())).rejects.toMatchObject({
+      code: "object_conflict",
+    });
+    expect(storage.calls).toBe(1);
+  });
+
   it("rejeita resultado desconhecido da porta privada", async () => {
     const storage = new FakePrivateStorage();
     storage.result = {

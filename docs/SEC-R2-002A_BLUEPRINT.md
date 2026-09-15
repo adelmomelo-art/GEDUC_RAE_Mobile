@@ -133,7 +133,8 @@ Nenhuma credencial R2 no Flutter ou APK.
 - A.6B: homologada e integrada na `main` pelo PR #81;
 - A.6C: homologada e integrada na `main` pelo PR #82;
 - A.6D: homologada e integrada na `main` pelo PR #83;
-- A.6E: adapter R2 e wiring local implementados sem infraestrutura produtiva.
+- A.6E: homologada e integrada na `main` pelo PR #84;
+- A.6F: preparacao versionada do binding R2, mantendo storage remoto desabilitado.
 
 <!-- SEC-R2-002A-A6A-HOMOLOGADO -->
 ## Registro de implementação — A.1 a A.6A
@@ -243,5 +244,22 @@ Nenhuma credencial R2 no Flutter ou APK.
 - `wrangler.jsonc` permanece sem binding R2.
 - `remoteStorageEnabled=false` permanece inalterado.
 - Bucket, binding real, secret e deploy: ausentes.
-- Status: IMPLEMENTADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
+- Status: HOMOLOGADO, INTEGRADO E ENCERRADO pelo PR #84; merge `ec217fa42244ef28a0b1fd275f7b10b85b0209db`.
 <!-- SEC-R2-002A-A6E-IMPLEMENTADO-END -->
+
+<!-- SEC-R2-002A-A6F-PREPARACAO-START -->
+## Registro de preparacao - A.6F
+
+- Baseline: `ec217fa42244ef28a0b1fd275f7b10b85b0209db`.
+- Branch: `security/sec-r2-002a-6f-r2-infra`.
+- Binding planejado: `EVIDENCE_BUCKET`.
+- Bucket privado planejado: `fenix-evidence-private-prod`.
+- `remoteStorageBound` separado de `remoteStorageEnabled`.
+- `remoteStorageEnabled=false` permanece obrigatorio.
+- Binding presente nao contorna o validator.
+- Nenhum `r2.dev`, custom domain ou CORS.
+- Nenhuma Access Key/Secret Key R2 no Worker ou Flutter.
+- Aplicacao/testes executados em worktree isolado.
+- Criacao real de bucket e deploy permanecem fora da aplicacao local.
+- Status: PREPARADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
+<!-- SEC-R2-002A-A6F-PREPARACAO-END -->

@@ -2397,3 +2397,24 @@ Garantias preservadas:
 
 Status: HOMOLOGADO LOCALMENTE / FECHAMENTO CONTROLADO.
 <!-- SEC-R2-002A-A6E-HOMOLOGADO-END -->
+
+<!-- SEC-R2-002A-A6F-HOMOLOGADO-START -->
+## SEC-R2-002A.6F - Infraestrutura R2 preparada para ativacao controlada
+
+A camada de evidencias passa a possuir configuracao versionada de R2 Binding,
+sem habilitar ainda o fluxo produtivo.
+
+Garantias:
+
+- binding `EVIDENCE_BUCKET`;
+- bucket planejado `fenix-evidence-private-prod`;
+- `remoteStorageBound` diferencia binding presente de feature habilitada;
+- `remoteStorageEnabled=false`;
+- validator, autenticacao e grant defaults permanecem fail-closed;
+- nenhuma configuracao `r2.dev`, custom domain ou CORS;
+- nenhuma Access Key/Secret Key R2 adicionada ao Worker ou Flutter;
+- aplicacao e testes realizados em worktree isolado;
+- bucket real e deploy permanecem fora do fechamento de codigo.
+
+Status: HOMOLOGADO LOCALMENTE / PUBLICACAO DE CODIGO CONTROLADA.
+<!-- SEC-R2-002A-A6F-HOMOLOGADO-END -->

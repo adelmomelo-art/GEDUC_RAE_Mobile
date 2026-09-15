@@ -37,6 +37,7 @@ export interface WorkerDependencies {
   evidenceUploadGrantIssuer: EvidenceUploadGrantIssuer;
   evidenceUploadValidator?: EvidenceUploadValidator;
   evidenceUploadPersister?: EvidenceUploadPersister;
+  remoteStorageBound?: boolean;
 }
 
 const disabledFirebaseIdTokenVerifier: FirebaseIdTokenVerifier = {
@@ -214,6 +215,7 @@ export async function handleRequest(
     return jsonResponse(200, {
       status: "ok",
       service: "fenix-evidence-api",
+      remoteStorageBound: dependencies.remoteStorageBound ?? false,
       remoteStorageEnabled: false,
     });
   }
@@ -400,12 +402,16 @@ export default {
       createR2EvidenceUploadPersister(env);
 
     if (evidenceUploadPersister === undefined) {
-      return handleRequest(request);
+      return handleRequest(request, {
+        ...defaultDependencies,
+        remoteStorageBound: false,
+      });
     }
 
     return handleRequest(request, {
       ...defaultDependencies,
       evidenceUploadPersister,
+      remoteStorageBound: true,
     });
   },
 };

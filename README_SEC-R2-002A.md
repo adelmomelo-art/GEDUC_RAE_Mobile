@@ -192,3 +192,28 @@ Garantias:
 
 Status: PREPARADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
 <!-- SEC-R2-002A-A6F-PREPARACAO-END -->
+
+<!-- SEC-R2-002A-A6G-STATUS-START -->
+## Status A.6G - homologacao local concluida / remoto pendente externamente
+
+A SEC-R2-002A.6G foi separada em duas fronteiras:
+
+- **A.6G-LAB:** homologada integralmente com R2 local/Miniflare;
+- **A.6G remota:** pendente exclusivamente de entitlement/billing da
+  Cloudflare.
+
+A tentativa remota parou antes da criacao do bucket com Cloudflare API
+`code 10042`. Nenhum bucket ou deploy remoto foi criado.
+
+A homologacao LAB comprovou 65/65 testes, typecheck, binding local,
+`remoteStorageBound=true`, `remoteStorageEnabled=false`, PUT fail-closed,
+PUT/GET/persistencia/delete no R2 local e restart limpo do Worker.
+
+A pendencia externa nao bloqueia a continuidade da engenharia da Plataforma
+Fenix. A ativacao remota devera ser retomada em intervencao isolada contra a
+main vigente quando o R2 estiver habilitado na conta.
+
+Documento oficial: `docs/SEC-R2-002A_6G_STATUS.md`.
+
+Status: **LAB HOMOLOGADO / REMOTO PENDENTE EXTERNAMENTE / ENGENHARIA LIBERADA**.
+<!-- SEC-R2-002A-A6G-STATUS-END -->

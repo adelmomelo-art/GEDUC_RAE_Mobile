@@ -170,4 +170,25 @@ Baseline A.6E:
 
 - `main`: `34d71d540fd12ba2f04c24124e9c02910c25e069`;
 - branch: `security/sec-r2-002a-6e-r2-adapter`;
-- status: IMPLEMENTADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
+- status: HOMOLOGADO, INTEGRADO E ENCERRADO pelo PR #84; merge `ec217fa42244ef28a0b1fd275f7b10b85b0209db`.
+
+<!-- SEC-R2-002A-A6F-PREPARACAO-START -->
+## Preparacao A.6F - Infraestrutura R2
+
+Baseline: `ec217fa42244ef28a0b1fd275f7b10b85b0209db`.
+
+A A.6F prepara o binding `EVIDENCE_BUCKET` para o bucket privado
+`fenix-evidence-private-prod`, mantendo a feature de storage remoto desligada.
+
+Garantias:
+
+- `remoteStorageBound` indica somente a presenca do binding;
+- `remoteStorageEnabled=false` permanece obrigatorio;
+- validator, autenticacao e grant produtivos continuam fail-closed;
+- nenhum secret R2 e necessario no Worker para uso do binding;
+- nenhum bucket, deploy ou recurso Cloudflare e criado pela aplicacao local;
+- nenhum acesso publico, CORS ou custom domain e configurado;
+- aplicacao e testes executados em worktree isolado.
+
+Status: PREPARADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
+<!-- SEC-R2-002A-A6F-PREPARACAO-END -->

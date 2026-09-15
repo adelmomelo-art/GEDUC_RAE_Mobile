@@ -2465,3 +2465,34 @@ Validacoes de homologacao:
 
 Fronteira operacional: commit/push/PR e quality gates autorizados; merge, deploy, bucket, binding e secret permanecem fora deste script.
 <!-- SEC-R2-002A-A6E-LOG-END -->
+
+<!-- SEC-R2-002A-A6F-LOG-START -->
+## 2026-09-15 14:02:27 -03:00 - SEC-R2-002A.6F
+
+Preparacao versionada da infraestrutura Cloudflare R2 concluida em worktree
+isolado.
+
+Validacoes:
+
+- baseline: PASS;
+- hashes base: PASS;
+- escopo pos-aplicacao: PASS;
+- escopo pos-testes: PASS;
+- MISSING=0;
+- EXTRA=0;
+- binding R2: PASS;
+- `remoteStorageEnabled=false`;
+- validator/auth/grant defaults: FAIL-CLOSED;
+- `npm ci`: PASS;
+- Vitest local: PASS;
+- testes A.6F focados: PASS;
+- Evidence Worker completo: PASS;
+- TypeScript typecheck: PASS;
+- Flutter Test: PASS;
+- Flutter Analyze: PASS;
+- git diff check: PASS;
+- checkout principal: CLEAN / INTOCADO.
+
+Fronteira: este fechamento publica codigo/PR. Bucket real, deploy Cloudflare,
+secrets e habilitacao produtiva permanecem fora deste script.
+<!-- SEC-R2-002A-A6F-LOG-END -->

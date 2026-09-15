@@ -236,6 +236,7 @@ describe("SEC-R2-002A Worker", () => {
     expect(body).toEqual({
       status: "ok",
       service: "fenix-evidence-api",
+      remoteStorageBound: false,
       remoteStorageEnabled: false,
     });
   });
@@ -272,6 +273,7 @@ describe("SEC-R2-002A Worker", () => {
     );
 
     expect(await healthResponse.json()).toMatchObject({
+      remoteStorageBound: true,
       remoteStorageEnabled: false,
     });
     expect(uploadResponse.status).toBe(503);

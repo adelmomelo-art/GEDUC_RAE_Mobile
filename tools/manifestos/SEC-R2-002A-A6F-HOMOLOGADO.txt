@@ -1,0 +1,17 @@
+# SEC-R2-002A.6F - Manifesto homologado
+# Data: 2026-09-15 14:02:27 -03:00
+# Branch: security/sec-r2-002a-6f-r2-infra
+# Baseline: ec217fa42244ef28a0b1fd275f7b10b85b0209db
+# Uma rota relativa por linha.
+
+backend/evidence-worker/src/index.ts
+backend/evidence-worker/test/index.test.ts
+backend/evidence-worker/wrangler.jsonc
+docs/01_PLATFORM_ARCHITECTURE.md
+docs/06_ENGINEERING_LOG.md
+docs/SEC-R2-002A_6F_BLUEPRINT.md
+docs/SEC-R2-002A_6F_HOMOLOGACAO.md
+docs/SEC-R2-002A_6F_PLANO.md
+docs/SEC-R2-002A_BLUEPRINT.md
+README_SEC-R2-002A.md
+tools/manifestos/SEC-R2-002A-A6F-HOMOLOGADO.txt

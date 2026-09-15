@@ -25,6 +25,7 @@ export interface EvidencePrivateStorageCreateInput {
 
 export type EvidencePrivateStorageCreateResult =
   | { status: "created" }
+  | { status: "conflict" }
   | {
       status: "already_exists";
       object: EvidencePrivateObjectMetadata;
@@ -157,6 +158,13 @@ export class AtomicEvidenceUploadPersister
         sha256: metadata.sha256,
         tamanhoBytes: metadata.tamanhoBytes,
       };
+    }
+
+    if (result.status === "conflict") {
+      throw new EvidencePersistenceError(
+        "object_conflict",
+        "Objeto existente nao possui identidade autorizada.",
+      );
     }
 
     if (result.status === "already_exists") {

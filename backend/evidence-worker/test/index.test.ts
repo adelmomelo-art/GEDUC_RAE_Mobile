@@ -6,6 +6,7 @@ import type {
   EvidenceUserRecord,
 } from "../src/evidence_acl";
 import {
+  default as worker,
   handleRequest,
   type WorkerDependencies,
 } from "../src/index";
@@ -25,6 +26,7 @@ import {
   EvidenceUploadValidationError,
   type EvidenceUploadValidator,
 } from "../src/evidence_upload";
+import type { R2EvidenceBucketBinding } from "../src/r2_evidence_storage";
 
 class FakeVerifier implements FirebaseIdTokenVerifier {
   lastToken: string | null = null;
@@ -236,6 +238,48 @@ describe("SEC-R2-002A Worker", () => {
       service: "fenix-evidence-api",
       remoteStorageEnabled: false,
     });
+  });
+
+  it("binding R2 injetado nao ativa health nem contorna o validador", async () => {
+    const calls: string[] = [];
+    const bucket: R2EvidenceBucketBinding = {
+      async put() {
+        calls.push("put");
+        return null;
+      },
+      async head() {
+        calls.push("head");
+        return null;
+      },
+    };
+    const env = {
+      EVIDENCE_BUCKET: bucket,
+    };
+
+    const healthResponse = await worker.fetch(
+      new Request("https://fenix.test/health"),
+      env,
+    );
+    const uploadResponse = await worker.fetch(
+      new Request(
+        "https://fenix.test/v1/evidencias/upload/capability-demo",
+        {
+          method: "PUT",
+          body: "abc",
+        },
+      ),
+      env,
+    );
+
+    expect(await healthResponse.json()).toMatchObject({
+      remoteStorageEnabled: false,
+    });
+    expect(uploadResponse.status).toBe(503);
+    expect(await uploadResponse.json()).toEqual({
+      error: "service_unavailable",
+      code: "validator_unavailable",
+    });
+    expect(calls).toEqual([]);
   });
 
   it("emite grant valido apos autenticacao, contrato e ACL", async () => {

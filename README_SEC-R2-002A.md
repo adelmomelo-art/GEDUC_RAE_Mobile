@@ -144,10 +144,30 @@ Baseline A.6D:
 - porta produtiva ausente: `503` fail-closed;
 - R2 adapter/binding: ausentes;
 - `remoteStorageEnabled=false`;
-- status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+- PR #83: integrado;
+- merge SHA: `34d71d540fd12ba2f04c24124e9c02910c25e069`;
+- branches local e remota: removidas;
+- status: HOMOLOGADO, INTEGRADO E ENCERRADO.
 
-## Proxima fronteira
+## Implementacao A.6E
 
-SEC-R2-002A.6E - adapter Cloudflare R2 e wiring de infraestrutura,
-condicionados a uma autorizacao posterior e ainda sem provisionamento
-produtivo.
+SEC-R2-002A.6E implementa localmente o adapter Cloudflare R2:
+
+- PUT condicional `etagDoesNotMatch: "*"` como primeira operacao;
+- `head` somente apos falha da precondicao de criacao;
+- MIME, metadados canonicos e checksum SHA-256 enviados ao R2;
+- validacao da identidade fisica e logica do objeto;
+- repeticao equivalente idempotente;
+- conflito para objeto malformado ou divergente, sem sobrescrita;
+- wiring opcional por `EVIDENCE_BUCKET` injetado;
+- falha do provedor convertida em `503` generico.
+
+O `wrangler.jsonc` continua sem `r2_buckets`, o health permanece
+`remoteStorageEnabled=false` e nenhum bucket, binding real, secret ou deploy
+pertence a esta subetapa.
+
+Baseline A.6E:
+
+- `main`: `34d71d540fd12ba2f04c24124e9c02910c25e069`;
+- branch: `security/sec-r2-002a-6e-r2-adapter`;
+- status: IMPLEMENTADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.

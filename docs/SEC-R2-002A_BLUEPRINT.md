@@ -132,7 +132,8 @@ Nenhuma credencial R2 no Flutter ou APK.
 - A.1 a A.6A: homologadas e integradas na `main` pelo PR #80;
 - A.6B: homologada e integrada na `main` pelo PR #81;
 - A.6C: homologada e integrada na `main` pelo PR #82;
-- A.6D: implementada e homologada localmente para pre-commit.
+- A.6D: homologada e integrada na `main` pelo PR #83;
+- A.6E: adapter R2 e wiring local implementados sem infraestrutura produtiva.
 
 <!-- SEC-R2-002A-A6A-HOMOLOGADO -->
 ## Registro de implementação — A.1 a A.6A
@@ -220,5 +221,27 @@ Nenhuma credencial R2 no Flutter ou APK.
 - Registrants EOL, hashes, diff check e escopo: PASS.
 - R2 Binding, bucket, secret e deploy: ausentes.
 - `remoteStorageEnabled=false` permanece inalterado.
-- Status: HOMOLOGADO LOCALMENTE / PRE-COMMIT.
+- PR #83 integrado pelo merge
+  `34d71d540fd12ba2f04c24124e9c02910c25e069`.
+- Status: HOMOLOGADO, INTEGRADO E ENCERRADO.
 <!-- SEC-R2-002A-A6D-HOMOLOGADO-END -->
+
+<!-- SEC-R2-002A-A6E-IMPLEMENTADO -->
+## Registro de implementacao - A.6E
+
+- Baseline: merge `34d71d540fd12ba2f04c24124e9c02910c25e069`.
+- Branch: `security/sec-r2-002a-6e-r2-adapter`.
+- Adapter Cloudflare R2 implementa `EvidencePrivateStoragePort`.
+- Primeira operacao e PUT condicional com `etagDoesNotMatch: "*"`.
+- `head` ocorre somente depois de falha da precondicao.
+- MIME, metadados canonicos e checksum SHA-256 sao enviados ao R2.
+- Identidade fisica e logica e conferida em criacao e idempotencia.
+- Caller e autor permanecem identidades distintas.
+- Objeto malformado ou divergente produz conflito sem sobrescrita.
+- Falha do provedor permanece `503` generico para o cliente.
+- Wiring depende da injecao de `EVIDENCE_BUCKET`.
+- `wrangler.jsonc` permanece sem binding R2.
+- `remoteStorageEnabled=false` permanece inalterado.
+- Bucket, binding real, secret e deploy: ausentes.
+- Status: IMPLEMENTADO LOCALMENTE / AGUARDANDO HOMOLOGACAO.
+<!-- SEC-R2-002A-A6E-IMPLEMENTADO-END -->

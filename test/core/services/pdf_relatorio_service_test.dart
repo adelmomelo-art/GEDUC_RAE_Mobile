@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -8,6 +9,23 @@ import 'package:geduc_rae_mobile/data/models/acao_model.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('carrega os quatro assets Noto Sans do bundle', () async {
+    const assets = [
+      'assets/fonts/noto_sans/NotoSans-Regular.ttf',
+      'assets/fonts/noto_sans/NotoSans-Bold.ttf',
+      'assets/fonts/noto_sans/NotoSans-Italic.ttf',
+      'assets/fonts/noto_sans/NotoSans-BoldItalic.ttf',
+    ];
+
+    for (final asset in assets) {
+      final data = await rootBundle.load(asset);
+      expect(
+        data.lengthInBytes,
+        greaterThan(10000),
+        reason: 'Fonte PDF deve estar presente no bundle: $asset',
+      );
+    }
+  });
   test('preserva o tipo de público no rascunho serializado', () {
     final acao = _acaoCompleta().copyWith(tipoPublicoId: 'interno');
 
@@ -16,17 +34,19 @@ void main() {
     expect(restaurada.tipoPublicoId, 'interno');
   });
 
-  test('gera relatório RAE sem fotos e preserva espaços de evidências',
-      () async {
-    final acao = _acaoCompleta().copyWith(fotosUrls: const []);
-    final bytes = await PdfRelatorioService().gerarBytes(
-      acao,
-      catalogos: _catalogos,
-    );
+  test(
+    'gera relatório RAE sem fotos e preserva espaços de evidências',
+    () async {
+      final acao = _acaoCompleta().copyWith(fotosUrls: const []);
+      final bytes = await PdfRelatorioService().gerarBytes(
+        acao,
+        catalogos: _catalogos,
+      );
 
-    _validarPdf(bytes);
-    await _salvarAmostra('RAE_CENARIO_SEM_FOTOS.pdf', bytes);
-  });
+      _validarPdf(bytes);
+      await _salvarAmostra('RAE_CENARIO_SEM_FOTOS.pdf', bytes);
+    },
+  );
 
   test('gera relatório RAE com três evidências fotográficas', () async {
     final temporario = await Directory.systemTemp.createTemp('rae-fotos-');
@@ -72,6 +92,55 @@ void main() {
 
     _validarPdf(bytes);
     await _salvarAmostra('RAE_CENARIO_TEXTOS_EXTENSOS.pdf', bytes);
+  });
+  test('gera relatório com acentuação Unicode sem fallback Helvetica',
+      () async {
+    final mensagens = <String>[];
+    final acao = _acaoCompleta().copyWith(
+      nomeAcao:
+          'Ação Educação no Trânsito – São José: cidadania, proteção e mobilidade',
+      nomeLocal: 'Praça João Cândido – Área de Educação e Convivência',
+      endereco: 'Avenida Antônio Sales, nº 1234 – Fortaleza/CE',
+      bairro: 'São João do Tauape',
+      pontoReferencia:
+          'Próximo ao órgão público, à estação e ao espaço de crianças',
+      instituicaoParceira:
+          'Associação Coração Cidadão e Fundação Educação & Trânsito',
+      coordenadorNome: 'João Gonçalves da Conceição',
+      pontosPositivos:
+          'Ótima participação: crianças, jovens e famílias compreenderam a ação.',
+      dificuldadesEncontradas:
+          'Interferência sonora próxima à área e circulação intensa de veículos.',
+      recomendacoes:
+          'Reforçar orientação, sinalização e proteção; manter atenção à inclusão.',
+      descricaoEvidencias:
+          'Fotografias da ação, público, órgãos parceiros e dinâmica educativa.',
+    );
+
+    final bytes = await runZoned(
+      () => PdfRelatorioService().gerarBytes(acao, catalogos: _catalogos),
+      zoneSpecification: ZoneSpecification(
+        print: (_, parent, zone, line) {
+          mensagens.add(line);
+        },
+      ),
+    );
+
+    _validarPdf(bytes);
+
+    final alertasFonte = mensagens.where((mensagem) {
+      final normalizada = mensagem.toLowerCase();
+      return normalizada.contains('helvetica') ||
+          normalizada.contains('unicode support');
+    }).toList();
+
+    expect(
+      alertasFonte,
+      isEmpty,
+      reason: 'O PDF nao pode emitir warning de fonte sem suporte Unicode.',
+    );
+
+    await _salvarAmostra('RAE_CENARIO_UNICODE.pdf', bytes);
   });
 }
 
@@ -190,10 +259,7 @@ const RaeCatalogos _catalogos = {
   'formacao': {'oficina': 'Oficina'},
   'publico': {'externo': 'Público externo'},
   'tipo_participacao': {'presencial': 'Presencial'},
-  'perfil_usuario': {
-    'pedestre': 'Pedestre',
-    'ciclista': 'Ciclista',
-  },
+  'perfil_usuario': {'pedestre': 'Pedestre', 'ciclista': 'Ciclista'},
   'sexo_predominante': {'misto': 'Misto'},
   'foco_tematico': {
     'mobilidade': 'Mobilidade segura',
@@ -204,14 +270,6 @@ const RaeCatalogos _catalogos = {
     'celular': 'Uso de celular',
   },
   'mudanca_comportamento': {'sim': 'Sim, observada'},
-  'material': {
-    'cones': 'Cones',
-    'folhetos': 'Folhetos educativos',
-  },
-  'orgao': {
-    'amc': 'AMC',
-    'samu': 'SAMU',
-    'prf': 'PRF',
-    'pre': 'PRE',
-  },
+  'material': {'cones': 'Cones', 'folhetos': 'Folhetos educativos'},
+  'orgao': {'amc': 'AMC', 'samu': 'SAMU', 'prf': 'PRF', 'pre': 'PRE'},
 };

@@ -6,6 +6,8 @@ import '../../../core/config/acl_feature_flags.dart';
 import '../../../core/security/authorization_service.dart';
 import '../../../core/security/permission.dart';
 import '../../acoes/controllers/acao_controller.dart';
+import '../../escala/security/escala_access_policy.dart';
+import '../../escala/security/escala_permission.dart';
 import '../theme/home_visual_tokens.dart';
 
 class AtalhosWidget extends StatelessWidget {
@@ -63,12 +65,31 @@ class AtalhosWidget extends StatelessWidget {
     const aclAtiva = AclFeatureFlags.scopedAccessEnabled;
     final podeCriarRae =
         !aclAtiva || authorizationService.possuiPermissao(Permission.criarRae);
-    final podeConsultarRae = !aclAtiva ||
+    final podeConsultarRae =
+        !aclAtiva ||
         authorizationService.possuiPermissao(Permission.consultarRae);
-    final podeAcessarCio = !aclAtiva ||
+    final podeAcessarCio =
+        !aclAtiva ||
         authorizationService.possuiPermissao(Permission.acessarCioEscopo);
+    final usuarioAtual = authorizationService.usuarioAtual;
+    final podeConsultarEscala =
+        usuarioAtual != null &&
+        EscalaAccessPolicy.autoriza(
+          perfilAcesso: usuarioAtual.perfilAcesso,
+          usuarioId: usuarioAtual.id,
+          responsavelEscalaUsuarioId: '',
+          permissao: EscalaPermission.consultarEscalaGeral,
+        );
 
     final principais = <_AtalhoItem>[
+      if (podeConsultarEscala)
+        _AtalhoItem(
+          icon: Icons.calendar_month_rounded,
+          title: 'Escala GEDUC',
+          subtitle: 'Consultar programação',
+          color: HomeVisualTokens.navy,
+          onTap: () => context.push('/escala'),
+        ),
       if (podeCriarRae)
         _AtalhoItem(
           icon: Icons.add_rounded,
@@ -175,9 +196,9 @@ class _HomeSection extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: HomeVisualTokens.text,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: HomeVisualTokens.text,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
@@ -245,10 +266,7 @@ class _PrimaryAction extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                item.color,
-                Color.lerp(item.color, Colors.black, 0.10)!,
-              ],
+              colors: [item.color, Color.lerp(item.color, Colors.black, 0.10)!],
             ),
             borderRadius: BorderRadius.circular(HomeVisualTokens.radiusMedium),
           ),
@@ -281,19 +299,17 @@ class _PrimaryAction extends StatelessWidget {
                       children: [
                         Text(
                           item.title,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
                         if (item.subtitle != null) ...[
                           const SizedBox(height: HomeVisualTokens.space4),
                           Text(
                             item.subtitle!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.84),
                                 ),
@@ -302,10 +318,7 @@ class _PrimaryAction extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.arrow_forward_rounded, color: Colors.white),
                 ],
               ),
             ),
@@ -354,9 +367,9 @@ class _SecondaryAction extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: HomeVisualTokens.text,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: HomeVisualTokens.text,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

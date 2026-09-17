@@ -15,6 +15,9 @@ import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
 import '../../modules/evidencias/evidencias_page.dart';
+import '../../modules/escala/pages/escala_page.dart';
+import '../../modules/escala/security/escala_access_policy.dart';
+import '../../modules/escala/security/escala_permission.dart';
 import '../../modules/home/home_page.dart';
 import '../../modules/integracao/integracao_observacoes_page.dart';
 import '../../modules/localizacao/localizacao_page.dart';
@@ -37,6 +40,7 @@ class AppRoutes {
   static const String loginPath = '/login';
   static const String homePath = '/home';
   static const String accountAccessPath = '/acesso-conta';
+  static const String escalaPath = '/escala';
 
   static const String novaAcaoPath = '/nova-acao';
   static const String localizacaoPath = '/localizacao';
@@ -82,6 +86,21 @@ class AppRoutes {
     );
   }
 
+  static Future<String?> _protegerConsultaEscala() async {
+    await _authorizationService.garantirUsuarioAtual();
+    final usuario = _authorizationService.usuarioAtual;
+    if (usuario == null) return acessoNegadoPath;
+
+    final autorizado = EscalaAccessPolicy.autoriza(
+      perfilAcesso: usuario.perfilAcesso,
+      usuarioId: usuario.id,
+      responsavelEscalaUsuarioId: '',
+      permissao: EscalaPermission.consultarEscalaGeral,
+    );
+
+    return autorizado ? null : acessoNegadoPath;
+  }
+
   static final router = GoRouter(
     initialLocation: loginPath,
     refreshListenable: Listenable.merge([
@@ -113,17 +132,19 @@ class AppRoutes {
       return null;
     },
     routes: [
-      GoRoute(
-        path: loginPath,
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: loginPath, builder: (context, state) => const LoginPage()),
       GoRoute(
         path: accountAccessPath,
         builder: (context, state) => const AccountAccessPage(),
       ),
+      GoRoute(path: homePath, builder: (context, state) => const HomePage()),
       GoRoute(
-        path: homePath,
-        builder: (context, state) => const HomePage(),
+        path: escalaPath,
+        redirect: (context, state) => _protegerConsultaEscala(),
+        builder: (context, state) => EscalaPage(
+          usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          iniciarMinhaEscala: state.uri.queryParameters['minha'] == '1',
+        ),
       ),
       GoRoute(
         path: acessoNegadoPath,
@@ -192,10 +213,7 @@ class AppRoutes {
         ),
         builder: (context, state) => const AdminHomePage(),
       ),
-      GoRoute(
-        path: adminLegadoPath,
-        redirect: (context, state) => adminPath,
-      ),
+      GoRoute(path: adminLegadoPath, redirect: (context, state) => adminPath),
       GoRoute(
         path: adminDominiosPath,
         redirect: (context, state) => RouteGuard.proteger(

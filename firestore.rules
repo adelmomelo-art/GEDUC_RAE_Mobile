@@ -187,6 +187,477 @@ service cloud.firestore {
         && request.resource.data.ativo is bool;
     }
 
+    // ESC-001C - Autorização isolada do módulo Escala.
+    // Não reutiliza usuarioAtivo() para o Gerente, evitando ampliar o ACL
+    // legado de RAE e demais coleções.
+    function perfilEscalaAtual() {
+      return usuarioAtual().data.perfilAcesso;
+    }
+
+    function usuarioEscalaAtivo() {
+      return usuarioExiste()
+        && usuarioAtual().data.ativo == true
+        && usuarioAtual().data.perfilAcesso is string
+        && perfilEscalaAtual() in [
+          'administrador',
+          'gestor',
+          'gerente',
+          'coordenador',
+          'agente'
+        ];
+    }
+
+    function administradorEscala() {
+      return usuarioEscalaAtivo()
+        && perfilEscalaAtual() == 'administrador';
+    }
+
+    function gerenteEscala() {
+      return usuarioEscalaAtivo()
+        && perfilEscalaAtual() == 'gerente';
+    }
+
+    function caminhoConfiguracaoEscala() {
+      return /databases/$(database)/documents/escala_configuracoes/principal;
+    }
+
+    function responsavelEscalaAtivo() {
+      return usuarioEscalaAtivo()
+        && perfilEscalaAtual() == 'agente'
+        && exists(caminhoConfiguracaoEscala())
+        && get(caminhoConfiguracaoEscala()).data.ativo == true
+        && get(caminhoConfiguracaoEscala()).data.responsavelEscalaUsuarioId
+          == request.auth.uid;
+    }
+
+    function podeGerenciarEscala() {
+      return administradorEscala()
+        || gerenteEscala()
+        || responsavelEscalaAtivo();
+    }
+
+    function podeDesignarResponsavelEscala() {
+      return administradorEscala() || gerenteEscala();
+    }
+
+    function caminhoMembroEquipe(membroId) {
+      return /databases/$(database)/documents/equipe_operacional/$(membroId);
+    }
+
+    function membroEquipeAtivo(membroId) {
+      return membroId is string
+        && membroId.size() > 0
+        && exists(caminhoMembroEquipe(membroId))
+        && get(caminhoMembroEquipe(membroId)).data.ativo == true;
+    }
+
+    function membroEquipeCompativelComUsuario(membroId, usuarioId) {
+      return membroEquipeAtivo(membroId)
+        && usuarioId is string
+        && (
+          usuarioId.size() == 0
+          || get(caminhoMembroEquipe(membroId)).data.usuarioId == usuarioId
+        );
+    }
+
+    function responsavelEscalaValido() {
+      let uid = request.resource.data.responsavelEscalaUsuarioId;
+      let membroId = request.resource.data.responsavelEscalaMembroEquipeId;
+      let caminho = /databases/$(database)/documents/usuarios/$(uid);
+      return uid is string
+        && uid.size() > 0
+        && membroId is string
+        && membroId.size() > 0
+        && exists(caminho)
+        && get(caminho).data.ativo == true
+        && get(caminho).data.perfilAcesso == 'agente'
+        && membroEquipeAtivo(membroId)
+        && get(caminhoMembroEquipe(membroId)).data.usuarioId == uid;
+    }
+
+    function configuracaoEscalaValida() {
+      return request.resource.data.keys().hasOnly([
+          'responsavelEscalaUsuarioId',
+          'responsavelEscalaMembroEquipeId',
+          'ativo',
+          'designadoPor',
+          'designadoEm'
+        ])
+        && request.resource.data.responsavelEscalaUsuarioId is string
+        && request.resource.data.responsavelEscalaMembroEquipeId is string
+        && request.resource.data.ativo is bool
+        && request.resource.data.designadoPor == request.auth.uid
+        && request.resource.data.designadoEm is timestamp
+        && responsavelEscalaValido();
+    }
+
+    function perfilOperacionalEscalaValido() {
+      return request.resource.data.keys().hasOnly([
+          'membroEquipeId',
+          'usuarioId',
+          'setorCodigo',
+          'cargaHorariaCodigo',
+          'ativo',
+          'criadoPor',
+          'criadoEm',
+          'atualizadoPor',
+          'atualizadoEm'
+        ])
+        && request.resource.data.membroEquipeId is string
+        && request.resource.data.usuarioId is string
+        && request.resource.data.setorCodigo is string
+        && request.resource.data.setorCodigo.size() > 0
+        && request.resource.data.cargaHorariaCodigo is string
+        && request.resource.data.cargaHorariaCodigo.size() > 0
+        && request.resource.data.ativo is bool
+        && request.resource.data.criadoPor is string
+        && request.resource.data.criadoPor.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp
+        && membroEquipeCompativelComUsuario(
+          request.resource.data.membroEquipeId,
+          request.resource.data.usuarioId
+        );
+    }
+
+    function escalaValida() {
+      return request.resource.data.keys().hasOnly([
+          'data',
+          'status',
+          'versao',
+          'observacaoGeral',
+          'motivoRevisao',
+          'criadoPor',
+          'criadoEm',
+          'atualizadoPor',
+          'atualizadoEm',
+          'publicadoPor',
+          'publicadoEm'
+        ])
+        && request.resource.data.data is timestamp
+        && request.resource.data.status in ['rascunho', 'publicada', 'arquivada']
+        && request.resource.data.versao is int
+        && request.resource.data.versao > 0
+        && request.resource.data.observacaoGeral is string
+        && request.resource.data.motivoRevisao is string
+        && request.resource.data.criadoPor is string
+        && request.resource.data.criadoPor.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp
+        && request.resource.data.publicadoPor is string
+        && (
+          request.resource.data.publicadoEm == null
+          || request.resource.data.publicadoEm is timestamp
+        )
+        && (
+          (
+            request.resource.data.status == 'rascunho'
+            && request.resource.data.publicadoPor.size() == 0
+            && request.resource.data.publicadoEm == null
+          )
+          || (
+            request.resource.data.status in ['publicada', 'arquivada']
+            && request.resource.data.publicadoPor.size() > 0
+            && request.resource.data.publicadoEm is timestamp
+          )
+        );
+    }
+
+    function criacaoEscalaValida() {
+      return escalaValida()
+        && request.resource.data.status == 'rascunho'
+        && request.resource.data.versao == 1
+        && request.resource.data.criadoPor == request.auth.uid;
+    }
+
+    function atualizacaoEscalaValida() {
+      return escalaValida()
+        && request.resource.data.data == resource.data.data
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm
+        && resource.data.status != 'arquivada'
+        && (
+          (
+            resource.data.status == 'rascunho'
+            && request.resource.data.status in ['rascunho', 'publicada']
+            && request.resource.data.versao == resource.data.versao
+          )
+          || (
+            resource.data.status == 'publicada'
+            && request.resource.data.status in ['publicada', 'arquivada']
+            && request.resource.data.versao == resource.data.versao + 1
+            && request.resource.data.motivoRevisao.size() > 0
+          )
+        )
+        && (
+          request.resource.data.status != 'publicada'
+          || (
+            request.resource.data.publicadoPor == request.auth.uid
+            && request.resource.data.publicadoEm is timestamp
+          )
+        );
+    }
+
+    function coordenadorAtividadeValido() {
+      let membroId = request.resource.data.coordenadorMembroEquipeId;
+      let usuarioId = request.resource.data.coordenadorUsuarioId;
+      return (
+          membroId.size() == 0
+          && usuarioId.size() == 0
+          && request.resource.data.coordenadorNomeSnapshot.size() == 0
+        ) || (
+          membroEquipeAtivo(membroId)
+          && get(caminhoMembroEquipe(membroId)).data.podeCoordenar == true
+          && (
+            usuarioId.size() == 0
+            || get(caminhoMembroEquipe(membroId)).data.usuarioId == usuarioId
+          )
+          && request.resource.data.coordenadorNomeSnapshot.size() > 0
+        );
+    }
+
+    function atividadeEscalaValida() {
+      return request.resource.data.keys().hasOnly([
+          'escalaId',
+          'data',
+          'secaoId',
+          'tipoAtividadeId',
+          'naturezaAtividade',
+          'titulo',
+          'descricao',
+          'turnoId',
+          'qtrHorario',
+          'horaInicio',
+          'horaFim',
+          'qthLocal',
+          'qthEndereco',
+          'qthRegionalId',
+          'qthPontoReferencia',
+          'orientacaoOperacional',
+          'coordenadorMembroEquipeId',
+          'coordenadorUsuarioId',
+          'coordenadorNomeSnapshot',
+          'participanteUsuarioIds',
+          'geraRae',
+          'contabilizaProdutividade',
+          'raeId',
+          'execucaoMissaoId',
+          'status',
+          'criadoPor',
+          'criadoEm',
+          'atualizadoPor',
+          'atualizadoEm'
+        ])
+        && request.resource.data.escalaId is string
+        && request.resource.data.escalaId.size() > 0
+        && request.resource.data.data is timestamp
+        && request.resource.data.secaoId is string
+        && request.resource.data.tipoAtividadeId is string
+        && request.resource.data.tipoAtividadeId.size() > 0
+        && request.resource.data.naturezaAtividade in ['educativa', 'administrativa']
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() > 0
+        && request.resource.data.descricao is string
+        && request.resource.data.turnoId is string
+        && request.resource.data.qtrHorario is string
+        && request.resource.data.horaInicio is string
+        && request.resource.data.horaFim is string
+        && request.resource.data.qthLocal is string
+        && request.resource.data.qthEndereco is string
+        && request.resource.data.qthRegionalId is string
+        && request.resource.data.qthPontoReferencia is string
+        && request.resource.data.orientacaoOperacional is string
+        && request.resource.data.coordenadorMembroEquipeId is string
+        && request.resource.data.coordenadorUsuarioId is string
+        && request.resource.data.coordenadorNomeSnapshot is string
+        && request.resource.data.participanteUsuarioIds is list
+        && request.resource.data.geraRae is bool
+        && request.resource.data.contabilizaProdutividade is bool
+        && request.resource.data.raeId is string
+        && request.resource.data.execucaoMissaoId is string
+        && request.resource.data.status in [
+          'planejada',
+          'publicada',
+          'em_execucao',
+          'concluida',
+          'cancelada'
+        ]
+        && request.resource.data.criadoPor is string
+        && request.resource.data.criadoPor.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp
+        && (
+          (
+            request.resource.data.naturezaAtividade == 'educativa'
+            && request.resource.data.geraRae == true
+          )
+          || (
+            request.resource.data.naturezaAtividade == 'administrativa'
+            && request.resource.data.geraRae == false
+          )
+        )
+        && coordenadorAtividadeValido();
+    }
+
+    function alocacaoEscalaValida() {
+      return request.resource.data.keys().hasOnly([
+          'escalaId',
+          'atividadeId',
+          'data',
+          'membroEquipeId',
+          'usuarioId',
+          'nomeSnapshot',
+          'vinculoSnapshot',
+          'setorSnapshot',
+          'cargaHorariaSnapshot',
+          'funcaoNaAtividade',
+          'turnoId',
+          'horaInicio',
+          'horaFim',
+          'observacao',
+          'criadoPor',
+          'criadoEm',
+          'atualizadoPor',
+          'atualizadoEm'
+        ])
+        && request.resource.data.escalaId is string
+        && request.resource.data.escalaId.size() > 0
+        && request.resource.data.atividadeId is string
+        && request.resource.data.atividadeId.size() > 0
+        && request.resource.data.data is timestamp
+        && membroEquipeCompativelComUsuario(
+          request.resource.data.membroEquipeId,
+          request.resource.data.usuarioId
+        )
+        && request.resource.data.nomeSnapshot is string
+        && request.resource.data.nomeSnapshot.size() > 0
+        && request.resource.data.vinculoSnapshot in ['agente', 'terceirizado']
+        && request.resource.data.setorSnapshot is string
+        && request.resource.data.cargaHorariaSnapshot is string
+        && request.resource.data.funcaoNaAtividade is string
+        && request.resource.data.turnoId is string
+        && request.resource.data.horaInicio is string
+        && request.resource.data.horaFim is string
+        && request.resource.data.observacao is string
+        && request.resource.data.criadoPor is string
+        && request.resource.data.criadoPor.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp;
+    }
+
+    function indisponibilidadeEscalaValida() {
+      return request.resource.data.keys().hasOnly([
+          'dataInicio',
+          'dataFim',
+          'membroEquipeId',
+          'usuarioId',
+          'nomeSnapshot',
+          'tipoId',
+          'turnoId',
+          'horaInicio',
+          'horaFim',
+          'observacao',
+          'criadoPor',
+          'criadoEm',
+          'atualizadoPor',
+          'atualizadoEm'
+        ])
+        && request.resource.data.dataInicio is timestamp
+        && request.resource.data.dataFim is timestamp
+        && request.resource.data.dataFim >= request.resource.data.dataInicio
+        && membroEquipeCompativelComUsuario(
+          request.resource.data.membroEquipeId,
+          request.resource.data.usuarioId
+        )
+        && request.resource.data.nomeSnapshot is string
+        && request.resource.data.nomeSnapshot.size() > 0
+        && request.resource.data.tipoId is string
+        && request.resource.data.tipoId.size() > 0
+        && request.resource.data.turnoId is string
+        && request.resource.data.horaInicio is string
+        && request.resource.data.horaFim is string
+        && request.resource.data.observacao is string
+        && request.resource.data.criadoPor is string
+        && request.resource.data.criadoPor.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp;
+    }
+
+    function caminhoAtividadeEscala(atividadeId) {
+      return /databases/$(database)/documents/escala_atividades/$(atividadeId);
+    }
+
+    function podeRegistrarExecucaoMissao(atividadeId) {
+      let caminho = caminhoAtividadeEscala(atividadeId);
+      return usuarioEscalaAtivo()
+        && atividadeId is string
+        && atividadeId.size() > 0
+        && exists(caminho)
+        && get(caminho).data.naturezaAtividade == 'administrativa'
+        && get(caminho).data.geraRae == false
+        && (
+          get(caminho).data.coordenadorUsuarioId == request.auth.uid
+          || request.auth.uid in get(caminho).data.participanteUsuarioIds
+        );
+    }
+
+    function execucaoMissaoValida() {
+      return request.resource.data.keys().hasOnly([
+          'escalaAtividadeId',
+          'escalaId',
+          'data',
+          'status',
+          'resultadoResumo',
+          'observacao',
+          'evidencias',
+          'executadoPorUsuarioId',
+          'executadoPorMembroEquipeId',
+          'executadoPorNomeSnapshot',
+          'concluidoEm',
+          'criadoEm',
+          'atualizadoEm'
+        ])
+        && request.resource.data.escalaAtividadeId is string
+        && request.resource.data.escalaId is string
+        && request.resource.data.escalaId.size() > 0
+        && request.resource.data.data is timestamp
+        && request.resource.data.status in ['em_execucao', 'concluida', 'cancelada']
+        && request.resource.data.resultadoResumo is string
+        && request.resource.data.observacao is string
+        && request.resource.data.evidencias is list
+        && request.resource.data.evidencias.size() <= 20
+        && request.resource.data.executadoPorUsuarioId == request.auth.uid
+        && request.resource.data.executadoPorMembroEquipeId is string
+        && request.resource.data.executadoPorMembroEquipeId.size() > 0
+        && membroEquipeCompativelComUsuario(
+          request.resource.data.executadoPorMembroEquipeId,
+          request.auth.uid
+        )
+        && request.resource.data.executadoPorNomeSnapshot is string
+        && request.resource.data.executadoPorNomeSnapshot.size() > 0
+        && (
+          request.resource.data.concluidoEm == null
+          || request.resource.data.concluidoEm is timestamp
+        )
+        && request.resource.data.criadoEm is timestamp
+        && request.resource.data.atualizadoEm is timestamp
+        && (
+          request.resource.data.status != 'concluida'
+          || (
+            request.resource.data.resultadoResumo.size() > 0
+            && request.resource.data.concluidoEm is timestamp
+          )
+        )
+        && podeRegistrarExecucaoMissao(
+          request.resource.data.escalaAtividadeId
+        );
+    }
+
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
@@ -268,6 +739,92 @@ service cloud.firestore {
     match /contadores/{contadorId} {
       allow get, create, update: if usuarioAtivo();
       allow list, delete: if false;
+    }
+
+    // ESC-001C - Escala GEDUC
+    match /escala_configuracoes/{configId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create, update: if configId == 'principal'
+        && podeDesignarResponsavelEscala()
+        && configuracaoEscalaValida();
+      allow delete: if false;
+    }
+
+    match /escala_perfis_operacionais/{perfilId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if podeDesignarResponsavelEscala()
+        && perfilOperacionalEscalaValido()
+        && request.resource.data.criadoPor == request.auth.uid;
+      allow update: if podeDesignarResponsavelEscala()
+        && perfilOperacionalEscalaValido()
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
+    }
+
+    match /escalas/{escalaId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if podeGerenciarEscala() && criacaoEscalaValida();
+      allow update: if podeGerenciarEscala() && atualizacaoEscalaValida();
+      allow delete: if false;
+    }
+
+    match /escala_atividades/{atividadeId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if podeGerenciarEscala()
+        && atividadeEscalaValida()
+        && request.resource.data.criadoPor == request.auth.uid;
+      allow update: if podeGerenciarEscala()
+        && atividadeEscalaValida()
+        && request.resource.data.escalaId == resource.data.escalaId
+        && request.resource.data.data == resource.data.data
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
+    }
+
+    match /escala_alocacoes/{alocacaoId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if podeGerenciarEscala()
+        && alocacaoEscalaValida()
+        && request.resource.data.criadoPor == request.auth.uid;
+      allow update: if podeGerenciarEscala()
+        && alocacaoEscalaValida()
+        && request.resource.data.escalaId == resource.data.escalaId
+        && request.resource.data.atividadeId == resource.data.atividadeId
+        && request.resource.data.membroEquipeId == resource.data.membroEquipeId
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
+    }
+
+    match /escala_indisponibilidades/{indisponibilidadeId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if podeGerenciarEscala()
+        && indisponibilidadeEscalaValida()
+        && request.resource.data.criadoPor == request.auth.uid;
+      allow update: if podeGerenciarEscala()
+        && indisponibilidadeEscalaValida()
+        && request.resource.data.membroEquipeId == resource.data.membroEquipeId
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
+    }
+
+    match /escala_execucoes_missao/{execucaoId} {
+      allow get, list: if usuarioEscalaAtivo();
+      allow create: if execucaoMissaoValida();
+      allow update: if execucaoMissaoValida()
+        && request.resource.data.escalaAtividadeId
+          == resource.data.escalaAtividadeId
+        && request.resource.data.escalaId == resource.data.escalaId
+        && request.resource.data.data == resource.data.data
+        && request.resource.data.executadoPorUsuarioId
+          == resource.data.executadoPorUsuarioId
+        && request.resource.data.executadoPorMembroEquipeId
+          == resource.data.executadoPorMembroEquipeId
+        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
     }
 
     // Toda coleção não inventariada permanece explicitamente bloqueada.

@@ -1,0 +1,33 @@
+ESC-001C - MODELO DE DADOS + FIRESTORE RULES
+Baseline=7578c5eafd53985c036d35eb5476bcb3a0009177
+Branch=feature/esc-001c-modelo-dados-rules
+
+ESCOPO VERSIONADO=13
+
+lib/modules/escala/models/escala_models.dart
+lib/modules/escala/security/escala_permission.dart
+lib/modules/escala/security/escala_access_policy.dart
+test/modules/escala/models/escala_models_test.dart
+test/modules/escala/security/escala_access_policy_test.dart
+firestore.rules
+test/firestore_escala.rules.test.js
+package.json
+docs/ESC-001B_MATRIZ_FUNCIONAL_HOMOLOGADA.md
+docs/ESC-001C_BLUEPRINT.md
+docs/ESC-001C_PLANO.md
+README_ESC-001C_MODELO_DADOS_RULES.md
+tools/manifestos/ESC-001C-MODELO-DADOS-RULES.txt
+
+INVARIANTES
+GerenteGlobalAcl=NAO_ALTERADO
+GerenteEscalaAcl=ISOLADO
+ResponsavelEscala=AGENTE_FIXO
+CoordenadorGestaoEscala=NEGADO
+CoordenadorExecucao=PERMITIDO_QUANDO_COORDENA
+AgenteExecucao=PERMITIDO_QUANDO_PARTICIPA
+EducativaGeraRae=TRUE
+AdministrativaGeraRae=FALSE
+IndisponibilidadeBloqueia=FALSE
+SobreposicaoBloqueia=FALSE
+RemoteStorageEnabled=FALSE_PRESERVADO
+CloudflareChanges=NONE

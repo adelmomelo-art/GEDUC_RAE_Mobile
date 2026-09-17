@@ -17,6 +17,10 @@ abstract final class EscalaCodigos {
   static const execucaoEmExecucao = 'em_execucao';
   static const execucaoConcluida = 'concluida';
   static const execucaoCancelada = 'cancelada';
+
+  static const jornadaNormal = 'normal';
+  static const jornadaHoraExtra = 'hora_extra';
+  static const jornadaBancoHoras = 'banco_horas';
 }
 
 class EscalaConfiguracaoModel {
@@ -53,12 +57,13 @@ class EscalaConfiguracaoModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'responsavelEscalaUsuarioId': responsavelEscalaUsuarioId.trim(),
-    'responsavelEscalaMembroEquipeId': responsavelEscalaMembroEquipeId.trim(),
-    'ativo': ativo,
-    'designadoPor': designadoPor.trim(),
-    'designadoEm': Timestamp.fromDate(designadoEm),
-  };
+        'responsavelEscalaUsuarioId': responsavelEscalaUsuarioId.trim(),
+        'responsavelEscalaMembroEquipeId':
+            responsavelEscalaMembroEquipeId.trim(),
+        'ativo': ativo,
+        'designadoPor': designadoPor.trim(),
+        'designadoEm': Timestamp.fromDate(designadoEm),
+      };
 }
 
 class EscalaPerfilOperacionalModel {
@@ -105,16 +110,16 @@ class EscalaPerfilOperacionalModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'membroEquipeId': membroEquipeId.trim(),
-    'usuarioId': usuarioId.trim(),
-    'setorCodigo': setorCodigo.trim(),
-    'cargaHorariaCodigo': cargaHorariaCodigo.trim(),
-    'ativo': ativo,
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoPor': atualizadoPor.trim(),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-  };
+        'membroEquipeId': membroEquipeId.trim(),
+        'usuarioId': usuarioId.trim(),
+        'setorCodigo': setorCodigo.trim(),
+        'cargaHorariaCodigo': cargaHorariaCodigo.trim(),
+        'ativo': ativo,
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoPor': atualizadoPor.trim(),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      };
 }
 
 class EscalaModel {
@@ -167,20 +172,19 @@ class EscalaModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'data': Timestamp.fromDate(data),
-    'status': status.trim(),
-    'versao': versao,
-    'observacaoGeral': observacaoGeral.trim(),
-    'motivoRevisao': motivoRevisao.trim(),
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoPor': atualizadoPor.trim(),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-    'publicadoPor': publicadoPor.trim(),
-    'publicadoEm': publicadoEm == null
-        ? null
-        : Timestamp.fromDate(publicadoEm!),
-  };
+        'data': Timestamp.fromDate(data),
+        'status': status.trim(),
+        'versao': versao,
+        'observacaoGeral': observacaoGeral.trim(),
+        'motivoRevisao': motivoRevisao.trim(),
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoPor': atualizadoPor.trim(),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+        'publicadoPor': publicadoPor.trim(),
+        'publicadoEm':
+            publicadoEm == null ? null : Timestamp.fromDate(publicadoEm!),
+      };
 }
 
 class EscalaAtividadeModel {
@@ -216,10 +220,10 @@ class EscalaAtividadeModel {
     required this.atualizadoPor,
     required this.atualizadoEm,
   }) : participanteUsuarioIds = List<String>.unmodifiable(
-         participanteUsuarioIds
-             .map((item) => item.trim())
-             .where((item) => item.isNotEmpty),
-       );
+          participanteUsuarioIds
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty),
+        );
 
   final String id;
   final String escalaId;
@@ -296,36 +300,36 @@ class EscalaAtividadeModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'escalaId': escalaId.trim(),
-    'data': Timestamp.fromDate(data),
-    'secaoId': secaoId.trim(),
-    'tipoAtividadeId': tipoAtividadeId.trim(),
-    'naturezaAtividade': naturezaAtividade.trim(),
-    'titulo': titulo.trim(),
-    'descricao': descricao.trim(),
-    'turnoId': turnoId.trim(),
-    'qtrHorario': qtrHorario.trim(),
-    'horaInicio': horaInicio.trim(),
-    'horaFim': horaFim.trim(),
-    'qthLocal': qthLocal.trim(),
-    'qthEndereco': qthEndereco.trim(),
-    'qthRegionalId': qthRegionalId.trim(),
-    'qthPontoReferencia': qthPontoReferencia.trim(),
-    'orientacaoOperacional': orientacaoOperacional.trim(),
-    'coordenadorMembroEquipeId': coordenadorMembroEquipeId.trim(),
-    'coordenadorUsuarioId': coordenadorUsuarioId.trim(),
-    'coordenadorNomeSnapshot': coordenadorNomeSnapshot.trim(),
-    'participanteUsuarioIds': participanteUsuarioIds,
-    'geraRae': geraRae,
-    'contabilizaProdutividade': contabilizaProdutividade,
-    'raeId': raeId.trim(),
-    'execucaoMissaoId': execucaoMissaoId.trim(),
-    'status': status.trim(),
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoPor': atualizadoPor.trim(),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-  };
+        'escalaId': escalaId.trim(),
+        'data': Timestamp.fromDate(data),
+        'secaoId': secaoId.trim(),
+        'tipoAtividadeId': tipoAtividadeId.trim(),
+        'naturezaAtividade': naturezaAtividade.trim(),
+        'titulo': titulo.trim(),
+        'descricao': descricao.trim(),
+        'turnoId': turnoId.trim(),
+        'qtrHorario': qtrHorario.trim(),
+        'horaInicio': horaInicio.trim(),
+        'horaFim': horaFim.trim(),
+        'qthLocal': qthLocal.trim(),
+        'qthEndereco': qthEndereco.trim(),
+        'qthRegionalId': qthRegionalId.trim(),
+        'qthPontoReferencia': qthPontoReferencia.trim(),
+        'orientacaoOperacional': orientacaoOperacional.trim(),
+        'coordenadorMembroEquipeId': coordenadorMembroEquipeId.trim(),
+        'coordenadorUsuarioId': coordenadorUsuarioId.trim(),
+        'coordenadorNomeSnapshot': coordenadorNomeSnapshot.trim(),
+        'participanteUsuarioIds': participanteUsuarioIds,
+        'geraRae': geraRae,
+        'contabilizaProdutividade': contabilizaProdutividade,
+        'raeId': raeId.trim(),
+        'execucaoMissaoId': execucaoMissaoId.trim(),
+        'status': status.trim(),
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoPor': atualizadoPor.trim(),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      };
 }
 
 class EscalaAlocacaoModel {
@@ -344,6 +348,14 @@ class EscalaAlocacaoModel {
     required this.turnoId,
     required this.horaInicio,
     required this.horaFim,
+    required this.tipoJornada,
+    required this.horaInicioReal,
+    required this.horaFimReal,
+    required this.minutosPrevistos,
+    required this.minutosRealizados,
+    required this.motivoJornadaComplementar,
+    required this.classificadoPor,
+    required this.classificadoEm,
     required this.observacao,
     required this.criadoPor,
     required this.criadoEm,
@@ -365,16 +377,29 @@ class EscalaAlocacaoModel {
   final String turnoId;
   final String horaInicio;
   final String horaFim;
+  final String tipoJornada;
+  final String horaInicioReal;
+  final String horaFimReal;
+  final int minutosPrevistos;
+  final int? minutosRealizados;
+  final String motivoJornadaComplementar;
+  final String classificadoPor;
+  final DateTime? classificadoEm;
   final String observacao;
   final String criadoPor;
   final DateTime criadoEm;
   final String atualizadoPor;
   final DateTime atualizadoEm;
 
+  bool get jornadaComplementar =>
+      tipoJornada == EscalaCodigos.jornadaHoraExtra ||
+      tipoJornada == EscalaCodigos.jornadaBancoHoras;
+
   factory EscalaAlocacaoModel.fromMap(
     Map<String, dynamic> map, {
     required String documentId,
   }) {
+    final minutosRealizadosValor = map['minutosRealizados'];
     return EscalaAlocacaoModel(
       id: documentId,
       escalaId: map['escalaId']?.toString() ?? '',
@@ -390,6 +415,18 @@ class EscalaAlocacaoModel {
       turnoId: map['turnoId']?.toString() ?? '',
       horaInicio: map['horaInicio']?.toString() ?? '',
       horaFim: map['horaFim']?.toString() ?? '',
+      tipoJornada:
+          map['tipoJornada']?.toString() ?? EscalaCodigos.jornadaNormal,
+      horaInicioReal: map['horaInicioReal']?.toString() ?? '',
+      horaFimReal: map['horaFimReal']?.toString() ?? '',
+      minutosPrevistos: _inteiro(map['minutosPrevistos'], fallback: 0),
+      minutosRealizados: minutosRealizadosValor == null
+          ? null
+          : _inteiro(minutosRealizadosValor, fallback: 0),
+      motivoJornadaComplementar:
+          map['motivoJornadaComplementar']?.toString() ?? '',
+      classificadoPor: map['classificadoPor']?.toString() ?? '',
+      classificadoEm: _dataOpcional(map['classificadoEm']),
       observacao: map['observacao']?.toString() ?? '',
       criadoPor: map['criadoPor']?.toString() ?? '',
       criadoEm: _dataObrigatoria(map['criadoEm']),
@@ -399,25 +436,34 @@ class EscalaAlocacaoModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'escalaId': escalaId.trim(),
-    'atividadeId': atividadeId.trim(),
-    'data': Timestamp.fromDate(data),
-    'membroEquipeId': membroEquipeId.trim(),
-    'usuarioId': usuarioId.trim(),
-    'nomeSnapshot': nomeSnapshot.trim(),
-    'vinculoSnapshot': vinculoSnapshot.trim(),
-    'setorSnapshot': setorSnapshot.trim(),
-    'cargaHorariaSnapshot': cargaHorariaSnapshot.trim(),
-    'funcaoNaAtividade': funcaoNaAtividade.trim(),
-    'turnoId': turnoId.trim(),
-    'horaInicio': horaInicio.trim(),
-    'horaFim': horaFim.trim(),
-    'observacao': observacao.trim(),
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoPor': atualizadoPor.trim(),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-  };
+        'escalaId': escalaId.trim(),
+        'atividadeId': atividadeId.trim(),
+        'data': Timestamp.fromDate(data),
+        'membroEquipeId': membroEquipeId.trim(),
+        'usuarioId': usuarioId.trim(),
+        'nomeSnapshot': nomeSnapshot.trim(),
+        'vinculoSnapshot': vinculoSnapshot.trim(),
+        'setorSnapshot': setorSnapshot.trim(),
+        'cargaHorariaSnapshot': cargaHorariaSnapshot.trim(),
+        'funcaoNaAtividade': funcaoNaAtividade.trim(),
+        'turnoId': turnoId.trim(),
+        'horaInicio': horaInicio.trim(),
+        'horaFim': horaFim.trim(),
+        'tipoJornada': tipoJornada.trim(),
+        'horaInicioReal': horaInicioReal.trim(),
+        'horaFimReal': horaFimReal.trim(),
+        'minutosPrevistos': minutosPrevistos,
+        'minutosRealizados': minutosRealizados,
+        'motivoJornadaComplementar': motivoJornadaComplementar.trim(),
+        'classificadoPor': classificadoPor.trim(),
+        'classificadoEm':
+            classificadoEm == null ? null : Timestamp.fromDate(classificadoEm!),
+        'observacao': observacao.trim(),
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoPor': atualizadoPor.trim(),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      };
 }
 
 class EscalaIndisponibilidadeModel {
@@ -479,21 +525,21 @@ class EscalaIndisponibilidadeModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'dataInicio': Timestamp.fromDate(dataInicio),
-    'dataFim': Timestamp.fromDate(dataFim),
-    'membroEquipeId': membroEquipeId.trim(),
-    'usuarioId': usuarioId.trim(),
-    'nomeSnapshot': nomeSnapshot.trim(),
-    'tipoId': tipoId.trim(),
-    'turnoId': turnoId.trim(),
-    'horaInicio': horaInicio.trim(),
-    'horaFim': horaFim.trim(),
-    'observacao': observacao.trim(),
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoPor': atualizadoPor.trim(),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-  };
+        'dataInicio': Timestamp.fromDate(dataInicio),
+        'dataFim': Timestamp.fromDate(dataFim),
+        'membroEquipeId': membroEquipeId.trim(),
+        'usuarioId': usuarioId.trim(),
+        'nomeSnapshot': nomeSnapshot.trim(),
+        'tipoId': tipoId.trim(),
+        'turnoId': turnoId.trim(),
+        'horaInicio': horaInicio.trim(),
+        'horaFim': horaFim.trim(),
+        'observacao': observacao.trim(),
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoPor': atualizadoPor.trim(),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      };
 }
 
 class MissaoEvidenciaModel {
@@ -525,13 +571,13 @@ class MissaoEvidenciaModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'id': id.trim(),
-    'tipo': tipo.trim(),
-    'descricao': descricao.trim(),
-    'referencia': referencia.trim(),
-    'criadoPor': criadoPor.trim(),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-  };
+        'id': id.trim(),
+        'tipo': tipo.trim(),
+        'descricao': descricao.trim(),
+        'referencia': referencia.trim(),
+        'criadoPor': criadoPor.trim(),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+      };
 }
 
 class ExecucaoMissaoModel {
@@ -604,22 +650,21 @@ class ExecucaoMissaoModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-    'escalaAtividadeId': escalaAtividadeId.trim(),
-    'escalaId': escalaId.trim(),
-    'data': Timestamp.fromDate(data),
-    'status': status.trim(),
-    'resultadoResumo': resultadoResumo.trim(),
-    'observacao': observacao.trim(),
-    'evidencias': evidencias.map((item) => item.toMap()).toList(),
-    'executadoPorUsuarioId': executadoPorUsuarioId.trim(),
-    'executadoPorMembroEquipeId': executadoPorMembroEquipeId.trim(),
-    'executadoPorNomeSnapshot': executadoPorNomeSnapshot.trim(),
-    'concluidoEm': concluidoEm == null
-        ? null
-        : Timestamp.fromDate(concluidoEm!),
-    'criadoEm': Timestamp.fromDate(criadoEm),
-    'atualizadoEm': Timestamp.fromDate(atualizadoEm),
-  };
+        'escalaAtividadeId': escalaAtividadeId.trim(),
+        'escalaId': escalaId.trim(),
+        'data': Timestamp.fromDate(data),
+        'status': status.trim(),
+        'resultadoResumo': resultadoResumo.trim(),
+        'observacao': observacao.trim(),
+        'evidencias': evidencias.map((item) => item.toMap()).toList(),
+        'executadoPorUsuarioId': executadoPorUsuarioId.trim(),
+        'executadoPorMembroEquipeId': executadoPorMembroEquipeId.trim(),
+        'executadoPorNomeSnapshot': executadoPorNomeSnapshot.trim(),
+        'concluidoEm':
+            concluidoEm == null ? null : Timestamp.fromDate(concluidoEm!),
+        'criadoEm': Timestamp.fromDate(criadoEm),
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      };
 }
 
 DateTime _dataObrigatoria(Object? valor) {

@@ -33,17 +33,17 @@ class EscalaAccessPolicy {
 
     final administrador = perfil == 'administrador';
     final gerente = perfil == 'gerente';
-    final agenteResponsavel =
-        perfil == 'agente' &&
+    final agenteResponsavel = perfil == 'agente' &&
         responsavelUid.isNotEmpty &&
         uid == responsavelUid;
 
     switch (permissao) {
       case EscalaPermission.criarEscala:
+        return agenteResponsavel;
       case EscalaPermission.editarEscala:
       case EscalaPermission.revisarEscala:
       case EscalaPermission.publicarEscala:
-        return administrador || gerente || agenteResponsavel;
+        return gerente || agenteResponsavel;
       case EscalaPermission.designarResponsavelEscala:
         return administrador || gerente;
       case EscalaPermission.registrarExecucaoMissao:

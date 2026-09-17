@@ -230,10 +230,12 @@ service cloud.firestore {
           == request.auth.uid;
     }
 
-    function podeGerenciarEscala() {
-      return administradorEscala()
-        || gerenteEscala()
-        || responsavelEscalaAtivo();
+    function podeCriarEscala() {
+      return responsavelEscalaAtivo();
+    }
+
+    function podeAtualizarEscala() {
+      return gerenteEscala() || responsavelEscalaAtivo();
     }
 
     function podeDesignarResponsavelEscala() {
@@ -502,6 +504,59 @@ service cloud.firestore {
         && coordenadorAtividadeValido();
     }
 
+    function jornadaComplementarEscala() {
+      return request.resource.data.tipoJornada in ['hora_extra', 'banco_horas'];
+    }
+
+    function classificacaoJornadaEscalaValida() {
+      return request.resource.data.tipoJornada in [
+          'normal',
+          'hora_extra',
+          'banco_horas'
+        ]
+        && request.resource.data.horaInicioReal is string
+        && request.resource.data.horaFimReal is string
+        && request.resource.data.minutosPrevistos is int
+        && request.resource.data.minutosPrevistos >= 0
+        && request.resource.data.minutosPrevistos <= 1440
+        && (
+          request.resource.data.minutosRealizados == null
+          || (
+            request.resource.data.minutosRealizados is int
+            && request.resource.data.minutosRealizados >= 0
+            && request.resource.data.minutosRealizados <= 1440
+          )
+        )
+        && request.resource.data.motivoJornadaComplementar is string
+        && request.resource.data.classificadoPor is string
+        && (
+          request.resource.data.classificadoEm == null
+          || request.resource.data.classificadoEm is timestamp
+        )
+        && (
+          !jornadaComplementarEscala()
+          || (
+            request.resource.data.motivoJornadaComplementar.size() > 0
+            && request.resource.data.classificadoPor.size() > 0
+            && request.resource.data.classificadoEm is timestamp
+          )
+        );
+    }
+
+    function criacaoClassificacaoJornadaEscalaValida() {
+      return !jornadaComplementarEscala()
+        || request.resource.data.classificadoPor == request.auth.uid;
+    }
+
+    function atualizacaoClassificacaoJornadaEscalaValida() {
+      let mudou = request.resource.data.tipoJornada != resource.data.tipoJornada
+        || request.resource.data.motivoJornadaComplementar
+          != resource.data.motivoJornadaComplementar
+        || request.resource.data.classificadoPor != resource.data.classificadoPor
+        || request.resource.data.classificadoEm != resource.data.classificadoEm;
+      return !mudou || request.resource.data.classificadoPor == request.auth.uid;
+    }
+
     function alocacaoEscalaValida() {
       return request.resource.data.keys().hasOnly([
           'escalaId',
@@ -517,6 +572,14 @@ service cloud.firestore {
           'turnoId',
           'horaInicio',
           'horaFim',
+          'tipoJornada',
+          'horaInicioReal',
+          'horaFimReal',
+          'minutosPrevistos',
+          'minutosRealizados',
+          'motivoJornadaComplementar',
+          'classificadoPor',
+          'classificadoEm',
           'observacao',
           'criadoPor',
           'criadoEm',
@@ -541,6 +604,7 @@ service cloud.firestore {
         && request.resource.data.turnoId is string
         && request.resource.data.horaInicio is string
         && request.resource.data.horaFim is string
+        && classificacaoJornadaEscalaValida()
         && request.resource.data.observacao is string
         && request.resource.data.criadoPor is string
         && request.resource.data.criadoPor.size() > 0
@@ -764,17 +828,17 @@ service cloud.firestore {
 
     match /escalas/{escalaId} {
       allow get, list: if usuarioEscalaAtivo();
-      allow create: if podeGerenciarEscala() && criacaoEscalaValida();
-      allow update: if podeGerenciarEscala() && atualizacaoEscalaValida();
+      allow create: if podeCriarEscala() && criacaoEscalaValida();
+      allow update: if podeAtualizarEscala() && atualizacaoEscalaValida();
       allow delete: if false;
     }
 
     match /escala_atividades/{atividadeId} {
       allow get, list: if usuarioEscalaAtivo();
-      allow create: if podeGerenciarEscala()
+      allow create: if podeAtualizarEscala()
         && atividadeEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
-      allow update: if podeGerenciarEscala()
+      allow update: if podeAtualizarEscala()
         && atividadeEscalaValida()
         && request.resource.data.escalaId == resource.data.escalaId
         && request.resource.data.data == resource.data.data
@@ -785,11 +849,13 @@ service cloud.firestore {
 
     match /escala_alocacoes/{alocacaoId} {
       allow get, list: if usuarioEscalaAtivo();
-      allow create: if podeGerenciarEscala()
+      allow create: if podeAtualizarEscala()
         && alocacaoEscalaValida()
+        && criacaoClassificacaoJornadaEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
-      allow update: if podeGerenciarEscala()
+      allow update: if podeAtualizarEscala()
         && alocacaoEscalaValida()
+        && atualizacaoClassificacaoJornadaEscalaValida()
         && request.resource.data.escalaId == resource.data.escalaId
         && request.resource.data.atividadeId == resource.data.atividadeId
         && request.resource.data.membroEquipeId == resource.data.membroEquipeId
@@ -800,10 +866,10 @@ service cloud.firestore {
 
     match /escala_indisponibilidades/{indisponibilidadeId} {
       allow get, list: if usuarioEscalaAtivo();
-      allow create: if podeGerenciarEscala()
+      allow create: if podeAtualizarEscala()
         && indisponibilidadeEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
-      allow update: if podeGerenciarEscala()
+      allow update: if podeAtualizarEscala()
         && indisponibilidadeEscalaValida()
         && request.resource.data.membroEquipeId == resource.data.membroEquipeId
         && request.resource.data.criadoPor == resource.data.criadoPor

@@ -21,8 +21,8 @@ void main() {
     );
   }
 
-  group('EscalaAccessPolicy', () {
-    test('todos os perfis reconhecidos da escala consultam escala geral', () {
+  group('EscalaAccessPolicy ESC-001D.1', () {
+    test('todos os perfis reconhecidos consultam escala geral', () {
       for (final perfil in [
         'administrador',
         'gestor',
@@ -41,20 +41,43 @@ void main() {
       }
     });
 
-    test('agente comum não gerencia escala', () {
+    test('somente agente responsavel cria nova escala', () {
+      expect(
+        autoriza(
+          perfil: 'agente',
+          uid: 'responsavel',
+          permissao: EscalaPermission.criarEscala,
+        ),
+        isTrue,
+      );
+      for (final perfil in [
+        'administrador',
+        'gestor',
+        'gerente',
+        'coordenador',
+      ]) {
+        expect(
+          autoriza(
+            perfil: perfil,
+            uid: perfil,
+            permissao: EscalaPermission.criarEscala,
+          ),
+          isFalse,
+          reason: '$perfil nao deve criar nova escala',
+        );
+      }
       expect(
         autoriza(
           perfil: 'agente',
           uid: 'agente-comum',
-          permissao: EscalaPermission.editarEscala,
+          permissao: EscalaPermission.criarEscala,
         ),
         isFalse,
       );
     });
 
-    test('agente responsável cria edita revisa e publica', () {
+    test('responsavel edita revisa e publica', () {
       for (final permissao in [
-        EscalaPermission.criarEscala,
         EscalaPermission.editarEscala,
         EscalaPermission.revisarEscala,
         EscalaPermission.publicarEscala,
@@ -66,20 +89,16 @@ void main() {
       }
     });
 
-    test('agente responsável não designa a si próprio', () {
+    test('gerente edita revisa publica e designa, mas nao cria', () {
       expect(
         autoriza(
-          perfil: 'agente',
-          uid: 'responsavel',
-          permissao: EscalaPermission.designarResponsavelEscala,
+          perfil: 'gerente',
+          uid: 'gerente',
+          permissao: EscalaPermission.criarEscala,
         ),
         isFalse,
       );
-    });
-
-    test('gerente gerencia escala e designa responsável', () {
       for (final permissao in [
-        EscalaPermission.criarEscala,
         EscalaPermission.editarEscala,
         EscalaPermission.revisarEscala,
         EscalaPermission.publicarEscala,
@@ -88,6 +107,28 @@ void main() {
         expect(
           autoriza(perfil: 'gerente', uid: 'gerente', permissao: permissao),
           isTrue,
+        );
+      }
+    });
+
+    test('administrador configura, mas nao opera a escala', () {
+      expect(
+        autoriza(
+          perfil: 'administrador',
+          uid: 'admin',
+          permissao: EscalaPermission.designarResponsavelEscala,
+        ),
+        isTrue,
+      );
+      for (final permissao in [
+        EscalaPermission.criarEscala,
+        EscalaPermission.editarEscala,
+        EscalaPermission.revisarEscala,
+        EscalaPermission.publicarEscala,
+      ]) {
+        expect(
+          autoriza(perfil: 'administrador', uid: 'admin', permissao: permissao),
+          isFalse,
         );
       }
     });
@@ -103,7 +144,7 @@ void main() {
       );
     });
 
-    test('coordenador atua na execução, não na gestão da escala', () {
+    test('coordenador atua na execucao, nao na gestao', () {
       expect(
         autoriza(
           perfil: 'coordenador',
@@ -124,7 +165,7 @@ void main() {
       );
     });
 
-    test('agente participante registra própria execução e evidência', () {
+    test('agente participante registra propria execucao e evidencia', () {
       expect(
         autoriza(
           perfil: 'agente',

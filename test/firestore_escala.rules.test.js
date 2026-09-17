@@ -86,6 +86,37 @@ function atividadeEducativa(overrides = {}) {
   });
 }
 
+function alocacao(overrides = {}) {
+  return {
+    escalaId: 'escala-1',
+    atividadeId: 'atividade-admin',
+    data: new Date('2026-09-17T00:00:00.000Z'),
+    membroEquipeId: 'membro-agente',
+    usuarioId: 'agente',
+    nomeSnapshot: 'Agente',
+    vinculoSnapshot: 'agente',
+    setorSnapshot: 'GEDUC',
+    cargaHorariaSnapshot: '180H',
+    funcaoNaAtividade: 'execucao',
+    turnoId: 'tarde',
+    horaInicio: '12:00',
+    horaFim: '16:00',
+    tipoJornada: 'normal',
+    horaInicioReal: '',
+    horaFimReal: '',
+    minutosPrevistos: 240,
+    minutosRealizados: null,
+    motivoJornadaComplementar: '',
+    classificadoPor: '',
+    classificadoEm: null,
+    observacao: '',
+    criadoPor: 'responsavel',
+    criadoEm: agora(),
+    atualizadoPor: 'responsavel',
+    atualizadoEm: agora(),
+    ...overrides,
+  };
+}
 function execucao(executor, overrides = {}) {
   return {
     escalaAtividadeId: 'atividade-admin',
@@ -198,6 +229,14 @@ async function semear() {
       turnoId: 'tarde',
       horaInicio: '',
       horaFim: '',
+      tipoJornada: 'normal',
+      horaInicioReal: '',
+      horaFimReal: '',
+      minutosPrevistos: 0,
+      minutosRealizados: null,
+      motivoJornadaComplementar: '',
+      classificadoPor: '',
+      classificadoEm: null,
       observacao: '',
       criadoPor: 'responsavel',
       criadoEm: agora(),
@@ -280,12 +319,14 @@ test('agente comum, coordenador e gestor não gerenciam escala', async () => {
   }
 });
 
-test('gerente cria, altera, revisa e publica escala', async () => {
-  const ref = banco('gerente').collection('escalas').doc('gerente-nova');
-  await assertSucceeds(ref.set(escala({
+test('gerente nao cria, mas altera revisa e publica escala existente', async () => {
+  const nova = banco('gerente').collection('escalas').doc('gerente-nova');
+  await assertFails(nova.set(escala({
     criadoPor: 'gerente',
     atualizadoPor: 'gerente',
   })));
+
+  const ref = banco('gerente').collection('escalas').doc('escala-1');
   await assertSucceeds(ref.update({
     observacaoGeral: 'Revisada pelo gerente',
     atualizadoPor: 'gerente',
@@ -298,6 +339,21 @@ test('gerente cria, altera, revisa e publica escala', async () => {
     atualizadoPor: 'gerente',
     atualizadoEm: agora(),
   }));
+});
+
+test('administrador configura, mas nao opera escala', async () => {
+  await assertFails(
+    banco('admin').collection('escalas').doc('admin-nova').set(
+      escala({ criadoPor: 'admin', atualizadoPor: 'admin' }),
+    ),
+  );
+  await assertFails(
+    banco('admin').collection('escalas').doc('escala-1').update({
+      observacaoGeral: 'Tentativa operacional',
+      atualizadoPor: 'admin',
+      atualizadoEm: agora(),
+    }),
+  );
 });
 
 test('revisão de escala publicada exige nova versão e motivo', async () => {
@@ -378,6 +434,68 @@ test('gerente mantém perfis operacionais e agente apenas consulta', async () =>
   );
 });
 
+test('alocacao aceita normal, hora extra e banco de horas', async () => {
+  await assertSucceeds(
+    banco('responsavel').collection('escala_alocacoes').doc('j-normal').set(
+      alocacao(),
+    ),
+  );
+  await assertSucceeds(
+    banco('responsavel').collection('escala_alocacoes').doc('j-extra').set(
+      alocacao({
+        tipoJornada: 'hora_extra',
+        motivoJornadaComplementar: 'Reforco operacional',
+        classificadoPor: 'responsavel',
+        classificadoEm: agora(),
+      }),
+    ),
+  );
+  await assertSucceeds(
+    banco('responsavel').collection('escala_alocacoes').doc('j-banco').set(
+      alocacao({
+        tipoJornada: 'banco_horas',
+        motivoJornadaComplementar: 'Credito para compensacao futura',
+        classificadoPor: 'responsavel',
+        classificadoEm: agora(),
+      }),
+    ),
+  );
+});
+
+test('alocacao rejeita jornada desconhecida e minutos invalidos', async () => {
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('j-invalida').set(
+      alocacao({ tipoJornada: 'dobra' }),
+    ),
+  );
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('min-invalido').set(
+      alocacao({ minutosPrevistos: 1441 }),
+    ),
+  );
+});
+
+test('jornada complementar exige motivo, autoria e timestamp', async () => {
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('extra-sem-motivo').set(
+      alocacao({
+        tipoJornada: 'hora_extra',
+        classificadoPor: 'responsavel',
+        classificadoEm: agora(),
+      }),
+    ),
+  );
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('banco-forjado').set(
+      alocacao({
+        tipoJornada: 'banco_horas',
+        motivoJornadaComplementar: 'Teste',
+        classificadoPor: 'gerente',
+        classificadoEm: agora(),
+      }),
+    ),
+  );
+});
 test('ação educativa exige geraRae=true e administrativa exige false', async () => {
   await assertFails(
     banco('responsavel').collection('escala_atividades').doc('educativa-invalida').set(

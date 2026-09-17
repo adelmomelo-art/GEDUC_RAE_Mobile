@@ -5,7 +5,7 @@ import 'package:geduc_rae_mobile/modules/escala/models/escala_models.dart';
 void main() {
   final agora = DateTime.utc(2026, 9, 17, 12);
 
-  group('ESC-001C models', () {
+  group('ESC-001D.1 models', () {
     test('EscalaConfiguracaoModel round-trip', () {
       final original = EscalaConfiguracaoModel(
         id: 'principal',
@@ -27,7 +27,7 @@ void main() {
       expect(reidratado.designadoPor, 'gerente');
     });
 
-    test('perfil operacional preserva GEDUC e carga horária', () {
+    test('perfil operacional preserva GEDUC e carga horaria', () {
       final original = EscalaPerfilOperacionalModel(
         id: 'membro-1',
         membroEquipeId: 'membro-1',
@@ -47,7 +47,7 @@ void main() {
       expect(map['criadoEm'], isA<Timestamp>());
     });
 
-    test('escala publicada aceita metadados de publicação', () {
+    test('escala publicada aceita metadados de publicacao', () {
       final model = EscalaModel(
         id: '2026-09-17',
         data: DateTime.utc(2026, 9, 17),
@@ -73,7 +73,7 @@ void main() {
       expect(reidratado.publicadoEm, isNotNull);
     });
 
-    test('atividade educativa mantém QTR horário e QTH local separados', () {
+    test('atividade educativa mantem QTR e QTH separados', () {
       final atividade = EscalaAtividadeModel(
         id: 'atividade-1',
         escalaId: '2026-09-17',
@@ -87,7 +87,7 @@ void main() {
         qtrHorario: '06:00',
         horaInicio: '07:00',
         horaFim: '11:00',
-        qthLocal: 'Av. Tenente Benévolo x Rua Gonçalves Ledo',
+        qthLocal: 'Av. Tenente Benevolo x Rua Goncalves Ledo',
         qthEndereco: '',
         qthRegionalId: 'regional-12',
         qthPontoReferencia: '',
@@ -115,7 +115,7 @@ void main() {
       expect(atividade.geraRae, isTrue);
     });
 
-    test('alocação aceita membro sem usuarioId', () {
+    test('alocacao normal serializa contrato de jornada', () {
       final alocacao = EscalaAlocacaoModel(
         id: 'a-1',
         escalaId: '2026-09-17',
@@ -131,6 +131,14 @@ void main() {
         turnoId: 'tarde',
         horaInicio: '13:00',
         horaFim: '16:00',
+        tipoJornada: EscalaCodigos.jornadaNormal,
+        horaInicioReal: '',
+        horaFimReal: '',
+        minutosPrevistos: 180,
+        minutosRealizados: null,
+        motivoJornadaComplementar: '',
+        classificadoPor: '',
+        classificadoEm: null,
         observacao: '',
         criadoPor: 'responsavel',
         criadoEm: agora,
@@ -138,11 +146,61 @@ void main() {
         atualizadoEm: agora,
       );
 
-      expect(alocacao.toMap()['usuarioId'], '');
-      expect(alocacao.toMap()['cargaHorariaSnapshot'], '240H');
+      final map = alocacao.toMap();
+      expect(map['tipoJornada'], EscalaCodigos.jornadaNormal);
+      expect(map['minutosPrevistos'], 180);
+      expect(map['minutosRealizados'], isNull);
+      expect(map['usuarioId'], '');
+      expect(map['cargaHorariaSnapshot'], '240H');
     });
 
-    test('indisponibilidade é informativa e serializável', () {
+    test('hora extra preserva classificacao operacional sem financeiro', () {
+      final alocacao = EscalaAlocacaoModel(
+        id: 'a-extra',
+        escalaId: '2026-09-17',
+        atividadeId: 'atividade-1',
+        data: DateTime.utc(2026, 9, 17),
+        membroEquipeId: 'membro-1',
+        usuarioId: 'agente-1',
+        nomeSnapshot: 'Agente 1',
+        vinculoSnapshot: 'agente',
+        setorSnapshot: 'GEDUC',
+        cargaHorariaSnapshot: '180H',
+        funcaoNaAtividade: 'apoio',
+        turnoId: 'noite',
+        horaInicio: '18:00',
+        horaFim: '22:00',
+        tipoJornada: EscalaCodigos.jornadaHoraExtra,
+        horaInicioReal: '',
+        horaFimReal: '',
+        minutosPrevistos: 240,
+        minutosRealizados: null,
+        motivoJornadaComplementar: 'Reforco operacional',
+        classificadoPor: 'responsavel',
+        classificadoEm: agora,
+        observacao: '',
+        criadoPor: 'responsavel',
+        criadoEm: agora,
+        atualizadoPor: 'responsavel',
+        atualizadoEm: agora,
+      );
+
+      final map = alocacao.toMap();
+      expect(map['tipoJornada'], EscalaCodigos.jornadaHoraExtra);
+      expect(map['motivoJornadaComplementar'], 'Reforco operacional');
+      expect(map.containsKey('valorHora'), isFalse);
+      expect(map.containsKey('custo'), isFalse);
+    });
+
+    test('banco de horas e diferente de hora extra', () {
+      expect(EscalaCodigos.jornadaBancoHoras, 'banco_horas');
+      expect(
+        EscalaCodigos.jornadaBancoHoras,
+        isNot(EscalaCodigos.jornadaHoraExtra),
+      );
+    });
+
+    test('indisponibilidade e informativa e serializavel', () {
       final item = EscalaIndisponibilidadeModel(
         id: 'i-1',
         dataInicio: DateTime.utc(2026, 9, 17),
@@ -164,7 +222,7 @@ void main() {
       expect(item.toMap()['tipoId'], 'ferias');
     });
 
-    test('execução administrativa preserva evidência sem horas reais', () {
+    test('execucao administrativa continua sem horas reais na ESC-001D.1', () {
       final evidencia = MissaoEvidenciaModel(
         id: 'ev-1',
         tipo: 'documento',

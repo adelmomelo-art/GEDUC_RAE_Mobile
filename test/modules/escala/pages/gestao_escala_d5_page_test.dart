@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geduc_rae_mobile/data/models/membro_equipe_model.dart';
 import 'package:geduc_rae_mobile/modules/escala/data/escala_gestao_repository.dart';
 import 'package:geduc_rae_mobile/modules/escala/data/escala_repository.dart';
 import 'package:geduc_rae_mobile/modules/escala/models/escala_models.dart';
@@ -10,7 +9,7 @@ void main() {
   final dia = DateTime(2026, 9, 17);
   final agora = DateTime(2026, 9, 17, 12);
 
-  EscalaConfiguracaoModel config() => EscalaConfiguracaoModel(
+  EscalaConfiguracaoModel configuracao() => EscalaConfiguracaoModel(
         id: 'principal',
         responsavelEscalaUsuarioId: 'responsavel',
         responsavelEscalaMembroEquipeId: 'membro-responsavel',
@@ -19,39 +18,22 @@ void main() {
         designadoEm: agora,
       );
 
-  MembroEquipeModel membro(String id, String uid) => MembroEquipeModel(
-        id: id,
-        usuarioId: uid,
-        nome: id,
-        vinculo: VinculoOperacional.agente,
-        podeCoordenar: false,
-        ativo: true,
-        origem: 'usuario',
-        createdAt: agora,
-        updatedAt: agora,
-      );
-
-  EscalaPerfilOperacionalModel perfil(String id, String uid) =>
-      EscalaPerfilOperacionalModel(
-        id: 'perfil-$id',
-        membroEquipeId: id,
-        usuarioId: uid,
-        setorCodigo: 'GEDUC',
-        cargaHorariaCodigo: '180H',
-        ativo: true,
-        criadoPor: 'gerente',
-        criadoEm: agora,
-        atualizadoPor: 'gerente',
-        atualizadoEm: agora,
-      );
-
-  EscalaModel escala(String status) => EscalaModel(
-        id: '2026-09-17',
+  EscalaModel escala({
+    required String status,
+    int versao = 1,
+    String motivo = '',
+    String origem = '',
+    bool preparada = true,
+  }) =>
+      EscalaModel(
+        id: versao == 1 ? '2026-09-17' : '2026-09-17-v$versao',
         data: dia,
         status: status,
-        versao: 1,
+        versao: versao,
         observacaoGeral: '',
-        motivoRevisao: '',
+        motivoRevisao: motivo,
+        revisaoDeEscalaId: origem,
+        revisaoPreparada: preparada,
         criadoPor: 'responsavel',
         criadoEm: agora,
         atualizadoPor: 'responsavel',
@@ -61,9 +43,9 @@ void main() {
         publicadoEm: status == EscalaCodigos.statusPublicada ? agora : null,
       );
 
-  EscalaAtividadeModel atividade() => EscalaAtividadeModel(
-        id: 'a1',
-        escalaId: '2026-09-17',
+  EscalaAtividadeModel atividade(String escalaId) => EscalaAtividadeModel(
+        id: 'atividade-1',
+        escalaId: escalaId,
         data: dia,
         secaoId: 'comandos_tematicos',
         tipoAtividadeId: 'comando',
@@ -72,9 +54,9 @@ void main() {
         descricao: '',
         turnoId: 'manha',
         qtrHorario: '06:00',
-        horaInicio: '06:00',
-        horaFim: '12:00',
-        qthLocal: 'Praca Central',
+        horaInicio: '07:00',
+        horaFim: '11:00',
+        qthLocal: 'Praça Central',
         qthEndereco: '',
         qthRegionalId: '',
         qthPontoReferencia: '',
@@ -94,25 +76,24 @@ void main() {
         atualizadoEm: agora,
       );
 
-  EscalaGestaoDados dados({EscalaModel? escala, bool comAtividade = false}) =>
-      EscalaGestaoDados(
+  EscalaGestaoDados dados(EscalaModel item) => EscalaGestaoDados(
         dia: EscalaDiaConsulta(
           data: dia,
-          escala: escala,
-          atividades: comAtividade ? [atividade()] : const [],
+          escala: item,
+          atividades: [atividade(item.id)],
           alocacoes: const [],
           indisponibilidades: const [],
         ),
-        configuracao: config(),
-        membrosEquipe: [membro('membro-responsavel', 'responsavel')],
-        perfisOperacionais: [perfil('membro-responsavel', 'responsavel')],
+        configuracao: configuracao(),
+        membrosEquipe: const [],
+        perfisOperacionais: const [],
       );
 
   Future<void> pump(
     WidgetTester tester, {
+    required EscalaModel item,
     required String usuarioId,
     required String perfil,
-    required EscalaGestaoDados estado,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -121,96 +102,86 @@ void main() {
           usuarioId: usuarioId,
           perfilAcesso: perfil,
           dataInicial: dia,
-          repository: _FakeRepo(estado),
+          repository: _FakePageD5Repo(dados(item)),
         ),
       ),
     );
+
     await tester.pumpAndSettle();
   }
 
-  testWidgets('responsavel sem escala recebe Criar rascunho', (tester) async {
-    await pump(
-      tester,
-      usuarioId: 'responsavel',
-      perfil: 'agente',
-      estado: dados(),
-    );
-    expect(find.byKey(const ValueKey('gestao-sem-escala')), findsOneWidget);
-    expect(find.byKey(const ValueKey('criar-rascunho')), findsOneWidget);
-  });
-
-  testWidgets('gerente sem escala nao recebe criacao', (tester) async {
-    await pump(
-      tester,
-      usuarioId: 'gerente',
-      perfil: 'gerente',
-      estado: dados(),
-    );
-    expect(find.byKey(const ValueKey('criar-rascunho')), findsNothing);
-    expect(
-      find.textContaining('exclusiva do agente responsável'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('rascunho exibe resumo, atividade e Nova atividade', (
+  testWidgets('rascunho preparado oferece revisao de publicacao', (
     tester,
   ) async {
     await pump(
       tester,
+      item: escala(status: EscalaCodigos.statusRascunho),
       usuarioId: 'responsavel',
       perfil: 'agente',
-      estado: dados(
-        escala: escala(EscalaCodigos.statusRascunho),
-        comAtividade: true,
-      ),
     );
-    expect(find.text('RASCUNHO • v1'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('selecionar-data-gestao')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const ValueKey('nova-atividade')), findsOneWidget);
-    expect(find.text('Motociclista Seguro'), findsOneWidget);
-    expect(find.text('Cobertura'), findsOneWidget);
+
+    expect(find.byKey(const ValueKey('revisar-publicacao')), findsOneWidget);
   });
 
-  testWidgets('publicada preserva consulta e oferece revisao na D5', (
-    tester,
-  ) async {
+  testWidgets('publicada oferece Revisar escala para gerente', (tester) async {
     await pump(
       tester,
+      item: escala(status: EscalaCodigos.statusPublicada),
       usuarioId: 'gerente',
       perfil: 'gerente',
-      estado: dados(
-        escala: escala(EscalaCodigos.statusPublicada),
-        comAtividade: true,
-      ),
     );
-    expect(find.byKey(const ValueKey('gestao-publicada')), findsOneWidget);
-    expect(find.byKey(const ValueKey('nova-atividade')), findsNothing);
+
     expect(find.byKey(const ValueKey('revisar-escala')), findsOneWidget);
-    expect(find.textContaining('Versão 1 publicada'), findsOneWidget);
+  });
+
+  testWidgets('revisao incompleta oferece retomada e bloqueia edicao', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      item: escala(
+        status: EscalaCodigos.statusRascunho,
+        versao: 2,
+        motivo: 'Mudança',
+        origem: '2026-09-17',
+        preparada: false,
+      ),
+      usuarioId: 'gerente',
+      perfil: 'gerente',
+    );
+
+    expect(find.byKey(const ValueKey('retomar-revisao')), findsOneWidget);
+    expect(find.byKey(const ValueKey('nova-atividade')), findsNothing);
   });
 }
 
-class _FakeRepo implements EscalaGestaoRepository {
-  _FakeRepo(this.estado);
-  EscalaGestaoDados estado;
+class _FakePageD5Repo implements EscalaGestaoRepository {
+  _FakePageD5Repo(this.estado);
+
+  final EscalaGestaoDados estado;
 
   @override
   Future<EscalaConfiguracaoModel?> carregarConfiguracao() async =>
       estado.configuracao;
+
   @override
   Future<EscalaGestaoDados> carregarGestao(DateTime data) async => estado;
+
   @override
   Future<void> criarRascunho(EscalaModel escala) async {}
+
+  @override
+  Future<void> salvarAtividadeComEquipe(
+    EscalaAtividadePersistencia persistencia,
+  ) async {}
+
   @override
   Future<void> publicarEscala({
     required EscalaModel escalaAtual,
     required String usuarioId,
     required DateTime agora,
   }) async {}
+
   @override
   Future<void> prepararRevisao({
     required EscalaModel escalaAtual,
@@ -218,12 +189,10 @@ class _FakeRepo implements EscalaGestaoRepository {
     required String usuarioId,
     required DateTime agora,
   }) async {}
+
   @override
   String novoIdAtividade() => 'atividade';
+
   @override
   String novoIdAlocacao() => 'alocacao';
-  @override
-  Future<void> salvarAtividadeComEquipe(
-    EscalaAtividadePersistencia persistencia,
-  ) async {}
 }

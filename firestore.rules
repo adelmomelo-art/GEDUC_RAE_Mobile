@@ -337,6 +337,8 @@ service cloud.firestore {
           'versao',
           'observacaoGeral',
           'motivoRevisao',
+          'revisaoDeEscalaId',
+          'revisaoPreparada',
           'criadoPor',
           'criadoEm',
           'atualizadoPor',
@@ -350,6 +352,14 @@ service cloud.firestore {
         && request.resource.data.versao > 0
         && request.resource.data.observacaoGeral is string
         && request.resource.data.motivoRevisao is string
+        && (
+          !('revisaoDeEscalaId' in request.resource.data)
+          || request.resource.data.revisaoDeEscalaId is string
+        )
+        && (
+          !('revisaoPreparada' in request.resource.data)
+          || request.resource.data.revisaoPreparada is bool
+        )
         && request.resource.data.criadoPor is string
         && request.resource.data.criadoPor.size() > 0
         && request.resource.data.criadoEm is timestamp
@@ -374,11 +384,50 @@ service cloud.firestore {
         );
     }
 
-    function criacaoEscalaValida() {
+    function revisaoDeEscalaIdAtual() {
+      return 'revisaoDeEscalaId' in request.resource.data
+        ? request.resource.data.revisaoDeEscalaId
+        : '';
+    }
+
+    function revisaoDeEscalaIdAnterior() {
+      return 'revisaoDeEscalaId' in resource.data
+        ? resource.data.revisaoDeEscalaId
+        : '';
+    }
+
+    function revisaoPreparadaAtual() {
+      return 'revisaoPreparada' in request.resource.data
+        ? request.resource.data.revisaoPreparada
+        : true;
+    }
+
+    function criacaoEscalaInicialValida() {
       return escalaValida()
         && request.resource.data.status == 'rascunho'
         && request.resource.data.versao == 1
+        && revisaoDeEscalaIdAtual().size() == 0
+        && revisaoPreparadaAtual() == true
         && request.resource.data.criadoPor == request.auth.uid;
+    }
+
+    function criacaoRevisaoEscalaValida() {
+      let origemId = revisaoDeEscalaIdAtual();
+      let caminhoOrigem =
+        /databases/$(database)/documents/escalas/$(origemId);
+      return escalaValida()
+        && request.resource.data.status == 'rascunho'
+        && request.resource.data.versao > 1
+        && request.resource.data.motivoRevisao.size() > 0
+        && origemId.size() > 0
+        && 'revisaoPreparada' in request.resource.data
+        && request.resource.data.revisaoPreparada == false
+        && request.resource.data.criadoPor == request.auth.uid
+        && exists(caminhoOrigem)
+        && get(caminhoOrigem).data.status == 'publicada'
+        && get(caminhoOrigem).data.data == request.resource.data.data
+        && request.resource.data.versao
+          == get(caminhoOrigem).data.versao + 1;
     }
 
     function atualizacaoEscalaValida() {
@@ -386,18 +435,35 @@ service cloud.firestore {
         && request.resource.data.data == resource.data.data
         && request.resource.data.criadoPor == resource.data.criadoPor
         && request.resource.data.criadoEm == resource.data.criadoEm
+        && revisaoDeEscalaIdAtual() == revisaoDeEscalaIdAnterior()
         && resource.data.status != 'arquivada'
         && (
           (
             resource.data.status == 'rascunho'
             && request.resource.data.status in ['rascunho', 'publicada']
             && request.resource.data.versao == resource.data.versao
+            && (
+              request.resource.data.versao == 1
+              || (
+                request.resource.data.motivoRevisao.size() > 0
+                && request.resource.data.motivoRevisao
+                  == resource.data.motivoRevisao
+                && revisaoDeEscalaIdAtual().size() > 0
+              )
+            )
           )
           || (
             resource.data.status == 'publicada'
-            && request.resource.data.status in ['publicada', 'arquivada']
-            && request.resource.data.versao == resource.data.versao + 1
-            && request.resource.data.motivoRevisao.size() > 0
+            && request.resource.data.status == 'arquivada'
+            && request.resource.data.versao == resource.data.versao
+            && request.resource.data.observacaoGeral
+              == resource.data.observacaoGeral
+            && request.resource.data.motivoRevisao
+              == resource.data.motivoRevisao
+            && request.resource.data.publicadoPor
+              == resource.data.publicadoPor
+            && request.resource.data.publicadoEm
+              == resource.data.publicadoEm
           )
         )
         && (
@@ -405,6 +471,10 @@ service cloud.firestore {
           || (
             request.resource.data.publicadoPor == request.auth.uid
             && request.resource.data.publicadoEm is timestamp
+            && (
+              request.resource.data.versao == 1
+              || revisaoPreparadaAtual() == true
+            )
           )
         );
     }
@@ -550,11 +620,55 @@ service cloud.firestore {
         );
     }
 
+    function cloneJornadaPublicadaValido() {
+      let origemId = request.resource.data.origemAlocacaoId;
+      let caminhoOrigem =
+        /databases/$(database)/documents/escala_alocacoes/$(origemId);
+      let origem = get(caminhoOrigem).data;
+      let caminhoEscalaOrigem =
+        /databases/$(database)/documents/escalas/$(origem.escalaId);
+      return exists(caminhoOrigem)
+        && exists(caminhoEscalaOrigem)
+        && get(caminhoEscalaOrigem).data.status == 'publicada'
+        && origem.membroEquipeId == request.resource.data.membroEquipeId
+        && origem.usuarioId == request.resource.data.usuarioId
+        && origem.nomeSnapshot == request.resource.data.nomeSnapshot
+        && origem.vinculoSnapshot == request.resource.data.vinculoSnapshot
+        && origem.setorSnapshot == request.resource.data.setorSnapshot
+        && origem.cargaHorariaSnapshot
+          == request.resource.data.cargaHorariaSnapshot
+        && origem.funcaoNaAtividade
+          == request.resource.data.funcaoNaAtividade
+        && origem.turnoId == request.resource.data.turnoId
+        && origem.horaInicio == request.resource.data.horaInicio
+        && origem.horaFim == request.resource.data.horaFim
+        && origem.tipoJornada == request.resource.data.tipoJornada
+        && origem.horaInicioReal == request.resource.data.horaInicioReal
+        && origem.horaFimReal == request.resource.data.horaFimReal
+        && origem.minutosPrevistos == request.resource.data.minutosPrevistos
+        && origem.minutosRealizados
+          == request.resource.data.minutosRealizados
+        && origem.motivoJornadaComplementar
+          == request.resource.data.motivoJornadaComplementar
+        && origem.classificadoPor == request.resource.data.classificadoPor
+        && origem.classificadoEm == request.resource.data.classificadoEm
+        && origem.observacao == request.resource.data.observacao;
+    }
+
     function criacaoClassificacaoJornadaEscalaValida() {
       return !jornadaComplementarEscala()
         || (
           responsavelEscalaAtivo()
           && request.resource.data.classificadoPor == request.auth.uid
+        )
+        || (
+          'origemAlocacaoId' in request.resource.data
+          && request.resource.data.origemAlocacaoId is string
+          && request.resource.data.origemAlocacaoId.size() > 0
+          && exists(
+            /databases/$(database)/documents/escala_alocacoes/$(request.resource.data.origemAlocacaoId)
+          )
+          && cloneJornadaPublicadaValido()
         );
     }
 
@@ -594,6 +708,7 @@ service cloud.firestore {
           'motivoJornadaComplementar',
           'classificadoPor',
           'classificadoEm',
+          'origemAlocacaoId',
           'observacao',
           'criadoPor',
           'criadoEm',
@@ -619,6 +734,10 @@ service cloud.firestore {
         && request.resource.data.horaInicio is string
         && request.resource.data.horaFim is string
         && classificacaoJornadaEscalaValida()
+        && (
+          !('origemAlocacaoId' in request.resource.data)
+          || request.resource.data.origemAlocacaoId is string
+        )
         && request.resource.data.observacao is string
         && request.resource.data.criadoPor is string
         && request.resource.data.criadoPor.size() > 0
@@ -844,7 +963,13 @@ service cloud.firestore {
 
     match /escalas/{escalaId} {
       allow get, list: if usuarioEscalaAtivo();
-      allow create: if podeCriarEscala() && criacaoEscalaValida();
+      allow create: if (
+          podeCriarEscala()
+          && criacaoEscalaInicialValida()
+        ) || (
+          podeAtualizarEscala()
+          && criacaoRevisaoEscalaValida()
+        );
       allow update: if podeAtualizarEscala() && atualizacaoEscalaValida();
       allow delete: if false;
     }
@@ -879,6 +1004,17 @@ service cloud.firestore {
         && request.resource.data.escalaId == resource.data.escalaId
         && request.resource.data.atividadeId == resource.data.atividadeId
         && request.resource.data.membroEquipeId == resource.data.membroEquipeId
+        && (
+          (
+            'origemAlocacaoId' in resource.data
+            && request.resource.data.origemAlocacaoId
+              == resource.data.origemAlocacaoId
+          )
+          || (
+            !('origemAlocacaoId' in resource.data)
+            && request.resource.data.origemAlocacaoId == ''
+          )
+        )
         && request.resource.data.criadoPor == resource.data.criadoPor
         && request.resource.data.criadoEm == resource.data.criadoEm;
       allow delete: if podeAtualizarEscala()

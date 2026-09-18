@@ -26,6 +26,8 @@ function escala(overrides = {}) {
     versao: 1,
     observacaoGeral: '',
     motivoRevisao: '',
+    revisaoDeEscalaId: '',
+    revisaoPreparada: true,
     criadoPor: 'responsavel',
     criadoEm: agora(),
     atualizadoPor: 'responsavel',
@@ -109,6 +111,7 @@ function alocacao(overrides = {}) {
     motivoJornadaComplementar: '',
     classificadoPor: '',
     classificadoEm: null,
+    origemAlocacaoId: '',
     observacao: '',
     criadoPor: 'responsavel',
     criadoEm: agora(),
@@ -356,21 +359,67 @@ test('administrador configura, mas nao opera escala', async () => {
   );
 });
 
-test('revisão de escala publicada exige nova versão e motivo', async () => {
-  const ref = banco('gerente').collection('escalas').doc('escala-publicada');
+test('revisao publicada cria novo rascunho e nao sobrescreve in-place', async () => {
+  const publicada = banco('gerente')
+    .collection('escalas')
+    .doc('escala-publicada');
 
-  await assertFails(ref.update({
-    observacaoGeral: 'Sem versionar',
+  await assertFails(publicada.update({
+    observacaoGeral: 'Tentativa in-place',
+    versao: 2,
+    motivoRevisao: 'Substituicao operacional',
+    publicadoPor: 'gerente',
+    publicadoEm: agora(),
     atualizadoPor: 'gerente',
     atualizadoEm: agora(),
   }));
 
-  await assertSucceeds(ref.update({
-    observacaoGeral: 'Versão revisada',
+  const revisao = banco('gerente')
+    .collection('escalas')
+    .doc('escala-publicada-v2');
+
+  await assertSucceeds(revisao.set(escala({
+    status: 'rascunho',
     versao: 2,
-    motivoRevisao: 'Substituição operacional',
+    motivoRevisao: 'Substituicao operacional',
+    revisaoDeEscalaId: 'escala-publicada',
+    revisaoPreparada: false,
+    criadoPor: 'gerente',
+    atualizadoPor: 'gerente',
+    publicadoPor: '',
+    publicadoEm: null,
+  })));
+
+  await assertFails(
+    banco('gerente').collection('escalas').doc('revisao-sem-origem').set(
+      escala({
+        status: 'rascunho',
+        versao: 2,
+        motivoRevisao: 'Sem origem',
+        revisaoDeEscalaId: '',
+        revisaoPreparada: false,
+        criadoPor: 'gerente',
+        atualizadoPor: 'gerente',
+      }),
+    ),
+  );
+
+  await assertSucceeds(revisao.update({
+    revisaoPreparada: true,
+    atualizadoPor: 'gerente',
+    atualizadoEm: agora(),
+  }));
+
+  await assertSucceeds(revisao.update({
+    status: 'publicada',
     publicadoPor: 'gerente',
     publicadoEm: agora(),
+    atualizadoPor: 'gerente',
+    atualizadoEm: agora(),
+  }));
+
+  await assertSucceeds(publicada.update({
+    status: 'arquivada',
     atualizadoPor: 'gerente',
     atualizadoEm: agora(),
   }));
@@ -603,6 +652,69 @@ test('estrutura de escala publicada fica imutavel na D4', async () => {
       atualizadoPor: 'responsavel',
       atualizadoEm: agora(),
     }),
+  );
+});
+
+test('gerente clona jornada complementar publicada sem poder forjar classificacao', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore()
+      .collection('escala_alocacoes')
+      .doc('extra-publicada-origem')
+      .set(
+        alocacao({
+          escalaId: 'escala-publicada',
+          atividadeId: 'atividade-publicada-origem',
+          tipoJornada: 'hora_extra',
+          motivoJornadaComplementar: 'Reforco homologado',
+          classificadoPor: 'responsavel',
+          classificadoEm: agora(),
+          criadoPor: 'responsavel',
+          atualizadoPor: 'responsavel',
+        }),
+      );
+  });
+
+  await assertSucceeds(
+    banco('gerente').collection('escalas').doc('revisao-clone-v2').set(
+      escala({
+        status: 'rascunho',
+        versao: 2,
+        motivoRevisao: 'Ajuste de planejamento',
+        revisaoDeEscalaId: 'escala-publicada',
+        revisaoPreparada: false,
+        criadoPor: 'gerente',
+        atualizadoPor: 'gerente',
+      }),
+    ),
+  );
+
+  const cloneValido = alocacao({
+    escalaId: 'revisao-clone-v2',
+    atividadeId: 'atividade-v2-clone',
+    tipoJornada: 'hora_extra',
+    motivoJornadaComplementar: 'Reforco homologado',
+    classificadoPor: 'responsavel',
+    classificadoEm: agora(),
+    origemAlocacaoId: 'extra-publicada-origem',
+    criadoPor: 'gerente',
+    atualizadoPor: 'gerente',
+  });
+
+  await assertSucceeds(
+    banco('gerente')
+      .collection('escala_alocacoes')
+      .doc('extra-clone-valido')
+      .set(cloneValido),
+  );
+
+  await assertFails(
+    banco('gerente')
+      .collection('escala_alocacoes')
+      .doc('extra-clone-forjado')
+      .set({
+        ...cloneValido,
+        minutosPrevistos: 999,
+      }),
   );
 });
 

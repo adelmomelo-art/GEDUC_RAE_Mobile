@@ -30,11 +30,33 @@ class EscalaAtividadePersistencia {
 
 abstract class EscalaGestaoRepository {
   Future<EscalaConfiguracaoModel?> carregarConfiguracao();
+
   Future<EscalaGestaoDados> carregarGestao(DateTime data);
+
   Future<void> criarRascunho(EscalaModel escala);
+
   Future<void> salvarAtividadeComEquipe(
     EscalaAtividadePersistencia persistencia,
   );
+
+  Future<void> publicarEscala({
+    required EscalaModel escalaAtual,
+    required String usuarioId,
+    required DateTime agora,
+  }) async {
+    throw UnsupportedError('Publicação não implementada neste repositório.');
+  }
+
+  Future<void> prepararRevisao({
+    required EscalaModel escalaAtual,
+    required String motivo,
+    required String usuarioId,
+    required DateTime agora,
+  }) async {
+    throw UnsupportedError('Revisão não implementada neste repositório.');
+  }
+
   String novoIdAtividade();
+
   String novoIdAlocacao();
 }

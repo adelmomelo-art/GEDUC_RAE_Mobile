@@ -46,6 +46,8 @@ class EscalaAccessPolicy {
         return gerente || agenteResponsavel;
       case EscalaPermission.designarResponsavelEscala:
         return administrador || gerente;
+      case EscalaPermission.registrarHorasRealizadas:
+        return ehParticipanteAtividade;
       case EscalaPermission.registrarExecucaoMissao:
       case EscalaPermission.anexarEvidenciaMissao:
         return ehParticipanteAtividade || ehCoordenadorAtividade;

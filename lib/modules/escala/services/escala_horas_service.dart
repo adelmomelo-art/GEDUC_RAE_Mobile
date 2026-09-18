@@ -27,6 +27,28 @@ class EscalaHorasResumo {
       minutosHoraExtra > 0 || minutosBancoHoras > 0;
 }
 
+class EscalaHorasRealizadasResumo {
+  const EscalaHorasRealizadasResumo({
+    required this.totalMinutosRealizados,
+    required this.minutosNormal,
+    required this.minutosHoraExtra,
+    required this.minutosBancoHoras,
+    required this.totalAlocacoes,
+    required this.alocacoesComRegistro,
+    required this.alocacoesSemRegistro,
+    required this.alocacoesInvalidas,
+  });
+
+  final int totalMinutosRealizados;
+  final int minutosNormal;
+  final int minutosHoraExtra;
+  final int minutosBancoHoras;
+  final int totalAlocacoes;
+  final int alocacoesComRegistro;
+  final int alocacoesSemRegistro;
+  final int alocacoesInvalidas;
+}
+
 abstract final class EscalaHorasService {
   static final RegExp _horarioValido = RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d$');
 
@@ -135,6 +157,87 @@ abstract final class EscalaHorasService {
       agentesNormal: agentesNormal.length,
       agentesHoraExtra: agentesExtra.length,
       agentesBancoHoras: agentesBanco.length,
+    );
+  }
+
+  static bool possuiHorasRealizadas(EscalaAlocacaoModel alocacao) {
+    return alocacao.horaInicioReal.trim().isNotEmpty &&
+        alocacao.horaFimReal.trim().isNotEmpty &&
+        alocacao.minutosRealizados != null;
+  }
+
+  static int? minutosRealizadosCalculados(EscalaAlocacaoModel alocacao) {
+    final inicio = alocacao.horaInicioReal.trim();
+    final fim = alocacao.horaFimReal.trim();
+
+    if (inicio.isEmpty || fim.isEmpty) return null;
+
+    return calcularDuracaoMinutos(inicio: inicio, fim: fim);
+  }
+
+  static bool horasRealizadasCoerentes(EscalaAlocacaoModel alocacao) {
+    final inicio = alocacao.horaInicioReal.trim();
+    final fim = alocacao.horaFimReal.trim();
+    final persistido = alocacao.minutosRealizados;
+
+    if (inicio.isEmpty && fim.isEmpty && persistido == null) return true;
+    if (inicio.isEmpty || fim.isEmpty || persistido == null) return false;
+    if (persistido < 0 || persistido > 1440) return false;
+
+    final calculado = calcularDuracaoMinutos(inicio: inicio, fim: fim);
+    return calculado != null && calculado == persistido;
+  }
+
+  static EscalaHorasRealizadasResumo resumirRealizadas(
+    Iterable<EscalaAlocacaoModel> alocacoes,
+  ) {
+    var normal = 0;
+    var extra = 0;
+    var banco = 0;
+    var total = 0;
+    var quantidade = 0;
+    var comRegistro = 0;
+    var semRegistro = 0;
+    var invalidas = 0;
+
+    for (final alocacao in alocacoes) {
+      quantidade++;
+
+      if (!horasRealizadasCoerentes(alocacao)) {
+        invalidas++;
+        continue;
+      }
+
+      if (!possuiHorasRealizadas(alocacao)) {
+        semRegistro++;
+        continue;
+      }
+
+      final minutos = alocacao.minutosRealizados!;
+      comRegistro++;
+      total += minutos;
+
+      switch (alocacao.tipoJornada) {
+        case EscalaCodigos.jornadaHoraExtra:
+          extra += minutos;
+          break;
+        case EscalaCodigos.jornadaBancoHoras:
+          banco += minutos;
+          break;
+        default:
+          normal += minutos;
+      }
+    }
+
+    return EscalaHorasRealizadasResumo(
+      totalMinutosRealizados: total,
+      minutosNormal: normal,
+      minutosHoraExtra: extra,
+      minutosBancoHoras: banco,
+      totalAlocacoes: quantidade,
+      alocacoesComRegistro: comRegistro,
+      alocacoesSemRegistro: semRegistro,
+      alocacoesInvalidas: invalidas,
     );
   }
 

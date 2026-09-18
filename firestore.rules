@@ -238,6 +238,13 @@ service cloud.firestore {
       return gerenteEscala() || responsavelEscalaAtivo();
     }
 
+    function escalaRascunhoPorId(escalaId) {
+      return escalaId is string
+        && escalaId.size() > 0
+        && exists(/databases/$(database)/documents/escalas/$(escalaId))
+        && get(/databases/$(database)/documents/escalas/$(escalaId)).data.status == 'rascunho';
+    }
+
     function podeDesignarResponsavelEscala() {
       return administradorEscala() || gerenteEscala();
     }
@@ -545,7 +552,10 @@ service cloud.firestore {
 
     function criacaoClassificacaoJornadaEscalaValida() {
       return !jornadaComplementarEscala()
-        || request.resource.data.classificadoPor == request.auth.uid;
+        || (
+          responsavelEscalaAtivo()
+          && request.resource.data.classificadoPor == request.auth.uid
+        );
     }
 
     function atualizacaoClassificacaoJornadaEscalaValida() {
@@ -554,7 +564,11 @@ service cloud.firestore {
           != resource.data.motivoJornadaComplementar
         || request.resource.data.classificadoPor != resource.data.classificadoPor
         || request.resource.data.classificadoEm != resource.data.classificadoEm;
-      return !mudou || request.resource.data.classificadoPor == request.auth.uid;
+      return !mudou
+        || (
+          responsavelEscalaAtivo()
+          && request.resource.data.classificadoPor == request.auth.uid
+        );
     }
 
     function alocacaoEscalaValida() {
@@ -763,7 +777,9 @@ service cloud.firestore {
     }
 
     match /equipe_operacional/{membroId} {
-      allow get, list: if usuarioAtivo();
+      // Excecao de leitura estritamente necessaria a Gestao da Escala.
+      // Nao altera perfilReconhecido()/usuarioAtivo() nem libera escrita.
+      allow get, list: if usuarioAtivo() || gerenteEscala();
       allow create: if administrador() && membroEquipeValido();
       allow update: if administrador()
         && membroEquipeValido()
@@ -836,9 +852,11 @@ service cloud.firestore {
     match /escala_atividades/{atividadeId} {
       allow get, list: if usuarioEscalaAtivo();
       allow create: if podeAtualizarEscala()
+        && escalaRascunhoPorId(request.resource.data.escalaId)
         && atividadeEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
       allow update: if podeAtualizarEscala()
+        && escalaRascunhoPorId(request.resource.data.escalaId)
         && atividadeEscalaValida()
         && request.resource.data.escalaId == resource.data.escalaId
         && request.resource.data.data == resource.data.data
@@ -850,10 +868,12 @@ service cloud.firestore {
     match /escala_alocacoes/{alocacaoId} {
       allow get, list: if usuarioEscalaAtivo();
       allow create: if podeAtualizarEscala()
+        && escalaRascunhoPorId(request.resource.data.escalaId)
         && alocacaoEscalaValida()
         && criacaoClassificacaoJornadaEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
       allow update: if podeAtualizarEscala()
+        && escalaRascunhoPorId(request.resource.data.escalaId)
         && alocacaoEscalaValida()
         && atualizacaoClassificacaoJornadaEscalaValida()
         && request.resource.data.escalaId == resource.data.escalaId
@@ -861,7 +881,8 @@ service cloud.firestore {
         && request.resource.data.membroEquipeId == resource.data.membroEquipeId
         && request.resource.data.criadoPor == resource.data.criadoPor
         && request.resource.data.criadoEm == resource.data.criadoEm;
-      allow delete: if false;
+      allow delete: if podeAtualizarEscala()
+        && escalaRascunhoPorId(resource.data.escalaId);
     }
 
     match /escala_indisponibilidades/{indisponibilidadeId} {

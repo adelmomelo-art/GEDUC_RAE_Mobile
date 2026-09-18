@@ -15,7 +15,9 @@ import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
 import '../../modules/evidencias/evidencias_page.dart';
+import '../../modules/escala/data/firestore_escala_repository.dart';
 import '../../modules/escala/pages/escala_page.dart';
+import '../../modules/escala/pages/gestao_escala_page.dart';
 import '../../modules/escala/security/escala_access_policy.dart';
 import '../../modules/escala/security/escala_permission.dart';
 import '../../modules/home/home_page.dart';
@@ -41,6 +43,7 @@ class AppRoutes {
   static const String homePath = '/home';
   static const String accountAccessPath = '/acesso-conta';
   static const String escalaPath = '/escala';
+  static const String gestaoEscalaPath = '/escala/gestao';
 
   static const String novaAcaoPath = '/nova-acao';
   static const String localizacaoPath = '/localizacao';
@@ -101,6 +104,37 @@ class AppRoutes {
     return autorizado ? null : acessoNegadoPath;
   }
 
+  static Future<String?> _protegerGestaoEscala() async {
+    try {
+      await _authorizationService.garantirUsuarioAtual();
+      final usuario = _authorizationService.usuarioAtual;
+      if (usuario == null) return acessoNegadoPath;
+
+      final configuracao =
+          await FirestoreEscalaRepository().carregarConfiguracao();
+
+      final autorizado = EscalaAccessPolicy.autoriza(
+        perfilAcesso: usuario.perfilAcesso,
+        usuarioId: usuario.id,
+        responsavelEscalaUsuarioId: configuracao?.ativo == true
+            ? configuracao!.responsavelEscalaUsuarioId
+            : '',
+        permissao: EscalaPermission.editarEscala,
+      );
+
+      return autorizado ? null : acessoNegadoPath;
+    } catch (_) {
+      return acessoNegadoPath;
+    }
+  }
+
+  static DateTime? _parseDataEscala(String? valor) {
+    if (valor == null || valor.trim().isEmpty) return null;
+    final data = DateTime.tryParse(valor.trim());
+    if (data == null) return null;
+    return DateTime(data.year, data.month, data.day);
+  }
+
   static final router = GoRouter(
     initialLocation: loginPath,
     refreshListenable: Listenable.merge([
@@ -143,7 +177,17 @@ class AppRoutes {
         redirect: (context, state) => _protegerConsultaEscala(),
         builder: (context, state) => EscalaPage(
           usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          dataInicial: _parseDataEscala(state.uri.queryParameters['data']),
           iniciarMinhaEscala: state.uri.queryParameters['minha'] == '1',
+        ),
+      ),
+      GoRoute(
+        path: gestaoEscalaPath,
+        redirect: (context, state) => _protegerGestaoEscala(),
+        builder: (context, state) => GestaoEscalaPage(
+          usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
+          dataInicial: _parseDataEscala(state.uri.queryParameters['data']),
         ),
       ),
       GoRoute(

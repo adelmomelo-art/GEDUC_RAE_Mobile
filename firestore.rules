@@ -956,6 +956,9 @@ service cloud.firestore {
         && request.resource.data.criadoPor == request.auth.uid;
       allow update: if podeDesignarResponsavelEscala()
         && perfilOperacionalEscalaValido()
+        && request.resource.data.membroEquipeId
+          == resource.data.membroEquipeId
+        && request.resource.data.usuarioId == resource.data.usuarioId
         && request.resource.data.criadoPor == resource.data.criadoPor
         && request.resource.data.criadoEm == resource.data.criadoEm;
       allow delete: if false;

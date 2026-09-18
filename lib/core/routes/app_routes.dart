@@ -16,10 +16,10 @@ import '../../modules/coordenadores/coordenadores_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
 import '../../modules/evidencias/evidencias_page.dart';
 import '../../modules/escala/data/firestore_escala_repository.dart';
+import '../../modules/escala/pages/escala_configuracao_page.dart';
 import '../../modules/escala/pages/escala_page.dart';
 import '../../modules/escala/pages/gestao_escala_page.dart';
-import '../../modules/escala/security/escala_access_policy.dart';
-import '../../modules/escala/security/escala_permission.dart';
+import '../../modules/escala/security/escala_navigation_policy.dart';
 import '../../modules/home/home_page.dart';
 import '../../modules/integracao/integracao_observacoes_page.dart';
 import '../../modules/localizacao/localizacao_page.dart';
@@ -44,6 +44,7 @@ class AppRoutes {
   static const String accountAccessPath = '/acesso-conta';
   static const String escalaPath = '/escala';
   static const String gestaoEscalaPath = '/escala/gestao';
+  static const String configuracaoEscalaPath = '/escala/configuracao';
 
   static const String novaAcaoPath = '/nova-acao';
   static const String localizacaoPath = '/localizacao';
@@ -94,11 +95,9 @@ class AppRoutes {
     final usuario = _authorizationService.usuarioAtual;
     if (usuario == null) return acessoNegadoPath;
 
-    final autorizado = EscalaAccessPolicy.autoriza(
+    final autorizado = EscalaNavigationPolicy.podeConsultar(
       perfilAcesso: usuario.perfilAcesso,
       usuarioId: usuario.id,
-      responsavelEscalaUsuarioId: '',
-      permissao: EscalaPermission.consultarEscalaGeral,
     );
 
     return autorizado ? null : acessoNegadoPath;
@@ -110,22 +109,34 @@ class AppRoutes {
       final usuario = _authorizationService.usuarioAtual;
       if (usuario == null) return acessoNegadoPath;
 
-      final configuracao =
-          await FirestoreEscalaRepository().carregarConfiguracao();
+      final configuracao = await FirestoreEscalaRepository()
+          .carregarConfiguracao();
 
-      final autorizado = EscalaAccessPolicy.autoriza(
+      final autorizado = EscalaNavigationPolicy.podeGerenciar(
         perfilAcesso: usuario.perfilAcesso,
         usuarioId: usuario.id,
         responsavelEscalaUsuarioId: configuracao?.ativo == true
             ? configuracao!.responsavelEscalaUsuarioId
             : '',
-        permissao: EscalaPermission.editarEscala,
       );
 
       return autorizado ? null : acessoNegadoPath;
     } catch (_) {
       return acessoNegadoPath;
     }
+  }
+
+  static Future<String?> _protegerConfiguracaoEscala() async {
+    await _authorizationService.garantirUsuarioAtual();
+    final usuario = _authorizationService.usuarioAtual;
+    if (usuario == null) return acessoNegadoPath;
+
+    final autorizado = EscalaNavigationPolicy.podeConfigurar(
+      perfilAcesso: usuario.perfilAcesso,
+      usuarioId: usuario.id,
+    );
+
+    return autorizado ? null : acessoNegadoPath;
   }
 
   static DateTime? _parseDataEscala(String? valor) {
@@ -188,6 +199,14 @@ class AppRoutes {
           usuarioId: _authorizationService.usuarioAtual?.id ?? '',
           perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
           dataInicial: _parseDataEscala(state.uri.queryParameters['data']),
+        ),
+      ),
+      GoRoute(
+        path: configuracaoEscalaPath,
+        redirect: (context, state) => _protegerConfiguracaoEscala(),
+        builder: (context, state) => EscalaConfiguracaoPage(
+          usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
         ),
       ),
       GoRoute(

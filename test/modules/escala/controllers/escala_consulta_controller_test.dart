@@ -91,12 +91,10 @@ void main() {
       horaFimReal: '',
       minutosPrevistos: 360,
       minutosRealizados: null,
-      motivoJornadaComplementar: tipoJornada == EscalaCodigos.jornadaNormal
-          ? ''
-          : 'Reforço',
-      classificadoPor: tipoJornada == EscalaCodigos.jornadaNormal
-          ? ''
-          : 'responsavel',
+      motivoJornadaComplementar:
+          tipoJornada == EscalaCodigos.jornadaNormal ? '' : 'Reforço',
+      classificadoPor:
+          tipoJornada == EscalaCodigos.jornadaNormal ? '' : 'responsavel',
       classificadoEm: tipoJornada == EscalaCodigos.jornadaNormal ? null : agora,
       observacao: '',
       criadoPor: 'responsavel',

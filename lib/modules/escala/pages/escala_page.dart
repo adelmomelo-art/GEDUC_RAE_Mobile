@@ -160,7 +160,7 @@ class _EscalaPageState extends State<EscalaPage> {
             message: _controller.minhaEscala
                 ? 'Use "Escala completa" para consultar toda a programação do dia.'
                 : 'A escala está publicada, mas não possui atividades ou '
-                      'indisponibilidades cadastradas.',
+                    'indisponibilidades cadastradas.',
           )
         else ...[
           for (final secao in _agruparAtividades(atividades).entries) ...[
@@ -261,9 +261,8 @@ class _CabecalhoConsulta extends StatelessWidget {
               children: [
                 IconButton(
                   tooltip: 'Dia anterior',
-                  onPressed: controller.carregando
-                      ? null
-                      : controller.diaAnterior,
+                  onPressed:
+                      controller.carregando ? null : controller.diaAnterior,
                   icon: const Icon(Icons.chevron_left_rounded),
                 ),
                 ConstrainedBox(
@@ -279,17 +278,16 @@ class _CabecalhoConsulta extends StatelessWidget {
                         dataFormatada,
                         key: const ValueKey('escala-data'),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
                   tooltip: 'Próximo dia',
-                  onPressed: controller.carregando
-                      ? null
-                      : controller.proximoDia,
+                  onPressed:
+                      controller.carregando ? null : controller.proximoDia,
                   icon: const Icon(Icons.chevron_right_rounded),
                 ),
                 TextButton(
@@ -421,8 +419,8 @@ class _JornadasReferencia extends StatelessWidget {
                 final colunas = constraints.maxWidth >= 900
                     ? 3
                     : constraints.maxWidth >= 560
-                    ? 2
-                    : 1;
+                        ? 2
+                        : 1;
                 const espaco = 8.0;
                 final largura =
                     (constraints.maxWidth - espaco * (colunas - 1)) / colunas;
@@ -450,7 +448,9 @@ class _JornadasReferencia extends StatelessWidget {
                               children: [
                                 Text(
                                   jornada.turno,
-                                  style: Theme.of(context).textTheme.labelLarge
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
                                       ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
                                 const SizedBox(height: 6),
@@ -545,8 +545,8 @@ class _SecaoAtividades extends StatelessWidget {
                 final colunas = constraints.maxWidth >= 1080
                     ? 3
                     : constraints.maxWidth >= 700
-                    ? 2
-                    : 1;
+                        ? 2
+                        : 1;
                 const espaco = 12.0;
                 final largura =
                     (constraints.maxWidth - espaco * (colunas - 1)) / colunas;
@@ -616,8 +616,8 @@ class _AtividadeCard extends StatelessWidget {
                         ? 'Atividade sem título'
                         : atividade.titulo.trim(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                          fontWeight: FontWeight.w900,
+                        ),
                   ),
                 ),
                 const SizedBox(width: 8),

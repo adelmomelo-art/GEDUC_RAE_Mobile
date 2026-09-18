@@ -11,10 +11,10 @@ class EscalaConfiguracaoController extends ChangeNotifier {
     required String usuarioId,
     required String perfilAcesso,
     DateTime Function()? agora,
-  }) : _repository = repository,
-       _usuarioId = usuarioId.trim(),
-       _perfilAcesso = perfilAcesso.trim(),
-       _agora = agora ?? DateTime.now;
+  })  : _repository = repository,
+        _usuarioId = usuarioId.trim(),
+        _perfilAcesso = perfilAcesso.trim(),
+        _agora = agora ?? DateTime.now;
 
   static const cargasHorarias = <String>['180H', '240H'];
 
@@ -34,9 +34,9 @@ class EscalaConfiguracaoController extends ChangeNotifier {
   EscalaConfiguracaoDados? get dados => _dados;
 
   bool get podeConfigurar => EscalaNavigationPolicy.podeConfigurar(
-    perfilAcesso: _perfilAcesso,
-    usuarioId: _usuarioId,
-  );
+        perfilAcesso: _perfilAcesso,
+        usuarioId: _usuarioId,
+      );
 
   String get responsavelAtualMembroId => _dados?.configuracao?.ativo == true
       ? _dados!.configuracao!.responsavelEscalaMembroEquipeId.trim()
@@ -59,20 +59,19 @@ class EscalaConfiguracaoController extends ChangeNotifier {
       }
     }
 
-    final itens =
-        atual.membrosEquipe
-            .map(
-              (membro) => EscalaConfiguracaoMembro(
-                membro: membro,
-                perfil: perfisPorMembro[membro.id],
-              ),
-            )
-            .toList()
-          ..sort(
-            (a, b) => a.membro.nome.toLowerCase().compareTo(
+    final itens = atual.membrosEquipe
+        .map(
+          (membro) => EscalaConfiguracaoMembro(
+            membro: membro,
+            perfil: perfisPorMembro[membro.id],
+          ),
+        )
+        .toList()
+      ..sort(
+        (a, b) => a.membro.nome.toLowerCase().compareTo(
               b.membro.nome.toLowerCase(),
             ),
-          );
+      );
 
     return List<EscalaConfiguracaoMembro>.unmodifiable(itens);
   }
@@ -98,12 +97,11 @@ class EscalaConfiguracaoController extends ChangeNotifier {
   Future<void> salvarResponsavel(String membroEquipeId) async {
     _validarPermissao();
 
-    final candidato = candidatosResponsavel
-        .cast<EscalaConfiguracaoMembro?>()
-        .firstWhere(
-          (item) => item?.membro.id == membroEquipeId,
-          orElse: () => null,
-        );
+    final candidato =
+        candidatosResponsavel.cast<EscalaConfiguracaoMembro?>().firstWhere(
+              (item) => item?.membro.id == membroEquipeId,
+              orElse: () => null,
+            );
 
     if (candidato == null) {
       throw StateError(
@@ -141,9 +139,9 @@ class EscalaConfiguracaoController extends ChangeNotifier {
     }
 
     final item = membros.cast<EscalaConfiguracaoMembro?>().firstWhere(
-      (linha) => linha?.membro.id == membroEquipeId,
-      orElse: () => null,
-    );
+          (linha) => linha?.membro.id == membroEquipeId,
+          orElse: () => null,
+        );
 
     if (item == null) {
       throw StateError('Integrante da Equipe Operacional não encontrado.');

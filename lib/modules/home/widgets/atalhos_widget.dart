@@ -125,11 +125,9 @@ class _AtalhosWidgetState extends State<AtalhosWidget> {
     const aclAtiva = AclFeatureFlags.scopedAccessEnabled;
     final podeCriarRae =
         !aclAtiva || authorizationService.possuiPermissao(Permission.criarRae);
-    final podeConsultarRae =
-        !aclAtiva ||
+    final podeConsultarRae = !aclAtiva ||
         authorizationService.possuiPermissao(Permission.consultarRae);
-    final podeAcessarCio =
-        !aclAtiva ||
+    final podeAcessarCio = !aclAtiva ||
         authorizationService.possuiPermissao(Permission.acessarCioEscopo);
 
     final usuarioAtual = authorizationService.usuarioAtual;
@@ -281,9 +279,9 @@ class _HomeSection extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: HomeVisualTokens.text,
-                      fontWeight: FontWeight.w800,
-                    ),
+                          color: HomeVisualTokens.text,
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
               ],
@@ -384,17 +382,19 @@ class _PrimaryAction extends StatelessWidget {
                       children: [
                         Text(
                           item.title,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                         ),
                         if (item.subtitle != null) ...[
                           const SizedBox(height: HomeVisualTokens.space4),
                           Text(
                             item.subtitle!,
-                            style: Theme.of(context).textTheme.bodySmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
                                 ?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.84),
                                 ),
@@ -452,9 +452,9 @@ class _SecondaryAction extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: HomeVisualTokens.text,
-                    fontWeight: FontWeight.w700,
-                  ),
+                        color: HomeVisualTokens.text,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ],
             ),

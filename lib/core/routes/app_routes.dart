@@ -109,8 +109,8 @@ class AppRoutes {
       final usuario = _authorizationService.usuarioAtual;
       if (usuario == null) return acessoNegadoPath;
 
-      final configuracao = await FirestoreEscalaRepository()
-          .carregarConfiguracao();
+      final configuracao =
+          await FirestoreEscalaRepository().carregarConfiguracao();
 
       final autorizado = EscalaNavigationPolicy.podeGerenciar(
         perfilAcesso: usuario.perfilAcesso,

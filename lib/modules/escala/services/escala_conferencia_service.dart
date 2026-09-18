@@ -14,8 +14,8 @@ class EscalaConferenciaAgente {
     required this.emAtividadeEducativa,
     required this.emAdministrativoApoio,
   }) : tiposIndisponibilidade = List<String>.unmodifiable(
-         tiposIndisponibilidade.toSet().toList()..sort(),
-       );
+          tiposIndisponibilidade.toSet().toList()..sort(),
+        );
 
   final String chavePessoa;
   final String membroEquipeId;
@@ -44,17 +44,17 @@ class EscalaConferenciaResultado {
     required Iterable<String> indisponibilidadesNaoMapeadas,
     required Iterable<String> identidadesCanonicasDuplicadas,
     required Iterable<String> identidadesInconsistentes,
-  }) : agentes = List<EscalaConferenciaAgente>.unmodifiable(agentes),
-       alocacoesNaoMapeadas = List<String>.unmodifiable(alocacoesNaoMapeadas),
-       indisponibilidadesNaoMapeadas = List<String>.unmodifiable(
-         indisponibilidadesNaoMapeadas,
-       ),
-       identidadesCanonicasDuplicadas = List<String>.unmodifiable(
-         identidadesCanonicasDuplicadas,
-       ),
-       identidadesInconsistentes = List<String>.unmodifiable(
-         identidadesInconsistentes,
-       );
+  })  : agentes = List<EscalaConferenciaAgente>.unmodifiable(agentes),
+        alocacoesNaoMapeadas = List<String>.unmodifiable(alocacoesNaoMapeadas),
+        indisponibilidadesNaoMapeadas = List<String>.unmodifiable(
+          indisponibilidadesNaoMapeadas,
+        ),
+        identidadesCanonicasDuplicadas = List<String>.unmodifiable(
+          identidadesCanonicasDuplicadas,
+        ),
+        identidadesInconsistentes = List<String>.unmodifiable(
+          identidadesInconsistentes,
+        );
 
   final List<EscalaConferenciaAgente> agentes;
   final int totalAlocacoesMapeadas;

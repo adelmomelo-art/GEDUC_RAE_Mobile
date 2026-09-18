@@ -9,29 +9,29 @@ void main() {
   final agora = DateTime(2026, 9, 18, 8);
 
   MembroEquipeModel membro() => MembroEquipeModel(
-    id: 'membro-a',
-    usuarioId: 'uid-a',
-    nome: 'Agente A',
-    vinculo: VinculoOperacional.agente,
-    podeCoordenar: true,
-    ativo: true,
-    origem: 'usuario',
-    createdAt: agora,
-    updatedAt: agora,
-  );
+        id: 'membro-a',
+        usuarioId: 'uid-a',
+        nome: 'Agente A',
+        vinculo: VinculoOperacional.agente,
+        podeCoordenar: true,
+        ativo: true,
+        origem: 'usuario',
+        createdAt: agora,
+        updatedAt: agora,
+      );
 
   EscalaPerfilOperacionalModel perfil() => EscalaPerfilOperacionalModel(
-    id: 'perfil-a',
-    membroEquipeId: 'membro-a',
-    usuarioId: 'uid-a',
-    setorCodigo: 'GEDUC',
-    cargaHorariaCodigo: '180H',
-    ativo: true,
-    criadoPor: 'gerente',
-    criadoEm: agora,
-    atualizadoPor: 'gerente',
-    atualizadoEm: agora,
-  );
+        id: 'perfil-a',
+        membroEquipeId: 'membro-a',
+        usuarioId: 'uid-a',
+        setorCodigo: 'GEDUC',
+        cargaHorariaCodigo: '180H',
+        ativo: true,
+        criadoPor: 'gerente',
+        criadoEm: agora,
+        atualizadoPor: 'gerente',
+        atualizadoEm: agora,
+      );
 
   testWidgets('configuracao exibe responsavel e Equipe GEDUC', (tester) async {
     final repo = _FakePageConfigRepo(

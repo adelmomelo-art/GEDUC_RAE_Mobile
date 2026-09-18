@@ -8,6 +8,7 @@ import '../security/escala_permission.dart';
 import '../services/escala_conferencia_service.dart';
 import '../services/escala_conflito_service.dart';
 import '../services/escala_horas_service.dart';
+import '../services/escala_publicacao_service.dart';
 
 class EscalaGestaoController extends ChangeNotifier {
   EscalaGestaoController({
@@ -73,8 +74,45 @@ class EscalaGestaoController extends ChangeNotifier {
   bool get podeCriarEscala =>
       !possuiEscala && _autoriza(EscalaPermission.criarEscala);
 
+  bool get revisaoPreparacaoPendente =>
+      rascunho &&
+      (escala?.versao ?? 1) > 1 &&
+      escala?.revisaoPreparada == false;
+
   bool get podeEditarEscala =>
-      rascunho && _autoriza(EscalaPermission.editarEscala);
+      rascunho &&
+      !revisaoPreparacaoPendente &&
+      _autoriza(EscalaPermission.editarEscala);
+
+  bool get podeRevisarEscala =>
+      publicada && _autoriza(EscalaPermission.revisarEscala);
+
+  EscalaPublicacaoAnalise get analisePublicacao {
+    final atual = escala;
+    if (atual == null) {
+      return const EscalaPublicacaoAnalise(
+        bloqueios: <String>['Não existe escala para publicação.'],
+        alertas: <String>[],
+        totalAtividades: 0,
+        totalAgentes: 0,
+        totalEducativas: 0,
+        totalAdministrativas: 0,
+      );
+    }
+
+    return EscalaPublicacaoService.analisar(
+      escala: atual,
+      atividades: atividades,
+      alocacoes: alocacoes,
+      alertasOperacionais: alertasGerais,
+    );
+  }
+
+  bool get podePublicarEscala =>
+      rascunho &&
+      !revisaoPreparacaoPendente &&
+      _autoriza(EscalaPermission.publicarEscala) &&
+      analisePublicacao.podePublicar;
 
   EscalaHorasResumo get resumoHoras => EscalaHorasService.resumir(alocacoes);
 
@@ -246,6 +284,75 @@ class EscalaGestaoController extends ChangeNotifier {
       publicadoEm: null,
     );
     await _executarSalvamento(() => _repository.criarRascunho(nova));
+  }
+
+  Future<void> publicarEscala() async {
+    if (!rascunho || !_autoriza(EscalaPermission.publicarEscala)) {
+      throw StateError('Usuário sem permissão para publicar esta escala.');
+    }
+
+    final atual = escala;
+    if (atual == null) {
+      throw StateError('Não existe escala para publicação.');
+    }
+
+    final analise = analisePublicacao;
+    if (!analise.podePublicar) {
+      throw EscalaGestaoValidationException(analise.bloqueios);
+    }
+
+    await _executarSalvamento(
+      () => _repository.publicarEscala(
+        escalaAtual: atual,
+        usuarioId: _usuarioId,
+        agora: _agora(),
+      ),
+    );
+  }
+
+  Future<void> iniciarRevisao(String motivo) async {
+    if (!podeRevisarEscala) {
+      throw StateError('Usuário sem permissão para revisar esta escala.');
+    }
+
+    final atual = escala;
+    if (atual == null) {
+      throw StateError('Não existe escala publicada para revisão.');
+    }
+
+    final normalizado = motivo.trim();
+    if (normalizado.isEmpty) {
+      throw StateError('Informe o motivo da revisão.');
+    }
+
+    await _executarSalvamento(
+      () => _repository.prepararRevisao(
+        escalaAtual: atual,
+        motivo: normalizado,
+        usuarioId: _usuarioId,
+        agora: _agora(),
+      ),
+    );
+  }
+
+  Future<void> retomarRevisao() async {
+    final atual = escala;
+    if (atual == null || !revisaoPreparacaoPendente) {
+      throw StateError('Não há preparação de revisão pendente.');
+    }
+
+    if (!_autoriza(EscalaPermission.revisarEscala)) {
+      throw StateError('Usuário sem permissão para retomar a revisão.');
+    }
+
+    await _executarSalvamento(
+      () => _repository.prepararRevisao(
+        escalaAtual: atual,
+        motivo: atual.motivoRevisao,
+        usuarioId: _usuarioId,
+        agora: _agora(),
+      ),
+    );
   }
 
   EscalaPreparacaoAtividade prepararAtividade(EscalaAtividadeEntrada entrada) {
@@ -690,6 +797,7 @@ class EscalaGestaoController extends ChangeNotifier {
       motivoJornadaComplementar: motivo,
       classificadoPor: classificadoPor,
       classificadoEm: classificadoEm,
+      origemAlocacaoId: existente?.origemAlocacaoId ?? '',
       observacao: existente?.observacao ?? '',
       criadoPor: existente?.criadoPor ?? _usuarioId,
       criadoEm: existente?.criadoEm ?? agora,

@@ -130,6 +130,8 @@ class EscalaModel {
     required this.versao,
     required this.observacaoGeral,
     required this.motivoRevisao,
+    this.revisaoDeEscalaId = '',
+    this.revisaoPreparada = true,
     required this.criadoPor,
     required this.criadoEm,
     required this.atualizadoPor,
@@ -144,6 +146,8 @@ class EscalaModel {
   final int versao;
   final String observacaoGeral;
   final String motivoRevisao;
+  final String revisaoDeEscalaId;
+  final bool revisaoPreparada;
   final String criadoPor;
   final DateTime criadoEm;
   final String atualizadoPor;
@@ -162,6 +166,8 @@ class EscalaModel {
       versao: _inteiro(map['versao'], fallback: 1),
       observacaoGeral: map['observacaoGeral']?.toString() ?? '',
       motivoRevisao: map['motivoRevisao']?.toString() ?? '',
+      revisaoDeEscalaId: map['revisaoDeEscalaId']?.toString() ?? '',
+      revisaoPreparada: map['revisaoPreparada'] != false,
       criadoPor: map['criadoPor']?.toString() ?? '',
       criadoEm: _dataObrigatoria(map['criadoEm']),
       atualizadoPor: map['atualizadoPor']?.toString() ?? '',
@@ -177,6 +183,8 @@ class EscalaModel {
         'versao': versao,
         'observacaoGeral': observacaoGeral.trim(),
         'motivoRevisao': motivoRevisao.trim(),
+        'revisaoDeEscalaId': revisaoDeEscalaId.trim(),
+        'revisaoPreparada': revisaoPreparada,
         'criadoPor': criadoPor.trim(),
         'criadoEm': Timestamp.fromDate(criadoEm),
         'atualizadoPor': atualizadoPor.trim(),
@@ -356,6 +364,7 @@ class EscalaAlocacaoModel {
     required this.motivoJornadaComplementar,
     required this.classificadoPor,
     required this.classificadoEm,
+    this.origemAlocacaoId = '',
     required this.observacao,
     required this.criadoPor,
     required this.criadoEm,
@@ -385,6 +394,7 @@ class EscalaAlocacaoModel {
   final String motivoJornadaComplementar;
   final String classificadoPor;
   final DateTime? classificadoEm;
+  final String origemAlocacaoId;
   final String observacao;
   final String criadoPor;
   final DateTime criadoEm;
@@ -427,6 +437,7 @@ class EscalaAlocacaoModel {
           map['motivoJornadaComplementar']?.toString() ?? '',
       classificadoPor: map['classificadoPor']?.toString() ?? '',
       classificadoEm: _dataOpcional(map['classificadoEm']),
+      origemAlocacaoId: map['origemAlocacaoId']?.toString() ?? '',
       observacao: map['observacao']?.toString() ?? '',
       criadoPor: map['criadoPor']?.toString() ?? '',
       criadoEm: _dataObrigatoria(map['criadoEm']),
@@ -458,6 +469,7 @@ class EscalaAlocacaoModel {
         'classificadoPor': classificadoPor.trim(),
         'classificadoEm':
             classificadoEm == null ? null : Timestamp.fromDate(classificadoEm!),
+        'origemAlocacaoId': origemAlocacaoId.trim(),
         'observacao': observacao.trim(),
         'criadoPor': criadoPor.trim(),
         'criadoEm': Timestamp.fromDate(criadoEm),

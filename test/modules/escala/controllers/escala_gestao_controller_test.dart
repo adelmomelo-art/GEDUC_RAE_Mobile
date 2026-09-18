@@ -425,6 +425,21 @@ class _FakeGestaoRepository implements EscalaGestaoRepository {
   }
 
   @override
+  Future<void> publicarEscala({
+    required EscalaModel escalaAtual,
+    required String usuarioId,
+    required DateTime agora,
+  }) async {}
+
+  @override
+  Future<void> prepararRevisao({
+    required EscalaModel escalaAtual,
+    required String motivo,
+    required String usuarioId,
+    required DateTime agora,
+  }) async {}
+
+  @override
   String novoIdAtividade() => 'atividade-${++_atividade}';
 
   @override

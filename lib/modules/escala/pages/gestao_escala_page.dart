@@ -203,28 +203,54 @@ class _GestaoEscalaPageState extends State<GestaoEscalaPage> {
                     icon: const Icon(Icons.add_rounded),
                     label: const Text('Nova atividade'),
                   ),
+                if (_controller.rascunho &&
+                    !_controller.revisaoPreparacaoPendente)
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('revisar-publicacao'),
+                    onPressed: _abrirRevisaoPublicacao,
+                    icon: const Icon(Icons.fact_check_rounded),
+                    label: const Text('Revisar publicação'),
+                  ),
+                if (_controller.podeRevisarEscala)
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('revisar-escala'),
+                    onPressed: _abrirMotivoRevisao,
+                    icon: const Icon(Icons.history_rounded),
+                    label: const Text('Revisar escala'),
+                  ),
                 OutlinedButton.icon(
                   onPressed: _abrirConsulta,
                   icon: const Icon(Icons.visibility_rounded),
                   label: const Text('Ver escala'),
                 ),
-                if (_controller.publicada)
-                  const Chip(
-                    avatar: Icon(Icons.lock_clock_rounded, size: 18),
-                    label: Text('Revisão na ESC-001D.5'),
-                  ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 12),
-        if (_controller.publicada)
-          const _EstadoGestao(
-            key: ValueKey('gestao-publicada'),
+        if (_controller.revisaoPreparacaoPendente)
+          _EstadoGestao(
+            key: const ValueKey('gestao-revisao-pendente'),
+            icon: Icons.sync_rounded,
+            titulo: 'Preparação da revisão interrompida',
+            mensagem:
+                'A versão publicada continua disponível. Retome a preparação '
+                'antes de editar ou publicar a nova versão.',
+            acao: FilledButton.icon(
+              key: const ValueKey('retomar-revisao'),
+              onPressed: _retomarRevisao,
+              icon: const Icon(Icons.sync_rounded),
+              label: const Text('Retomar revisão'),
+            ),
+          )
+        else if (_controller.publicada)
+          _EstadoGestao(
+            key: const ValueKey('gestao-publicada'),
             icon: Icons.verified_rounded,
             titulo: 'Escala publicada',
             mensagem:
-                'A revisão versionada e a republicação entram na ESC-001D.5. Nesta etapa, a escala publicada permanece somente para consulta.',
+                'Versão ${escala.versao} publicada. Para alterar a estrutura, '
+                'inicie uma nova revisão versionada.',
           )
         else if (_controller.atividades.isEmpty)
           const _EstadoGestao(
@@ -282,6 +308,132 @@ class _GestaoEscalaPageState extends State<GestaoEscalaPage> {
     if (entrada == null || !mounted) return;
     try {
       await _controller.salvarAtividade(entrada);
+    } catch (erro) {
+      _mostrarErro(erro);
+    }
+  }
+
+  Future<void> _abrirRevisaoPublicacao() async {
+    final analise = _controller.analisePublicacao;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Revisão da escala'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('dd/MM/yyyy').format(_controller.dataSelecionada),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 12),
+                Text('Atividades: ${analise.totalAtividades}'),
+                Text('Agentes: ${analise.totalAgentes}'),
+                Text('Ações educativas: ${analise.totalEducativas}'),
+                Text(
+                  'Missões administrativas: '
+                  '${analise.totalAdministrativas}',
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'ALERTAS (${analise.alertas.length})',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                if (analise.alertas.isEmpty)
+                  const Text('Nenhum alerta operacional.')
+                else
+                  for (final alerta in analise.alertas) Text('• $alerta'),
+                const SizedBox(height: 14),
+                Text(
+                  'ERROS (${analise.bloqueios.length})',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                if (analise.bloqueios.isEmpty)
+                  const Text('✓ Nenhum blocker estrutural.')
+                else
+                  for (final bloqueio in analise.bloqueios) Text('• $bloqueio'),
+                const SizedBox(height: 14),
+                const Text(
+                  'Alertas não bloqueiam a decisão operacional. '
+                  'Erros estruturais bloqueiam a publicação.',
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: analise.podePublicar
+                ? () => Navigator.pop(context, true)
+                : null,
+            child: const Text('Publicar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+
+    try {
+      await _controller.publicarEscala();
+    } catch (erro) {
+      _mostrarErro(erro);
+    }
+  }
+
+  Future<void> _abrirMotivoRevisao() async {
+    final motivoController = TextEditingController();
+
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Revisar escala publicada'),
+        content: TextField(
+          controller: motivoController,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Motivo da revisão',
+            hintText: 'Descreva por que a nova versão é necessária.',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, motivoController.text),
+            child: const Text('Criar nova versão'),
+          ),
+        ],
+      ),
+    );
+
+    motivoController.dispose();
+
+    if (motivo == null || !mounted) return;
+
+    try {
+      await _controller.iniciarRevisao(motivo);
+    } catch (erro) {
+      _mostrarErro(erro);
+    }
+  }
+
+  Future<void> _retomarRevisao() async {
+    try {
+      await _controller.retomarRevisao();
     } catch (erro) {
       _mostrarErro(erro);
     }

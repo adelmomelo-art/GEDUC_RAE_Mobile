@@ -18,6 +18,13 @@ abstract final class EscalaCodigos {
   static const execucaoConcluida = 'concluida';
   static const execucaoCancelada = 'cancelada';
 
+  static const evidenciaFoto = 'foto';
+  static const evidenciaDocumento = 'documento';
+  static const evidenciaArquivo = 'arquivo';
+  static const evidenciaLink = 'link';
+  static const evidenciaObservacao = 'observacao';
+  static const evidenciaOutro = 'outro';
+
   static const jornadaNormal = 'normal';
   static const jornadaHoraExtra = 'hora_extra';
   static const jornadaBancoHoras = 'banco_horas';

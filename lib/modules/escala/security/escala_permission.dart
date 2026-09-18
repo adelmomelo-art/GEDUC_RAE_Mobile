@@ -6,6 +6,7 @@ enum EscalaPermission {
   revisarEscala,
   publicarEscala,
   designarResponsavelEscala,
+  registrarHorasRealizadas,
   registrarExecucaoMissao,
   anexarEvidenciaMissao,
 }

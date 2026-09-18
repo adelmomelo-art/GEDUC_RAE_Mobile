@@ -186,6 +186,70 @@ void main() {
       );
     });
 
+    test('agente participante registra somente as proprias horas realizadas',
+        () {
+      expect(
+        autoriza(
+          perfil: 'agente',
+          uid: 'agente',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          participante: true,
+        ),
+        isTrue,
+      );
+      expect(
+        autoriza(
+          perfil: 'coordenador',
+          uid: 'coord',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          coordenador: true,
+        ),
+        isFalse,
+      );
+      expect(
+        autoriza(
+          perfil: 'coordenador',
+          uid: 'coord',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          participante: true,
+          coordenador: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('agente participante registra somente as proprias horas realizadas',
+        () {
+      expect(
+        autoriza(
+          perfil: 'agente',
+          uid: 'agente',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          participante: true,
+        ),
+        isTrue,
+      );
+      expect(
+        autoriza(
+          perfil: 'coordenador',
+          uid: 'coord',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          coordenador: true,
+        ),
+        isFalse,
+      );
+      expect(
+        autoriza(
+          perfil: 'coordenador',
+          uid: 'coord',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          participante: true,
+          coordenador: true,
+        ),
+        isTrue,
+      );
+    });
+
     test('perfil desconhecido e uid vazio falham fechado', () {
       expect(
         autoriza(

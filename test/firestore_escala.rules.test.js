@@ -122,8 +122,8 @@ function alocacao(overrides = {}) {
 }
 function execucao(executor, overrides = {}) {
   return {
-    escalaAtividadeId: 'atividade-admin',
-    escalaId: 'escala-1',
+    escalaAtividadeId: 'atividade-admin-publicada',
+    escalaId: 'escala-publicada',
     data: new Date('2026-09-17T00:00:00.000Z'),
     status: 'concluida',
     resultadoResumo: 'Missão concluída',
@@ -216,6 +216,25 @@ async function semear() {
     );
     await db.collection('escala_atividades').doc('atividade-educativa').set(
       atividadeEducativa(),
+    );
+    await db
+      .collection('escala_atividades')
+      .doc('atividade-admin-publicada')
+      .set(
+        atividadeAdministrativa({
+          escalaId: 'escala-publicada',
+          status: 'publicada',
+        }),
+      );
+
+    await db.collection('escala_alocacoes').doc('alocacao-agente-publicada').set(
+      alocacao({
+        escalaId: 'escala-publicada',
+        atividadeId: 'atividade-admin-publicada',
+        horaInicio: '12:00',
+        horaFim: '16:00',
+        minutosPrevistos: 240,
+      }),
     );
 
     await db.collection('escala_alocacoes').doc('alocacao-agente').set({
@@ -819,6 +838,150 @@ test('ação educativa não usa registro de missão administrativa', async () =>
       execucao('agente', { escalaAtividadeId: 'atividade-educativa' }),
     ),
   );
+});
+
+test('execucao administrativa exige escala publicada', async () => {
+  await assertFails(
+    banco('agente').collection('escala_execucoes_missao').doc('exec-rascunho').set(
+      execucao('agente', {
+        escalaAtividadeId: 'atividade-admin',
+        escalaId: 'escala-1',
+      }),
+    ),
+  );
+});
+
+test('agente registra horas reais apenas da propria alocacao publicada', async () => {
+  const ref = banco('agente')
+    .collection('escala_alocacoes')
+    .doc('alocacao-agente-publicada');
+
+  await assertSucceeds(ref.update({
+    horaInicioReal: '12:10',
+    horaFimReal: '15:40',
+    minutosRealizados: 210,
+    observacao: 'Execucao propria',
+    atualizadoPor: 'agente',
+    atualizadoEm: agora(),
+  }));
+
+  await assertFails(
+    banco('coordenador')
+      .collection('escala_alocacoes')
+      .doc('alocacao-agente-publicada')
+      .update({
+        horaInicioReal: '12:00',
+        horaFimReal: '16:00',
+        minutosRealizados: 240,
+        atualizadoPor: 'coordenador',
+        atualizadoEm: agora(),
+      }),
+  );
+
+  await assertFails(
+    banco('responsavel')
+      .collection('escala_alocacoes')
+      .doc('alocacao-agente-publicada')
+      .update({
+        horaInicioReal: '12:00',
+        horaFimReal: '16:00',
+        minutosRealizados: 240,
+        atualizadoPor: 'responsavel',
+        atualizadoEm: agora(),
+      }),
+  );
+});
+
+test('execucao de horas nao altera planejamento publicado', async () => {
+  await assertFails(
+    banco('agente')
+      .collection('escala_alocacoes')
+      .doc('alocacao-agente-publicada')
+      .update({
+        horaInicio: '13:00',
+        atualizadoPor: 'agente',
+        atualizadoEm: agora(),
+      }),
+  );
+});
+
+test('horas reais parciais ou fora do contrato sao negadas', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore()
+      .collection('escala_alocacoes')
+      .doc('alocacao-horas-parciais')
+      .set(
+        alocacao({
+          escalaId: 'escala-publicada',
+          atividadeId: 'atividade-admin-publicada',
+          horaInicio: '12:00',
+          horaFim: '16:00',
+          minutosPrevistos: 240,
+        }),
+      );
+  });
+
+  await assertFails(
+    banco('agente')
+      .collection('escala_alocacoes')
+      .doc('alocacao-horas-parciais')
+      .update({
+        horaInicioReal: '12:15',
+        atualizadoPor: 'agente',
+        atualizadoEm: agora(),
+      }),
+  );
+
+  await assertFails(
+    banco('agente')
+      .collection('escala_alocacoes')
+      .doc('alocacao-horas-parciais')
+      .update({
+        horaInicioReal: '12:00',
+        horaFimReal: '16:00',
+        minutosRealizados: 1441,
+        atualizadoPor: 'agente',
+        atualizadoEm: agora(),
+      }),
+  );
+});
+
+test('execucao em andamento conclui e registro terminal nao reabre', async () => {
+  const ref = banco('agente')
+    .collection('escala_execucoes_missao')
+    .doc('exec-lifecycle');
+
+  await assertSucceeds(ref.set(execucao('agente', {
+    status: 'em_execucao',
+    resultadoResumo: '',
+    concluidoEm: null,
+  })));
+
+  await assertSucceeds(ref.update({
+    status: 'concluida',
+    resultadoResumo: 'Entrega concluida',
+    concluidoEm: agora(),
+    atualizadoEm: agora(),
+  }));
+
+  await assertFails(ref.update({
+    status: 'em_execucao',
+    concluidoEm: null,
+    atualizadoEm: agora(),
+  }));
+});
+
+test('registro criado terminal permanece imutavel', async () => {
+  const ref = banco('agente')
+    .collection('escala_execucoes_missao')
+    .doc('exec-terminal');
+
+  await assertSucceeds(ref.set(execucao('agente')));
+
+  await assertFails(ref.update({
+    observacao: 'Tentativa posterior',
+    atualizadoEm: agora(),
+  }));
 });
 
 test('férias e sobreposição não são bloqueios server-side da publicação', async () => {

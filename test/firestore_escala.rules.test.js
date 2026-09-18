@@ -496,6 +496,116 @@ test('jornada complementar exige motivo, autoria e timestamp', async () => {
     ),
   );
 });
+test('gerente le equipe operacional para gerir escala, mas nao escreve nela', async () => {
+  await assertSucceeds(
+    banco('gerente').collection('equipe_operacional').get(),
+  );
+  await assertFails(
+    banco('gerente').collection('equipe_operacional').doc('membro-agente').update({
+      nome: 'Tentativa de escrita',
+    }),
+  );
+});
+
+test('gerente nao classifica nem reclassifica jornada complementar', async () => {
+  await assertFails(
+    banco('gerente').collection('escala_alocacoes').doc('extra-gerente').set(
+      alocacao({
+        tipoJornada: 'hora_extra',
+        motivoJornadaComplementar: 'Reforco',
+        classificadoPor: 'gerente',
+        classificadoEm: agora(),
+        criadoPor: 'gerente',
+        atualizadoPor: 'gerente',
+      }),
+    ),
+  );
+
+  const ref = banco('responsavel')
+    .collection('escala_alocacoes')
+    .doc('reclassificar-responsavel');
+  await assertSucceeds(ref.set(alocacao()));
+
+  await assertFails(
+    banco('gerente').collection('escala_alocacoes').doc('reclassificar-responsavel').update({
+      tipoJornada: 'banco_horas',
+      motivoJornadaComplementar: 'Credito operacional',
+      classificadoPor: 'gerente',
+      classificadoEm: agora(),
+      atualizadoPor: 'gerente',
+      atualizadoEm: agora(),
+    }),
+  );
+});
+
+test('responsavel e gerente removem alocacao apenas de escala em rascunho', async () => {
+  const responsavelRef = banco('responsavel').collection('escala_alocacoes').doc('delete-responsavel');
+  await assertSucceeds(responsavelRef.set(alocacao()));
+  await assertSucceeds(responsavelRef.delete());
+
+  const gerenteRef = banco('responsavel').collection('escala_alocacoes').doc('delete-gerente');
+  await assertSucceeds(gerenteRef.set(alocacao()));
+  await assertSucceeds(banco('gerente').collection('escala_alocacoes').doc('delete-gerente').delete());
+
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore().collection('escala_alocacoes').doc('delete-publicada').set(
+      alocacao({ escalaId: 'escala-publicada' }),
+    );
+  });
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('delete-publicada').delete(),
+  );
+});
+
+test('estrutura de escala publicada fica imutavel na D4', async () => {
+  await assertFails(
+    banco('responsavel').collection('escala_atividades').doc('publicada-nova').set(
+      atividadeAdministrativa({
+        escalaId: 'escala-publicada',
+      }),
+    ),
+  );
+
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('publicada-alocacao-nova').set(
+      alocacao({
+        escalaId: 'escala-publicada',
+      }),
+    ),
+  );
+
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    const db = contexto.firestore();
+    await db.collection('escala_atividades').doc('atividade-publicada-seed').set(
+      atividadeAdministrativa({
+        escalaId: 'escala-publicada',
+      }),
+    );
+    await db.collection('escala_alocacoes').doc('alocacao-publicada-seed').set(
+      alocacao({
+        escalaId: 'escala-publicada',
+        atividadeId: 'atividade-publicada-seed',
+      }),
+    );
+  });
+
+  await assertFails(
+    banco('gerente').collection('escala_atividades').doc('atividade-publicada-seed').update({
+      titulo: 'Tentativa de alteração',
+      atualizadoPor: 'gerente',
+      atualizadoEm: agora(),
+    }),
+  );
+
+  await assertFails(
+    banco('responsavel').collection('escala_alocacoes').doc('alocacao-publicada-seed').update({
+      observacao: 'Tentativa de alteração',
+      atualizadoPor: 'responsavel',
+      atualizadoEm: agora(),
+    }),
+  );
+});
+
 test('ação educativa exige geraRae=true e administrativa exige false', async () => {
   await assertFails(
     banco('responsavel').collection('escala_atividades').doc('educativa-invalida').set(

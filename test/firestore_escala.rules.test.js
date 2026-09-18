@@ -481,6 +481,26 @@ test('gerente mantém perfis operacionais e agente apenas consulta', async () =>
       atualizadoPor: 'agente',
     }),
   );
+
+  await assertFails(
+    banco('gerente').collection('escala_perfis_operacionais').doc('membro-agente').update({
+      membroEquipeId: 'membro-coordenador',
+      usuarioId: 'coordenador',
+      atualizadoPor: 'gerente',
+      atualizadoEm: agora(),
+    }),
+  );
+});
+
+test('administrador também pode designar responsável fixo', async () => {
+  await assertSucceeds(
+    banco('admin').collection('escala_configuracoes').doc('principal').update({
+      responsavelEscalaUsuarioId: 'agente',
+      responsavelEscalaMembroEquipeId: 'membro-agente',
+      designadoPor: 'admin',
+      designadoEm: agora(),
+    }),
+  );
 });
 
 test('alocacao aceita normal, hora extra e banco de horas', async () => {

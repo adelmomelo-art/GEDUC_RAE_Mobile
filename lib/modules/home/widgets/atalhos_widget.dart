@@ -6,12 +6,42 @@ import '../../../core/config/acl_feature_flags.dart';
 import '../../../core/security/authorization_service.dart';
 import '../../../core/security/permission.dart';
 import '../../acoes/controllers/acao_controller.dart';
-import '../../escala/security/escala_access_policy.dart';
-import '../../escala/security/escala_permission.dart';
+import '../../escala/data/escala_gestao_repository.dart';
+import '../../escala/data/firestore_escala_repository.dart';
+import '../../escala/models/escala_models.dart';
+import '../../escala/security/escala_home_shortcuts_policy.dart';
 import '../theme/home_visual_tokens.dart';
 
-class AtalhosWidget extends StatelessWidget {
-  const AtalhosWidget({super.key});
+class AtalhosWidget extends StatefulWidget {
+  const AtalhosWidget({super.key, this.escalaRepository});
+
+  final EscalaGestaoRepository? escalaRepository;
+
+  @override
+  State<AtalhosWidget> createState() => _AtalhosWidgetState();
+}
+
+class _AtalhosWidgetState extends State<AtalhosWidget> {
+  late EscalaGestaoRepository _escalaRepository;
+  String _uidConfiguracao = '';
+  Future<EscalaConfiguracaoModel?>? _configuracaoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _escalaRepository = widget.escalaRepository ?? FirestoreEscalaRepository();
+  }
+
+  @override
+  void didUpdateWidget(covariant AtalhosWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.escalaRepository != widget.escalaRepository) {
+      _escalaRepository =
+          widget.escalaRepository ?? FirestoreEscalaRepository();
+      _uidConfiguracao = '';
+      _configuracaoFuture = null;
+    }
+  }
 
   Future<void> _abrirNovaAcao(BuildContext context) async {
     final acaoController = context.read<AcaoController>();
@@ -59,6 +89,36 @@ class AtalhosWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authorizationService = context.watch<AuthorizationService>();
+    final usuarioAtual = authorizationService.usuarioAtual;
+
+    _sincronizarConfiguracao(usuarioAtual?.id ?? '');
+
+    return FutureBuilder<EscalaConfiguracaoModel?>(
+      future: _configuracaoFuture,
+      builder: (context, snapshot) {
+        return _buildAtalhos(
+          context,
+          authorizationService: authorizationService,
+          configuracao: snapshot.data,
+        );
+      },
+    );
+  }
+
+  void _sincronizarConfiguracao(String uid) {
+    if (_uidConfiguracao == uid) return;
+
+    _uidConfiguracao = uid;
+    _configuracaoFuture = uid.isEmpty
+        ? Future<EscalaConfiguracaoModel?>.value(null)
+        : _escalaRepository.carregarConfiguracao();
+  }
+
+  Widget _buildAtalhos(
+    BuildContext context, {
+    required AuthorizationService authorizationService,
+    required EscalaConfiguracaoModel? configuracao,
+  }) {
     final podeAcessarAdministracao = authorizationService.possuiPermissao(
       Permission.acessarAdministracao,
     );
@@ -71,24 +131,35 @@ class AtalhosWidget extends StatelessWidget {
     final podeAcessarCio =
         !aclAtiva ||
         authorizationService.possuiPermissao(Permission.acessarCioEscopo);
+
     final usuarioAtual = authorizationService.usuarioAtual;
-    final podeConsultarEscala =
-        usuarioAtual != null &&
-        EscalaAccessPolicy.autoriza(
-          perfilAcesso: usuarioAtual.perfilAcesso,
-          usuarioId: usuarioAtual.id,
-          responsavelEscalaUsuarioId: '',
-          permissao: EscalaPermission.consultarEscalaGeral,
-        );
+
+    final atalhosEscala = usuarioAtual == null
+        ? const <EscalaHomeShortcut>{}
+        : EscalaHomeShortcutsPolicy.resolver(
+            perfilAcesso: usuarioAtual.perfilAcesso,
+            usuarioId: usuarioAtual.id,
+            responsavelEscalaUsuarioId: configuracao?.ativo == true
+                ? configuracao!.responsavelEscalaUsuarioId
+                : '',
+          );
 
     final principais = <_AtalhoItem>[
-      if (podeConsultarEscala)
+      if (atalhosEscala.contains(EscalaHomeShortcut.escalaGeduc))
         _AtalhoItem(
           icon: Icons.calendar_month_rounded,
           title: 'Escala GEDUC',
           subtitle: 'Consultar programação',
           color: HomeVisualTokens.navy,
           onTap: () => context.push('/escala'),
+        ),
+      if (atalhosEscala.contains(EscalaHomeShortcut.minhaEscala))
+        _AtalhoItem(
+          icon: Icons.badge_rounded,
+          title: 'Minha Escala',
+          subtitle: 'Ver minhas alocações',
+          color: HomeVisualTokens.blue,
+          onTap: () => context.push('/escala?minha=1'),
         ),
       if (podeCriarRae)
         _AtalhoItem(
@@ -109,6 +180,20 @@ class AtalhosWidget extends StatelessWidget {
     ];
 
     final secundarios = <_AtalhoItem>[
+      if (atalhosEscala.contains(EscalaHomeShortcut.gestaoEscala))
+        _AtalhoItem(
+          icon: Icons.edit_calendar_rounded,
+          title: 'Gestão da Escala',
+          color: HomeVisualTokens.navy,
+          onTap: () => context.push('/escala/gestao'),
+        ),
+      if (atalhosEscala.contains(EscalaHomeShortcut.configuracaoEscala))
+        _AtalhoItem(
+          icon: Icons.settings_suggest_rounded,
+          title: 'Configuração da Escala',
+          color: HomeVisualTokens.blue,
+          onTap: () => context.push('/escala/configuracao'),
+        ),
       if (podeAcessarCio)
         _AtalhoItem(
           icon: Icons.dashboard_rounded,

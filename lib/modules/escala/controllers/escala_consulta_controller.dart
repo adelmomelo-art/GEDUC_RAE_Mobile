@@ -11,10 +11,10 @@ class EscalaConsultaController extends ChangeNotifier {
     required String usuarioId,
     DateTime? dataInicial,
     bool iniciarMinhaEscala = false,
-  }) : _repository = repository,
-       _usuarioId = usuarioId.trim(),
-       _dataSelecionada = _somenteData(dataInicial ?? DateTime.now()),
-       _minhaEscala = iniciarMinhaEscala;
+  })  : _repository = repository,
+        _usuarioId = usuarioId.trim(),
+        _dataSelecionada = _somenteData(dataInicial ?? DateTime.now()),
+        _minhaEscala = iniciarMinhaEscala;
 
   final EscalaRepository _repository;
   final String _usuarioId;

@@ -12,7 +12,7 @@ class FirestoreEscalaRepository
         EscalaGestaoRepository,
         EscalaConfiguracaoRepository {
   FirestoreEscalaRepository({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
@@ -300,8 +300,8 @@ class FirestoreEscalaRepository
 
     final motivoEfetivo =
         revisaoRecebida?.motivoRevisao.trim().isNotEmpty == true
-        ? revisaoRecebida!.motivoRevisao.trim()
-        : motivoNormalizado;
+            ? revisaoRecebida!.motivoRevisao.trim()
+            : motivoNormalizado;
 
     if (motivoEfetivo.isEmpty) {
       throw StateError('Informe o motivo da revisão.');
@@ -311,8 +311,7 @@ class FirestoreEscalaRepository
     final revisaoId = '${_idData(origem.data)}-v$novaVersao';
     final revisaoRef = _firestore.collection('escalas').doc(revisaoId);
 
-    final revisao =
-        revisaoRecebida ??
+    final revisao = revisaoRecebida ??
         await _firestore.runTransaction<EscalaModel>((transaction) async {
           final snapshot = await transaction.get(revisaoRef);
           final map = snapshot.data();
@@ -519,10 +518,8 @@ class FirestoreEscalaRepository
   }
 
   Future<EscalaModel?> _carregarEscalaPorId(String id) async {
-    final snapshot = await _firestore
-        .collection('escalas')
-        .doc(id.trim())
-        .get();
+    final snapshot =
+        await _firestore.collection('escalas').doc(id.trim()).get();
 
     final map = snapshot.data();
     if (!snapshot.exists || map == null) return null;
@@ -535,10 +532,8 @@ class FirestoreEscalaRepository
     final fim = inicio.add(const Duration(days: 1));
     final candidatos = <String, EscalaModel>{};
 
-    final porId = await _firestore
-        .collection('escalas')
-        .doc(_idData(inicio))
-        .get();
+    final porId =
+        await _firestore.collection('escalas').doc(_idData(inicio)).get();
 
     final porIdMap = porId.data();
     if (porId.exists && porIdMap != null) {
@@ -624,25 +619,21 @@ class FirestoreEscalaRepository
     final indisponibilidades =
         resultados[2] as List<EscalaIndisponibilidadeModel>;
 
-    final atividades =
-        atividadesSnapshot.docs
-            .map(
-              (doc) =>
-                  EscalaAtividadeModel.fromMap(doc.data(), documentId: doc.id),
-            )
-            .where((item) => _mesmoDia(item.data, data))
-            .toList()
-          ..sort(_compararAtividades);
+    final atividades = atividadesSnapshot.docs
+        .map(
+          (doc) => EscalaAtividadeModel.fromMap(doc.data(), documentId: doc.id),
+        )
+        .where((item) => _mesmoDia(item.data, data))
+        .toList()
+      ..sort(_compararAtividades);
 
-    final alocacoes =
-        alocacoesSnapshot.docs
-            .map(
-              (doc) =>
-                  EscalaAlocacaoModel.fromMap(doc.data(), documentId: doc.id),
-            )
-            .where((item) => _mesmoDia(item.data, data))
-            .toList()
-          ..sort(_compararAlocacoes);
+    final alocacoes = alocacoesSnapshot.docs
+        .map(
+          (doc) => EscalaAlocacaoModel.fromMap(doc.data(), documentId: doc.id),
+        )
+        .where((item) => _mesmoDia(item.data, data))
+        .toList()
+      ..sort(_compararAlocacoes);
 
     return EscalaDiaConsulta(
       data: data,
@@ -664,17 +655,16 @@ class FirestoreEscalaRepository
         .where('dataInicio', isLessThan: Timestamp.fromDate(fim))
         .get();
 
-    final itens =
-        snapshot.docs
-            .map(
-              (doc) => EscalaIndisponibilidadeModel.fromMap(
-                doc.data(),
-                documentId: doc.id,
-              ),
-            )
-            .where((item) => _abrangeDia(item, inicio))
-            .toList()
-          ..sort((a, b) => a.nomeSnapshot.compareTo(b.nomeSnapshot));
+    final itens = snapshot.docs
+        .map(
+          (doc) => EscalaIndisponibilidadeModel.fromMap(
+            doc.data(),
+            documentId: doc.id,
+          ),
+        )
+        .where((item) => _abrangeDia(item, inicio))
+        .toList()
+      ..sort((a, b) => a.nomeSnapshot.compareTo(b.nomeSnapshot));
 
     return List<EscalaIndisponibilidadeModel>.unmodifiable(itens);
   }

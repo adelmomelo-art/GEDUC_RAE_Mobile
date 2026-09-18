@@ -136,8 +136,8 @@ class _EscalaConfiguracaoPageState extends State<EscalaConfiguracaoPage> {
                   Text(
                     'Parâmetros operacionais',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                   const SizedBox(height: 6),
                   const Text(
@@ -157,9 +157,8 @@ class _EscalaConfiguracaoPageState extends State<EscalaConfiguracaoPage> {
   Widget _responsavelCard() {
     final candidatos = _controller.candidatosResponsavel;
     final atual = _controller.responsavelAtualMembroId;
-    final valorAtual = candidatos.any((item) => item.membro.id == atual)
-        ? atual
-        : null;
+    final valorAtual =
+        candidatos.any((item) => item.membro.id == atual) ? atual : null;
 
     return Card(
       key: const ValueKey('config-responsavel-card'),
@@ -349,7 +348,9 @@ class _MembroConfiguracaoCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           membro.nome,
-                          style: Theme.of(context).textTheme.titleSmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),

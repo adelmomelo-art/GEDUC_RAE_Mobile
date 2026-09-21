@@ -186,6 +186,23 @@ void main() {
       );
     });
 
+    test('administrador nao registra missao mesmo quando participante', () {
+      for (final permissao in [
+        EscalaPermission.registrarExecucaoMissao,
+        EscalaPermission.anexarEvidenciaMissao,
+      ]) {
+        expect(
+          autoriza(
+            perfil: 'administrador',
+            uid: 'admin',
+            permissao: permissao,
+            participante: true,
+          ),
+          isFalse,
+        );
+      }
+    });
+
     test('agente participante registra somente as proprias horas realizadas',
         () {
       expect(

@@ -50,7 +50,8 @@ class EscalaAccessPolicy {
         return ehParticipanteAtividade;
       case EscalaPermission.registrarExecucaoMissao:
       case EscalaPermission.anexarEvidenciaMissao:
-        return ehParticipanteAtividade || ehCoordenadorAtividade;
+        return !administrador &&
+            (ehParticipanteAtividade || ehCoordenadorAtividade);
       case EscalaPermission.consultarEscalaGeral:
       case EscalaPermission.consultarPropriaEscala:
         return true;

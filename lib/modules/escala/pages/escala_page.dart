@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/routes/app_routes.dart';
 import '../controllers/escala_consulta_controller.dart';
 import '../data/escala_repository.dart';
 import '../data/firestore_escala_repository.dart';
 import '../models/escala_models.dart';
+import '../security/escala_access_policy.dart';
+import '../security/escala_permission.dart';
 import '../services/escala_horas_service.dart';
 
 class EscalaPage extends StatefulWidget {
   const EscalaPage({
     super.key,
     required this.usuarioId,
+    this.perfilAcesso = '',
     this.repository,
     this.dataInicial,
     this.iniciarMinhaEscala = false,
   });
 
   final String usuarioId;
+  final String perfilAcesso;
   final EscalaRepository? repository;
   final DateTime? dataInicial;
   final bool iniciarMinhaEscala;
@@ -168,6 +174,7 @@ class _EscalaPageState extends State<EscalaPage> {
               titulo: _rotuloSecao(secao.key),
               atividades: secao.value,
               controller: _controller,
+              perfilAcesso: widget.perfilAcesso,
             ),
             const SizedBox(height: 12),
           ],
@@ -518,11 +525,13 @@ class _SecaoAtividades extends StatelessWidget {
     required this.titulo,
     required this.atividades,
     required this.controller,
+    required this.perfilAcesso,
   });
 
   final String titulo;
   final List<EscalaAtividadeModel> atividades;
   final EscalaConsultaController controller;
+  final String perfilAcesso;
 
   @override
   Widget build(BuildContext context) {
@@ -564,6 +573,7 @@ class _SecaoAtividades extends StatelessWidget {
                             atividade.id,
                           ),
                           usuarioId: controller.usuarioId,
+                          perfilAcesso: perfilAcesso,
                         ),
                       ),
                   ],
@@ -582,17 +592,31 @@ class _AtividadeCard extends StatelessWidget {
     required this.atividade,
     required this.alocacoes,
     required this.usuarioId,
+    required this.perfilAcesso,
   });
 
   final EscalaAtividadeModel atividade;
   final List<EscalaAlocacaoModel> alocacoes;
   final String usuarioId;
+  final String perfilAcesso;
 
   @override
   Widget build(BuildContext context) {
     final resumo = EscalaHorasService.resumir(alocacoes);
     final equipe = alocacoes.take(8).toList();
     final restantes = alocacoes.length - equipe.length;
+    final podeAbrirMissao = atividade.administrativa &&
+        !atividade.geraRae &&
+        EscalaAccessPolicy.autoriza(
+          perfilAcesso: perfilAcesso,
+          usuarioId: usuarioId,
+          responsavelEscalaUsuarioId: '',
+          permissao: EscalaPermission.registrarExecucaoMissao,
+          ehParticipanteAtividade:
+              atividade.participanteUsuarioIds.contains(usuarioId.trim()),
+          ehCoordenadorAtividade:
+              atividade.coordenadorUsuarioId.trim() == usuarioId.trim(),
+        );
 
     return Card(
       key: ValueKey('atividade-${atividade.id}'),
@@ -715,6 +739,17 @@ class _AtividadeCard extends StatelessWidget {
                           'BANCO HORAS • ${EscalaHorasService.formatarMinutos(resumo.minutosBancoHoras)}',
                     ),
                 ],
+              ),
+            ],
+            if (podeAbrirMissao) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                key: ValueKey('abrir-missao-${atividade.id}'),
+                onPressed: () => context.push(
+                  AppRoutes.execucaoMissaoLocation(atividade.id),
+                ),
+                icon: const Icon(Icons.assignment_turned_in_outlined),
+                label: const Text('Execução da Missão'),
               ),
             ],
           ],

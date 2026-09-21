@@ -25,14 +25,17 @@ void main() {
     );
   }
 
-  EscalaAtividadeModel atividade(String id, String titulo, String secao) {
+  EscalaAtividadeModel atividade(String id, String titulo, String secao,
+      {bool administrativa = false}) {
     return EscalaAtividadeModel(
       id: id,
       escalaId: '2026-09-17',
       data: data,
       secaoId: secao,
       tipoAtividadeId: 'comando_educativo',
-      naturezaAtividade: EscalaCodigos.naturezaEducativa,
+      naturezaAtividade: administrativa
+          ? EscalaCodigos.naturezaAdministrativa
+          : EscalaCodigos.naturezaEducativa,
       titulo: titulo,
       descricao: '',
       turnoId: 'manha',
@@ -47,8 +50,8 @@ void main() {
       coordenadorMembroEquipeId: 'coord',
       coordenadorUsuarioId: 'uid-coord',
       coordenadorNomeSnapshot: 'Coordenação',
-      participanteUsuarioIds: const [],
-      geraRae: true,
+      participanteUsuarioIds: administrativa ? const ['uid-atual'] : const [],
+      geraRae: !administrativa,
       contabilizaProdutividade: true,
       raeId: '',
       execucaoMissaoId: '',
@@ -136,12 +139,14 @@ void main() {
     WidgetTester tester,
     EscalaDiaConsulta resultado, {
     bool minha = false,
+    String perfilAcesso = '',
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(useMaterial3: true),
         home: EscalaPage(
           usuarioId: 'uid-atual',
+          perfilAcesso: perfilAcesso,
           repository: _FakeRepository(resultado),
           dataInicial: data,
           iniciarMinhaEscala: minha,
@@ -199,6 +204,27 @@ void main() {
 
     expect(find.byKey(const ValueKey('escala-vazia')), findsOneWidget);
     expect(find.text('Nenhuma escala encontrada'), findsOneWidget);
+  });
+
+  testWidgets('missão publicada oferece entrada só ao executor elegível',
+      (tester) async {
+    final missao = atividade('m1', 'Apoio interno', 'administrativo',
+        administrativa: true);
+    final dia = EscalaDiaConsulta(
+      data: data,
+      escala: escala(),
+      atividades: [missao],
+      alocacoes: [alocacao('al1', 'm1', 'uid-atual')],
+      indisponibilidades: const [],
+    );
+
+    await pumpPage(tester, dia, perfilAcesso: 'agente');
+    expect(find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
+        findsOneWidget);
+
+    await pumpPage(tester, dia, perfilAcesso: 'administrador');
+    expect(find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
+        findsNothing);
   });
 
   testWidgets('jornadas de referência são explicitamente informativas', (

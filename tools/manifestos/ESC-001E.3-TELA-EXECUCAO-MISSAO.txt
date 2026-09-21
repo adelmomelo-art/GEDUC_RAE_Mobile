@@ -1,0 +1,31 @@
+PLATAFORMA FENIX / ESC-001E.3
+BASELINE=57fc8722064337dfa459802c02d362a13f7b3fe2
+BRANCH=feature/esc-001e3-tela-execucao-missao
+OBJETIVO=Tela Execucao da Missao e integracao na Escala publicada
+
+ESCOPO:
+docs/ESC-001E3_BLUEPRINT_TELA_EXECUCAO_MISSAO.md
+README_ESC-001E3_TELA_EXECUCAO_MISSAO.md
+firestore.rules
+lib/core/routes/app_routes.dart
+lib/modules/escala/pages/escala_page.dart
+lib/modules/escala/pages/escala_execucao_missao_page.dart
+lib/modules/escala/security/escala_access_policy.dart
+test/firestore_escala.rules.test.js
+test/modules/escala/pages/escala_page_test.dart
+test/modules/escala/pages/escala_execucao_missao_page_test.dart
+test/modules/escala/security/escala_access_policy_test.dart
+tools/manifestos/ESC-001E.3-TELA-EXECUCAO-MISSAO.txt
+
+GATES:
+flutter test
+flutter analyze (0 issues)
+npm run test:rules
+git diff --check
+6 checks de Quality Gates do PR
+
+FORA DO ESCOPO:
+horas realizadas e entrada/remoção de evidências na UX (ESC-001E.4)
+Escala para RAE (ESC-001F)
+PDF/produtividade/financeiro
+Storage/R2/App Check

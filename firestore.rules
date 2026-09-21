@@ -856,6 +856,7 @@ service cloud.firestore {
     function podeRegistrarExecucaoMissao(atividadeId) {
       let caminho = caminhoAtividadeEscala(atividadeId);
       return usuarioEscalaAtivo()
+        && !administradorEscala()
         && atividadeId is string
         && atividadeId.size() > 0
         && exists(caminho)

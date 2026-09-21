@@ -799,6 +799,30 @@ test('agente participante registra própria missão administrativa', async () =>
   );
 });
 
+test('administrador participante não registra execução administrativa', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    const db = contexto.firestore();
+    await db.collection('equipe_operacional').doc('membro-admin').set({
+      usuarioId: 'admin',
+      nome: 'admin',
+      vinculo: 'agente',
+      podeCoordenar: false,
+      ativo: true,
+      origem: 'usuario',
+      createdAt: agora(),
+      updatedAt: agora(),
+    });
+    await db.collection('escala_atividades')
+      .doc('atividade-admin-publicada')
+      .update({ participanteUsuarioIds: ['agente', 'admin'] });
+  });
+  await assertFails(
+    banco('admin').collection('escala_execucoes_missao').doc('exec-admin').set(
+      execucao('admin'),
+    ),
+  );
+});
+
 test('agente não participante não registra missão administrativa', async () => {
   await assertFails(
     banco('responsavel').collection('escala_execucoes_missao').doc('exec-fora').set(

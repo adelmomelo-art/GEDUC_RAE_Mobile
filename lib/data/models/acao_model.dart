@@ -1,8 +1,4 @@
-enum OrigemLocalizacao {
-  gps,
-  enderecoInformado,
-  mapa,
-}
+enum OrigemLocalizacao { gps, enderecoInformado, mapa }
 
 extension OrigemLocalizacaoExtension on OrigemLocalizacao {
   String get valorPersistencia {
@@ -185,6 +181,16 @@ class AcaoModel {
   final bool aclClassificacaoCompleta;
   final String aclScopeKey;
 
+  // ============================================================
+  // ORIGEM ESCALA GEDUC — ESC-001F
+  // ============================================================
+
+  /// Identifica a escala publicada que originou este RAE.
+  final String escalaId;
+
+  /// Identifica, de forma imutável, a atividade educativa de origem.
+  final String escalaAtividadeId;
+
   const AcaoModel({
     required this.id,
     this.numeroRAE = '',
@@ -257,7 +263,12 @@ class AcaoModel {
     this.projetoId = '',
     this.aclClassificacaoCompleta = false,
     this.aclScopeKey = '',
+    this.escalaId = '',
+    this.escalaAtividadeId = '',
   });
+
+  bool get originadaDaEscala =>
+      escalaId.trim().isNotEmpty && escalaAtividadeId.trim().isNotEmpty;
 
   AcaoModel copyWith({
     String? id,
@@ -331,6 +342,8 @@ class AcaoModel {
     String? projetoId,
     bool? aclClassificacaoCompleta,
     String? aclScopeKey,
+    String? escalaId,
+    String? escalaAtividadeId,
   }) {
     return AcaoModel(
       id: id ?? this.id,
@@ -414,6 +427,8 @@ class AcaoModel {
       aclClassificacaoCompleta:
           aclClassificacaoCompleta ?? this.aclClassificacaoCompleta,
       aclScopeKey: aclScopeKey ?? this.aclScopeKey,
+      escalaId: escalaId ?? this.escalaId,
+      escalaAtividadeId: escalaAtividadeId ?? this.escalaAtividadeId,
     );
   }
 
@@ -489,6 +504,8 @@ class AcaoModel {
         'projetoId': projetoId,
         'aclClassificacaoCompleta': aclClassificacaoCompleta,
         'aclScopeKey': aclScopeKey,
+        'escalaId': escalaId,
+        'escalaAtividadeId': escalaAtividadeId,
       };
 
   Map<String, dynamic> toJson() => toMap();
@@ -527,13 +544,15 @@ class AcaoModel {
       pontoReferencia: pontoReferencia,
       latitude: _decimal(map['latitude']),
       longitude: _decimal(map['longitude']),
-      origemLocalizacao:
-          OrigemLocalizacaoExtension.fromValue(map['origemLocalizacao']),
+      origemLocalizacao: OrigemLocalizacaoExtension.fromValue(
+        map['origemLocalizacao'],
+      ),
       precisaoGps: _decimalOpcional(map['precisaoGps']),
       dataHoraCaptura: _dataHora(map['dataHoraCaptura']),
       localizacaoValidada: _booleano(map['localizacaoValidada']),
-      localizacaoEditadaManualmente:
-          _booleano(map['localizacaoEditadaManualmente']),
+      localizacaoEditadaManualmente: _booleano(
+        map['localizacaoEditadaManualmente'],
+      ),
       fatorRiscoIds: _listaTexto(map['fatorRiscoIds']),
       mudancaComportamentoId: _texto(map['mudancaComportamentoId']),
       formacaoId: _texto(map['formacaoId']),
@@ -556,8 +575,9 @@ class AcaoModel {
       terceirizadoEquipeUserIds: _listaTexto(map['terceirizadoEquipeUserIds']),
       materialUtilizadoIds: _listaTexto(map['materialUtilizadoIds']),
       coberturaMidia: _booleano(map['coberturaMidia']),
-      houveParticipacaoOutroOrgao:
-          _booleano(map['houveParticipacaoOutroOrgao']),
+      houveParticipacaoOutroOrgao: _booleano(
+        map['houveParticipacaoOutroOrgao'],
+      ),
       orgaoParticipanteId: _texto(map['orgaoParticipanteId']),
       orgaoParticipanteIds: _listaTexto(map['orgaoParticipanteIds']).isNotEmpty
           ? _listaTexto(map['orgaoParticipanteIds'])
@@ -578,6 +598,8 @@ class AcaoModel {
       projetoId: _texto(map['projetoId']),
       aclClassificacaoCompleta: _booleano(map['aclClassificacaoCompleta']),
       aclScopeKey: _texto(map['aclScopeKey']),
+      escalaId: _texto(map['escalaId']),
+      escalaAtividadeId: _texto(map['escalaAtividadeId']),
     );
   }
 

@@ -11,9 +11,7 @@ import '../../../repositories/acao_repository.dart';
 class AcaoController extends ChangeNotifier {
   final AcaoRepository acaoRepository;
 
-  AcaoController({
-    required this.acaoRepository,
-  });
+  AcaoController({required this.acaoRepository});
 
   AcaoModel? acaoAtual;
   String? erro;
@@ -69,7 +67,7 @@ class AcaoController extends ChangeNotifier {
       return '/nova-acao';
     }
 
-    if (acao.turno.isEmpty || acao.nomeAcao.isEmpty) {
+    if (acao.turno.isEmpty || acao.nomeAcao.isEmpty || acao.projetoId.isEmpty) {
       return '/nova-acao';
     }
 
@@ -139,6 +137,24 @@ class AcaoController extends ChangeNotifier {
     await acaoRepository.excluirRascunho();
     acaoAtual = null;
     notifyListeners();
+  }
+
+  Future<void> adotarRascunhoDaEscala(AcaoModel rascunho) async {
+    if (!rascunho.originadaDaEscala || rascunho.status != 'rascunho') {
+      throw StateError('Rascunho de RAE originado da Escala inválido.');
+    }
+
+    acaoAtual = rascunho;
+    erro = null;
+    await _salvarRascunhoAtual();
+    notifyListeners();
+  }
+
+  bool rascunhoPertenceAAtividade(String atividadeId) {
+    final acao = acaoAtual;
+    return acao != null &&
+        acao.escalaAtividadeId.trim() == atividadeId.trim() &&
+        atividadeId.trim().isNotEmpty;
   }
 
   void criarRascunhoInicial() {
@@ -230,10 +246,7 @@ class AcaoController extends ChangeNotifier {
       final numero = await acaoRepository.gerarNumeroRaeAutomatico();
       final ano = DateTime.now().year;
 
-      acaoAtual = acaoAtual!.copyWith(
-        numeroRAE: numero,
-        anoRAE: ano,
-      );
+      acaoAtual = acaoAtual!.copyWith(numeroRAE: numero, anoRAE: ano);
 
       await _salvarRascunhoAtual();
     } finally {
@@ -271,9 +284,7 @@ class AcaoController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selecionarProjetoInstitucional(
-    String projetoId,
-  ) {
+  void selecionarProjetoInstitucional(String projetoId) {
     if (acaoAtual == null) {
       criarRascunhoInicial();
     }

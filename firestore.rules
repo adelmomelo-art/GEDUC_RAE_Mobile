@@ -853,6 +853,94 @@ service cloud.firestore {
       return /databases/$(database)/documents/escala_atividades/$(atividadeId);
     }
 
+    function caminhoRae(raeId) {
+      return /databases/$(database)/documents/acoes/$(raeId);
+    }
+
+    function operadorRaeDaAtividade(atividade) {
+      return usuarioEscalaAtivo()
+        && (
+          (
+            perfilEscalaAtual() == 'agente'
+            && request.auth.uid in atividade.participanteUsuarioIds
+          )
+          || (
+            perfilEscalaAtual() == 'coordenador'
+            && (
+              atividade.coordenadorUsuarioId == request.auth.uid
+              || request.auth.uid in atividade.participanteUsuarioIds
+            )
+          )
+        );
+    }
+
+    function vinculacaoRaeAtividadeValida(atividadeId) {
+      let raeId = request.resource.data.raeId;
+      let caminho = caminhoRae(raeId);
+      return resource.data.naturezaAtividade == 'educativa'
+        && resource.data.geraRae == true
+        && escalaPublicadaPorId(resource.data.escalaId)
+        && operadorRaeDaAtividade(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'raeId',
+          'atualizadoPor',
+          'atualizadoEm'
+        ])
+        && resource.data.raeId == ''
+        && raeId is string
+        && raeId.size() > 0
+        && request.resource.data.atualizadoPor == request.auth.uid
+        && request.resource.data.atualizadoEm is timestamp
+        && existsAfter(caminho)
+        && getAfter(caminho).data.id == raeId
+        && getAfter(caminho).data.escalaId == resource.data.escalaId
+        && getAfter(caminho).data.escalaAtividadeId == atividadeId
+        && getAfter(caminho).data.responsavelUserId == request.auth.uid;
+    }
+
+    function criacaoRaeVinculadoValida(acaoId) {
+      let possuiEscala = 'escalaId' in request.resource.data
+        && request.resource.data.escalaId is string
+        && request.resource.data.escalaId.size() > 0;
+      let possuiAtividade = 'escalaAtividadeId' in request.resource.data
+        && request.resource.data.escalaAtividadeId is string
+        && request.resource.data.escalaAtividadeId.size() > 0;
+      let atividadeId = possuiAtividade
+        ? request.resource.data.escalaAtividadeId
+        : '';
+      let caminho = caminhoAtividadeEscala(atividadeId);
+      return (!possuiEscala && !possuiAtividade)
+        || (
+          possuiEscala
+          && possuiAtividade
+          && request.resource.data.id == acaoId
+          && request.resource.data.responsavelUserId == request.auth.uid
+          && existsAfter(caminho)
+          && getAfter(caminho).data.escalaId == request.resource.data.escalaId
+          && getAfter(caminho).data.naturezaAtividade == 'educativa'
+          && getAfter(caminho).data.geraRae == true
+          && getAfter(caminho).data.raeId == acaoId
+          && operadorRaeDaAtividade(getAfter(caminho).data)
+        );
+    }
+
+    function atualizacaoRaePreservaOrigem() {
+      let escalaAnterior = 'escalaId' in resource.data
+        ? resource.data.escalaId
+        : '';
+      let atividadeAnterior = 'escalaAtividadeId' in resource.data
+        ? resource.data.escalaAtividadeId
+        : '';
+      let escalaAtual = 'escalaId' in request.resource.data
+        ? request.resource.data.escalaId
+        : '';
+      let atividadeAtual = 'escalaAtividadeId' in request.resource.data
+        ? request.resource.data.escalaAtividadeId
+        : '';
+      return escalaAtual == escalaAnterior
+        && atividadeAtual == atividadeAnterior;
+    }
+
     function podeRegistrarExecucaoMissao(atividadeId) {
       let caminho = caminhoAtividadeEscala(atividadeId);
       return usuarioEscalaAtivo()
@@ -1027,7 +1115,9 @@ service cloud.firestore {
     }
 
     match /acoes/{acaoId} {
-      allow get, list, create, update: if usuarioAtivo();
+      allow get, list: if usuarioAtivo();
+      allow create: if usuarioAtivo() && criacaoRaeVinculadoValida(acaoId);
+      allow update: if usuarioAtivo() && atualizacaoRaePreservaOrigem();
       allow delete: if administrador();
     }
 
@@ -1079,13 +1169,15 @@ service cloud.firestore {
         && escalaRascunhoPorId(request.resource.data.escalaId)
         && atividadeEscalaValida()
         && request.resource.data.criadoPor == request.auth.uid;
-      allow update: if podeAtualizarEscala()
-        && escalaRascunhoPorId(request.resource.data.escalaId)
-        && atividadeEscalaValida()
-        && request.resource.data.escalaId == resource.data.escalaId
-        && request.resource.data.data == resource.data.data
-        && request.resource.data.criadoPor == resource.data.criadoPor
-        && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow update: if (
+          podeAtualizarEscala()
+          && escalaRascunhoPorId(request.resource.data.escalaId)
+          && atividadeEscalaValida()
+          && request.resource.data.escalaId == resource.data.escalaId
+          && request.resource.data.data == resource.data.data
+          && request.resource.data.criadoPor == resource.data.criadoPor
+          && request.resource.data.criadoEm == resource.data.criadoEm
+        ) || vinculacaoRaeAtividadeValida(atividadeId);
       allow delete: if false;
     }
 

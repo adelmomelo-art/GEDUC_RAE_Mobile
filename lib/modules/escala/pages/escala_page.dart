@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../acoes/controllers/acao_controller.dart';
 import '../controllers/escala_consulta_controller.dart';
 import '../data/escala_repository.dart';
 import '../data/firestore_escala_repository.dart';
@@ -10,6 +12,7 @@ import '../models/escala_models.dart';
 import '../security/escala_access_policy.dart';
 import '../security/escala_permission.dart';
 import '../services/escala_horas_service.dart';
+import '../services/escala_rae_service.dart';
 
 class EscalaPage extends StatefulWidget {
   const EscalaPage({
@@ -660,11 +663,18 @@ class _AtividadeCard extends StatelessWidget {
           usuarioId: usuarioId,
           responsavelEscalaUsuarioId: '',
           permissao: EscalaPermission.registrarExecucaoMissao,
-          ehParticipanteAtividade:
-              atividade.participanteUsuarioIds.contains(usuarioId.trim()),
+          ehParticipanteAtividade: atividade.participanteUsuarioIds.contains(
+            usuarioId.trim(),
+          ),
           ehCoordenadorAtividade:
               atividade.coordenadorUsuarioId.trim() == usuarioId.trim(),
         );
+    final podeInteragirRae = EscalaRaeService.podeCriarRae(
+      atividade: atividade,
+      escalaPublicada: controller.escalaPublicada,
+      perfilAcesso: controller.perfilAcesso,
+      usuarioId: usuarioId,
+    );
 
     return Card(
       key: ValueKey('atividade-${atividade.id}'),
@@ -844,6 +854,31 @@ class _AtividadeCard extends StatelessWidget {
                 label: const Text('Execução da Missão'),
               ),
             ],
+            if (podeInteragirRae) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: ValueKey(
+                  atividade.raeId.trim().isEmpty
+                      ? 'criar-rae-${atividade.id}'
+                      : 'abrir-rae-${atividade.id}',
+                ),
+                onPressed: () => _abrirOuCriarRae(
+                  context,
+                  atividade: atividade,
+                  alocacoes: alocacoes,
+                ),
+                icon: Icon(
+                  atividade.raeId.trim().isEmpty
+                      ? Icons.post_add_rounded
+                      : Icons.assignment_turned_in_outlined,
+                ),
+                label: Text(
+                  atividade.raeId.trim().isEmpty
+                      ? 'Criar RAE desta atividade'
+                      : 'Abrir RAE vinculado',
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -859,6 +894,60 @@ class _AtividadeCard extends StatelessWidget {
       return atividade.qtrHorario.trim();
     }
     return 'Não informado';
+  }
+
+  Future<void> _abrirOuCriarRae(
+    BuildContext context, {
+    required EscalaAtividadeModel atividade,
+    required List<EscalaAlocacaoModel> alocacoes,
+  }) async {
+    final raeId = atividade.raeId.trim();
+    if (raeId.isNotEmpty) {
+      await context.push(AppRoutes.raeVinculadoLocation(raeId));
+      return;
+    }
+
+    final acaoController = context.read<AcaoController>();
+    if (acaoController.rascunhoPertenceAAtividade(atividade.id)) {
+      await context.push(acaoController.rotaContinuacaoRascunho);
+      return;
+    }
+
+    if (acaoController.possuiRascunhoEmAndamento) {
+      final substituir = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Existe outro RAE em andamento'),
+          content: const Text(
+            'Para criar o RAE desta atividade, o rascunho local atual precisa '
+            'ser descartado. Deseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Descartar e criar'),
+            ),
+          ],
+        ),
+      );
+      if (substituir != true || !context.mounted) return;
+      await acaoController.descartarRascunho();
+    }
+
+    final rascunho = EscalaRaeService.criarRascunho(
+      atividade: atividade,
+      alocacoes: alocacoes,
+      usuarioId: controller.usuarioId,
+    );
+    await acaoController.adotarRascunhoDaEscala(rascunho);
+
+    if (context.mounted) {
+      await context.push(AppRoutes.novaAcaoPath);
+    }
   }
 
   static Future<void> _abrirRegistroHoras(
@@ -956,7 +1045,8 @@ class _AtividadeCard extends StatelessWidget {
                         erro!,
                         key: const ValueKey('horas-erro'),
                         style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ],
                   ],

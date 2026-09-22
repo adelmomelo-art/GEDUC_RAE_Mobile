@@ -139,6 +139,17 @@ function execucao(executor, overrides = {}) {
   };
 }
 
+function raeVinculado(id, executor, atividadeId, overrides = {}) {
+  return {
+    id,
+    escalaId: 'escala-publicada',
+    escalaAtividadeId: atividadeId,
+    responsavelUserId: executor,
+    status: 'enviado',
+    ...overrides,
+  };
+}
+
 async function semear() {
   await ambiente.withSecurityRulesDisabled(async (contexto) => {
     const db = contexto.firestore();
@@ -226,6 +237,19 @@ async function semear() {
           status: 'publicada',
         }),
       );
+    await db.collection('escala_atividades').doc('atividade-educativa-publicada').set(
+      atividadeEducativa({
+        escalaId: 'escala-publicada',
+        status: 'publicada',
+      }),
+    );
+    await db.collection('escala_atividades').doc('atividade-educativa-coord').set(
+      atividadeEducativa({
+        escalaId: 'escala-publicada',
+        status: 'publicada',
+        participanteUsuarioIds: [],
+      }),
+    );
 
     await db.collection('escala_alocacoes').doc('alocacao-agente-publicada').set(
       alocacao({
@@ -1006,6 +1030,99 @@ test('registro criado terminal permanece imutavel', async () => {
     observacao: 'Tentativa posterior',
     atualizadoEm: agora(),
   }));
+});
+
+test('participante vincula RAE e atividade educativa na mesma transacao', async () => {
+  const db = banco('agente');
+  const raeId = 'rae-atividade-educativa-publicada';
+  const atividadeId = 'atividade-educativa-publicada';
+
+  await assertSucceeds(db.runTransaction(async (transaction) => {
+    transaction.set(
+      db.collection('acoes').doc(raeId),
+      raeVinculado(raeId, 'agente', atividadeId),
+    );
+    transaction.update(db.collection('escala_atividades').doc(atividadeId), {
+      raeId,
+      atualizadoPor: 'agente',
+      atualizadoEm: agora(),
+    });
+  }));
+});
+
+test('coordenador da atividade também vincula o próprio RAE', async () => {
+  const db = banco('coordenador');
+  const raeId = 'rae-atividade-educativa-coord';
+  const atividadeId = 'atividade-educativa-coord';
+
+  await assertSucceeds(db.runTransaction(async (transaction) => {
+    transaction.set(
+      db.collection('acoes').doc(raeId),
+      raeVinculado(raeId, 'coordenador', atividadeId),
+    );
+    transaction.update(db.collection('escala_atividades').doc(atividadeId), {
+      raeId,
+      atualizadoPor: 'coordenador',
+      atualizadoEm: agora(),
+    });
+  }));
+});
+
+test('RAE vinculado exige escrita atomica dos dois lados', async () => {
+  const db = banco('agente');
+  const raeId = 'rae-sem-vinculo-atomico';
+
+  await assertFails(
+    db.collection('acoes').doc(raeId).set(
+      raeVinculado(raeId, 'agente', 'atividade-educativa-publicada'),
+    ),
+  );
+
+  await assertFails(
+    db.collection('escala_atividades').doc('atividade-educativa-publicada').update({
+      raeId,
+      atualizadoPor: 'agente',
+      atualizadoEm: agora(),
+    }),
+  );
+});
+
+test('administrador e nao participante nao vinculam RAE da escala', async () => {
+  for (const uid of ['admin', 'responsavel']) {
+    const atividadeId = 'atividade-educativa-publicada';
+    const raeId = 'rae-negado';
+    const db = banco(uid);
+
+    await assertFails(db.runTransaction(async (transaction) => {
+      transaction.set(
+        db.collection('acoes').doc(raeId),
+        raeVinculado(raeId, uid, atividadeId),
+      );
+      transaction.update(db.collection('escala_atividades').doc(atividadeId), {
+        raeId,
+        atualizadoPor: uid,
+        atualizadoEm: agora(),
+      });
+    }));
+  }
+});
+
+test('origem do RAE vinculado permanece imutavel', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore().collection('acoes').doc('rae-vinculado-seed').set(
+      raeVinculado(
+        'rae-vinculado-seed',
+        'agente',
+        'atividade-educativa-publicada',
+      ),
+    );
+  });
+
+  await assertFails(
+    banco('agente').collection('acoes').doc('rae-vinculado-seed').update({
+      escalaAtividadeId: 'atividade-educativa-coord',
+    }),
+  );
 });
 
 test('férias e sobreposição não são bloqueios server-side da publicação', async () => {

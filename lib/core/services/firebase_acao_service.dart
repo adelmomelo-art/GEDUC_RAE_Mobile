@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../data/models/acao_model.dart';
 
 class FirebaseAcaoService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAcaoService({FirebaseFirestore? firestore, FirebaseAuth? auth})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
+
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>> get _acoesRef =>
       _firestore.collection('acoes');
@@ -29,7 +35,57 @@ class FirebaseAcaoService {
 
       dados['dataAtualizacao'] = FieldValue.serverTimestamp();
 
-      await _acoesRef.doc(acaoId).set(dados);
+      if (!acao.originadaDaEscala) {
+        await _acoesRef.doc(acaoId).set(dados);
+        return acaoId;
+      }
+
+      final atividadeId = acao.escalaAtividadeId.trim();
+      final escalaId = acao.escalaId.trim();
+      final usuarioId = _auth.currentUser?.uid.trim() ?? '';
+      if (usuarioId.isEmpty) {
+        throw StateError(
+          'Usuário autenticado obrigatório para vincular o RAE.',
+        );
+      }
+      final atividadeRef =
+          _firestore.collection('escala_atividades').doc(atividadeId);
+      final escalaRef = _firestore.collection('escalas').doc(escalaId);
+      final acaoRef = _acoesRef.doc(acaoId);
+
+      await _firestore.runTransaction((transaction) async {
+        final atividadeSnapshot = await transaction.get(atividadeRef);
+        final escalaSnapshot = await transaction.get(escalaRef);
+        final atividade = atividadeSnapshot.data();
+        final escala = escalaSnapshot.data();
+
+        if (!atividadeSnapshot.exists || atividade == null) {
+          throw StateError('Atividade educativa de origem não encontrada.');
+        }
+        if (!escalaSnapshot.exists || escala == null) {
+          throw StateError('Escala publicada de origem não encontrada.');
+        }
+        if (atividade['escalaId']?.toString().trim() != escalaId ||
+            atividade['naturezaAtividade'] != 'educativa' ||
+            atividade['geraRae'] != true ||
+            escala['status'] != 'publicada') {
+          throw StateError('A origem não está apta a gerar RAE.');
+        }
+
+        final vinculoAtual = atividade['raeId']?.toString().trim() ?? '';
+        if (vinculoAtual.isNotEmpty && vinculoAtual != acaoId) {
+          throw StateError('A atividade já está vinculada a outro RAE.');
+        }
+
+        transaction.set(acaoRef, dados);
+        if (vinculoAtual.isEmpty) {
+          transaction.update(atividadeRef, <String, dynamic>{
+            'raeId': acaoId,
+            'atualizadoPor': usuarioId,
+            'atualizadoEm': FieldValue.serverTimestamp(),
+          });
+        }
+      });
 
       return acaoId;
     } catch (e) {
@@ -104,13 +160,9 @@ class FirebaseAcaoService {
   }
 
   Stream<List<AcaoModel>> listarAcoesPorProjeto(String projetoId) {
-    return _acoesRef
-        .where(
-          'projetoId',
-          isEqualTo: projetoId,
-        )
-        .snapshots()
-        .map((snapshot) {
+    return _acoesRef.where('projetoId', isEqualTo: projetoId).snapshots().map((
+      snapshot,
+    ) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
 
@@ -132,10 +184,7 @@ class FirebaseAcaoService {
     }
   }
 
-  Future<void> atualizarNumeroRae(
-    String id,
-    String numeroRae,
-  ) async {
+  Future<void> atualizarNumeroRae(String id, String numeroRae) async {
     try {
       await _acoesRef.doc(id).update({
         'numeroRAE': numeroRae,
@@ -150,9 +199,7 @@ class FirebaseAcaoService {
     try {
       final ano = DateTime.now().year;
 
-      final counterRef = _firestore.collection('contadores').doc(
-            'rae_$ano',
-          );
+      final counterRef = _firestore.collection('contadores').doc('rae_$ano');
 
       return await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(counterRef);
@@ -168,16 +215,13 @@ class FirebaseAcaoService {
         final novoNumero = ultimoNumero + 1;
 
         transaction.set(
-          counterRef,
-          {
-            'ultimoNumero': novoNumero,
-            'ano': ano,
-            'dataAtualizacao': FieldValue.serverTimestamp(),
-          },
-          SetOptions(
-            merge: true,
-          ),
-        );
+            counterRef,
+            {
+              'ultimoNumero': novoNumero,
+              'ano': ano,
+              'dataAtualizacao': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
 
         return '${novoNumero.toString().padLeft(4, '0')}/$ano';
       });
@@ -186,10 +230,7 @@ class FirebaseAcaoService {
     }
   }
 
-  Future<void> vincularQrCode(
-    String id,
-    String qrCodeUrl,
-  ) async {
+  Future<void> vincularQrCode(String id, String qrCodeUrl) async {
     try {
       await _acoesRef.doc(id).update({
         'qrCodeUrl': qrCodeUrl,
@@ -207,21 +248,15 @@ class FirebaseAcaoService {
   }
 
   Future<int> totalPessoasAlcancadas() async {
-    return totalPorCampo(
-      'pessoasAlcancadas',
-    );
+    return totalPorCampo('pessoasAlcancadas');
   }
 
   Future<int> totalVeiculosAbordados() async {
-    return totalPorCampo(
-      'veiculosAbordados',
-    );
+    return totalPorCampo('veiculosAbordados');
   }
 
   Future<int> totalCredenciaisEmitidas() async {
-    return totalPorCampo(
-      'credenciaisEmitidas',
-    );
+    return totalPorCampo('credenciaisEmitidas');
   }
 
   Future<int> totalPorCampo(String campo) async {
@@ -284,10 +319,7 @@ class FirebaseAcaoService {
       }
     }
 
-    return {
-      'Atingidas': atingidas,
-      'Não atingidas': naoAtingidas,
-    };
+    return {'Atingidas': atingidas, 'Não atingidas': naoAtingidas};
   }
 }
 

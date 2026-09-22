@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../data/models/membro_equipe_model.dart';
 import '../models/escala_models.dart';
+import '../services/escala_horas_service.dart';
 import 'escala_configuracao_repository.dart';
 import 'escala_gestao_repository.dart';
 import 'escala_repository.dart';
@@ -36,6 +37,79 @@ class FirestoreEscalaRepository
     }
 
     return _carregarDiaComFilhos(data: inicio, escala: escala);
+  }
+
+  @override
+  Future<void> salvarHorasRealizadas({
+    required String alocacaoId,
+    required String usuarioId,
+    required String horaInicioReal,
+    required String horaFimReal,
+    required int minutosRealizados,
+    required String observacao,
+    required DateTime atualizadoEm,
+  }) async {
+    final id = alocacaoId.trim();
+    final uid = usuarioId.trim();
+    final inicio = horaInicioReal.trim();
+    final fim = horaFimReal.trim();
+    final minutos = EscalaHorasService.calcularDuracaoMinutos(
+      inicio: inicio,
+      fim: fim,
+    );
+
+    if (id.isEmpty || uid.isEmpty) {
+      throw StateError('Alocação e usuário são obrigatórios.');
+    }
+    if (minutos == null ||
+        minutos != minutosRealizados ||
+        minutosRealizados < 0 ||
+        minutosRealizados > 1440) {
+      throw StateError('Intervalo de horas realizadas inválido.');
+    }
+
+    final alocacaoRef = _firestore.collection('escala_alocacoes').doc(id);
+
+    await _firestore.runTransaction((transaction) async {
+      final alocacaoSnapshot = await transaction.get(alocacaoRef);
+      final alocacaoMap = alocacaoSnapshot.data();
+
+      if (!alocacaoSnapshot.exists || alocacaoMap == null) {
+        throw StateError('Alocação não encontrada.');
+      }
+
+      final alocacao = EscalaAlocacaoModel.fromMap(
+        alocacaoMap,
+        documentId: alocacaoSnapshot.id,
+      );
+      if (alocacao.usuarioId.trim() != uid) {
+        throw StateError('Somente o titular registra as próprias horas.');
+      }
+
+      final escalaRef = _firestore.collection('escalas').doc(alocacao.escalaId);
+      final escalaSnapshot = await transaction.get(escalaRef);
+      final escalaMap = escalaSnapshot.data();
+      if (!escalaSnapshot.exists || escalaMap == null) {
+        throw StateError('Escala da alocação não encontrada.');
+      }
+
+      final escala = EscalaModel.fromMap(
+        escalaMap,
+        documentId: escalaSnapshot.id,
+      );
+      if (escala.status != EscalaCodigos.statusPublicada) {
+        throw StateError('Horas realizadas exigem escala publicada.');
+      }
+
+      transaction.update(alocacaoRef, <String, dynamic>{
+        'horaInicioReal': inicio,
+        'horaFimReal': fim,
+        'minutosRealizados': minutosRealizados,
+        'observacao': observacao.trim(),
+        'atualizadoPor': uid,
+        'atualizadoEm': Timestamp.fromDate(atualizadoEm),
+      });
+    });
   }
 
   @override

@@ -50,6 +50,11 @@ void main() {
     String usuarioId = 'agente',
     String perfil = 'agente',
   }) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(MaterialApp(
       home: EscalaExecucaoMissaoPage(
         atividadeId: 'atividade',
@@ -143,6 +148,51 @@ void main() {
     await tester.tap(find.text('Tentar novamente'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('missao-iniciar')), findsOneWidget);
+  });
+
+  testWidgets('inclui e remove metadado de evidência durante a execução',
+      (tester) async {
+    final repo = _RepositorioFake(contexto());
+    await abrir(tester, repo);
+    await tester.tap(find.byKey(const ValueKey('missao-iniciar')));
+    await tester.pumpAndSettle();
+
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('evidencia-adicionar')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('evidencia-adicionar')));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Nenhum arquivo será enviado'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('evidencia-descricao')),
+      'Registro no livro de ocorrências',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('evidencia-referencia')),
+      'protocolo-123',
+    );
+    await tester.tap(find.byKey(const ValueKey('evidencia-confirmar')));
+    await tester.pumpAndSettle();
+
+    expect(repo.execucao!.evidencias, hasLength(1));
+    expect(find.text('Registro no livro de ocorrências'), findsOneWidget);
+    expect(find.textContaining('protocolo-123'), findsOneWidget);
+
+    final evidenciaId = repo.execucao!.evidencias.single.id;
+    final remover = find.byKey(ValueKey('evidencia-remover-$evidenciaId'));
+    await tester.ensureVisible(remover);
+    await tester.pumpAndSettle();
+    await tester.tap(remover);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(repo.execucao!.evidencias, isEmpty);
+    expect(find.text('Registro no livro de ocorrências'), findsNothing);
   });
 }
 

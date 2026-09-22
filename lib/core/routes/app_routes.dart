@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../modules/acoes/caracterizacao_acao_page.dart';
 import '../../modules/acoes/consulta_rae_page.dart';
 import '../../modules/acoes/nova_acao_page.dart';
+import '../../modules/acoes/rae_vinculado_page.dart';
 import '../../modules/acoes/resultados_page.dart';
 import '../../modules/acoes/revisao_relatorio_page.dart';
 import '../../modules/admin/access_denied_page.dart';
@@ -76,6 +77,9 @@ class AppRoutes {
   static const String regionaisPath = '/regionais';
   static const String materiaisPath = '/materiais';
   static const String consultaRaePath = '/consulta-rae';
+  static const String raeVinculadoPath = '/consulta-rae/:raeId';
+  static String raeVinculadoLocation(String raeId) =>
+      '/consulta-rae/${Uri.encodeComponent(raeId)}';
   static const String biGeducPath = '/bi-geduc';
   static const String sincronizacaoPath = '/sincronizacao';
 
@@ -349,6 +353,12 @@ class AppRoutes {
         path: consultaRaePath,
         redirect: (context, state) => _protegerAcl(Permission.consultarRae),
         builder: (context, state) => const ConsultaRaePage(),
+      ),
+      GoRoute(
+        path: raeVinculadoPath,
+        redirect: (context, state) => _protegerAcl(Permission.consultarRae),
+        builder: (context, state) =>
+            RaeVinculadoPage(raeId: state.pathParameters['raeId'] ?? ''),
       ),
       GoRoute(
         path: biGeducPath,

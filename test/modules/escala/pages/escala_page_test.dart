@@ -140,6 +140,7 @@ void main() {
     EscalaDiaConsulta resultado, {
     bool minha = false,
     String perfilAcesso = '',
+    _FakeRepository? repository,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -147,7 +148,7 @@ void main() {
         home: EscalaPage(
           usuarioId: 'uid-atual',
           perfilAcesso: perfilAcesso,
-          repository: _FakeRepository(resultado),
+          repository: repository ?? _FakeRepository(resultado),
           dataInicial: data,
           iniciarMinhaEscala: minha,
         ),
@@ -242,13 +243,78 @@ void main() {
     expect(find.text('180H • 06:00–11:52'), findsOneWidget);
     expect(find.text('240H • 18:00–23:58'), findsOneWidget);
   });
+
+  testWidgets(
+      'participante registra horas reais calculadas na própria alocação',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _FakeRepository(publicado());
+    await pumpPage(
+      tester,
+      publicado(),
+      perfilAcesso: 'agente',
+      repository: repository,
+    );
+
+    final botao = find.byKey(const ValueKey('registrar-horas-al1'));
+    expect(botao, findsOneWidget);
+    await tester.ensureVisible(botao);
+    await tester.pumpAndSettle();
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-inicio-real')),
+      '06:15',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-fim-real')),
+      '10:45',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-observacao')),
+      'Execução confirmada.',
+    );
+    await tester.pump();
+    expect(find.text('Duração calculada: 4h30'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('horas-confirmar')));
+    await tester.pumpAndSettle();
+
+    expect(repository.alocacaoSalva, 'al1');
+    expect(repository.minutosSalvos, 270);
+    expect(
+      find.textContaining('06:15–10:45', findRichText: true),
+      findsOneWidget,
+    );
+  });
 }
 
 class _FakeRepository implements EscalaRepository {
   _FakeRepository(this.resultado);
 
   final EscalaDiaConsulta resultado;
+  String? alocacaoSalva;
+  int? minutosSalvos;
 
   @override
   Future<EscalaDiaConsulta> carregarDia(DateTime data) async => resultado;
+
+  @override
+  Future<void> salvarHorasRealizadas({
+    required String alocacaoId,
+    required String usuarioId,
+    required String horaInicioReal,
+    required String horaFimReal,
+    required int minutosRealizados,
+    required String observacao,
+    required DateTime atualizadoEm,
+  }) async {
+    alocacaoSalva = alocacaoId;
+    minutosSalvos = minutosRealizados;
+  }
 }

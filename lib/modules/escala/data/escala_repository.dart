@@ -32,4 +32,14 @@ class EscalaDiaConsulta {
 
 abstract class EscalaRepository {
   Future<EscalaDiaConsulta> carregarDia(DateTime data);
+
+  Future<void> salvarHorasRealizadas({
+    required String alocacaoId,
+    required String usuarioId,
+    required String horaInicioReal,
+    required String horaFimReal,
+    required int minutosRealizados,
+    required String observacao,
+    required DateTime atualizadoEm,
+  });
 }

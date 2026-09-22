@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../data/escala_repository.dart';
 import '../models/escala_models.dart';
+import '../security/escala_access_policy.dart';
+import '../security/escala_permission.dart';
 import '../services/escala_conflito_service.dart';
 import '../services/escala_horas_service.dart';
 
@@ -9,19 +11,26 @@ class EscalaConsultaController extends ChangeNotifier {
   EscalaConsultaController({
     required EscalaRepository repository,
     required String usuarioId,
+    String perfilAcesso = '',
     DateTime? dataInicial,
     bool iniciarMinhaEscala = false,
+    DateTime Function()? agora,
   })  : _repository = repository,
         _usuarioId = usuarioId.trim(),
+        _perfilAcesso = perfilAcesso.trim(),
         _dataSelecionada = _somenteData(dataInicial ?? DateTime.now()),
-        _minhaEscala = iniciarMinhaEscala;
+        _minhaEscala = iniciarMinhaEscala,
+        _agora = agora ?? DateTime.now;
 
   final EscalaRepository _repository;
   final String _usuarioId;
+  final String _perfilAcesso;
+  final DateTime Function() _agora;
 
   DateTime _dataSelecionada;
   bool _minhaEscala;
   bool _carregando = false;
+  bool _salvandoHoras = false;
   Object? _erro;
   EscalaDiaConsulta? _dia;
   int _geracaoCarregamento = 0;
@@ -29,9 +38,11 @@ class EscalaConsultaController extends ChangeNotifier {
   DateTime get dataSelecionada => _dataSelecionada;
   bool get minhaEscala => _minhaEscala;
   bool get carregando => _carregando;
+  bool get salvandoHoras => _salvandoHoras;
   Object? get erro => _erro;
   EscalaDiaConsulta? get dia => _dia;
   String get usuarioId => _usuarioId;
+  String get perfilAcesso => _perfilAcesso;
 
   bool get escalaEncontrada => _dia?.encontrada == true;
   bool get escalaPublicada => _dia?.publicada == true;
@@ -95,6 +106,9 @@ class EscalaConsultaController extends ChangeNotifier {
   EscalaHorasResumo get resumoHoras =>
       EscalaHorasService.resumir(alocacoesDoModoAtual);
 
+  EscalaHorasRealizadasResumo get resumoHorasRealizadas =>
+      EscalaHorasService.resumirRealizadas(alocacoesDoModoAtual);
+
   List<EscalaConflitoHorario> get conflitosSobreposicao =>
       EscalaConflitoService.detectarSobreposicoes(alocacoesDoModoAtual);
 
@@ -110,6 +124,103 @@ class EscalaConsultaController extends ChangeNotifier {
     return List<EscalaAlocacaoModel>.unmodifiable(
       atual.alocacoes.where((item) => item.atividadeId == atividadeId),
     );
+  }
+
+  EscalaAlocacaoModel? alocacaoPropriaDaAtividade(String atividadeId) {
+    final id = atividadeId.trim();
+    if (id.isEmpty || _usuarioId.isEmpty) return null;
+
+    for (final item in alocacoesDaAtividade(id)) {
+      if (item.usuarioId.trim() == _usuarioId) return item;
+    }
+    return null;
+  }
+
+  bool podeRegistrarHoras(EscalaAlocacaoModel alocacao) {
+    return escalaPublicada &&
+        alocacao.usuarioId.trim() == _usuarioId &&
+        EscalaAccessPolicy.autoriza(
+          perfilAcesso: _perfilAcesso,
+          usuarioId: _usuarioId,
+          responsavelEscalaUsuarioId: '',
+          permissao: EscalaPermission.registrarHorasRealizadas,
+          ehParticipanteAtividade: true,
+        );
+  }
+
+  Future<void> registrarHorasRealizadas({
+    required String alocacaoId,
+    required String horaInicioReal,
+    required String horaFimReal,
+    required String observacao,
+  }) async {
+    if (_salvandoHoras) {
+      throw StateError('Já existe um registro de horas em andamento.');
+    }
+
+    final dia = _dia;
+    if (dia == null || !dia.publicada) {
+      throw StateError('Horas realizadas exigem escala publicada.');
+    }
+
+    EscalaAlocacaoModel? alocacao;
+    for (final item in dia.alocacoes) {
+      if (item.id == alocacaoId.trim()) {
+        alocacao = item;
+        break;
+      }
+    }
+    if (alocacao == null || !podeRegistrarHoras(alocacao)) {
+      throw StateError('Somente o titular registra as próprias horas.');
+    }
+
+    final inicio = horaInicioReal.trim();
+    final fim = horaFimReal.trim();
+    final minutos = EscalaHorasService.calcularDuracaoMinutos(
+      inicio: inicio,
+      fim: fim,
+    );
+    if (minutos == null || minutos < 0 || minutos > 1440) {
+      throw StateError('Informe início e fim reais no formato HH:mm.');
+    }
+
+    final instante = _agora();
+    _salvandoHoras = true;
+    notifyListeners();
+
+    try {
+      await _repository.salvarHorasRealizadas(
+        alocacaoId: alocacao.id,
+        usuarioId: _usuarioId,
+        horaInicioReal: inicio,
+        horaFimReal: fim,
+        minutosRealizados: minutos,
+        observacao: observacao,
+        atualizadoEm: instante,
+      );
+
+      final atualizada = _copiarAlocacaoComHoras(
+        alocacao,
+        horaInicioReal: inicio,
+        horaFimReal: fim,
+        minutosRealizados: minutos,
+        observacao: observacao,
+        atualizadoEm: instante,
+      );
+      _dia = EscalaDiaConsulta(
+        data: dia.data,
+        escala: dia.escala,
+        atividades: dia.atividades,
+        alocacoes: List<EscalaAlocacaoModel>.unmodifiable(
+          dia.alocacoes
+              .map((item) => item.id == atualizada.id ? atualizada : item),
+        ),
+        indisponibilidades: dia.indisponibilidades,
+      );
+    } finally {
+      _salvandoHoras = false;
+      notifyListeners();
+    }
   }
 
   Future<void> carregar() async {
@@ -165,4 +276,44 @@ class EscalaConsultaController extends ChangeNotifier {
 
   static DateTime _somenteData(DateTime data) =>
       DateTime(data.year, data.month, data.day);
+
+  EscalaAlocacaoModel _copiarAlocacaoComHoras(
+    EscalaAlocacaoModel origem, {
+    required String horaInicioReal,
+    required String horaFimReal,
+    required int minutosRealizados,
+    required String observacao,
+    required DateTime atualizadoEm,
+  }) {
+    return EscalaAlocacaoModel(
+      id: origem.id,
+      escalaId: origem.escalaId,
+      atividadeId: origem.atividadeId,
+      data: origem.data,
+      membroEquipeId: origem.membroEquipeId,
+      usuarioId: origem.usuarioId,
+      nomeSnapshot: origem.nomeSnapshot,
+      vinculoSnapshot: origem.vinculoSnapshot,
+      setorSnapshot: origem.setorSnapshot,
+      cargaHorariaSnapshot: origem.cargaHorariaSnapshot,
+      funcaoNaAtividade: origem.funcaoNaAtividade,
+      turnoId: origem.turnoId,
+      horaInicio: origem.horaInicio,
+      horaFim: origem.horaFim,
+      tipoJornada: origem.tipoJornada,
+      horaInicioReal: horaInicioReal,
+      horaFimReal: horaFimReal,
+      minutosPrevistos: origem.minutosPrevistos,
+      minutosRealizados: minutosRealizados,
+      motivoJornadaComplementar: origem.motivoJornadaComplementar,
+      classificadoPor: origem.classificadoPor,
+      classificadoEm: origem.classificadoEm,
+      origemAlocacaoId: origem.origemAlocacaoId,
+      observacao: observacao.trim(),
+      criadoPor: origem.criadoPor,
+      criadoEm: origem.criadoEm,
+      atualizadoPor: _usuarioId,
+      atualizadoEm: atualizadoEm,
+    );
+  }
 }

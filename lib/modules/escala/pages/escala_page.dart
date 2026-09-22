@@ -32,21 +32,48 @@ class EscalaPage extends StatefulWidget {
 }
 
 class _EscalaPageState extends State<EscalaPage> {
-  late final EscalaConsultaController _controller;
+  late EscalaConsultaController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = EscalaConsultaController(
-      repository: widget.repository ?? FirestoreEscalaRepository(),
-      usuarioId: widget.usuarioId,
-      dataInicial: widget.dataInicial,
-      iniciarMinhaEscala: widget.iniciarMinhaEscala,
-    )..addListener(_atualizar);
+    _criarController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _controller.carregar();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant EscalaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.usuarioId == widget.usuarioId &&
+        oldWidget.perfilAcesso == widget.perfilAcesso &&
+        oldWidget.repository == widget.repository &&
+        oldWidget.dataInicial == widget.dataInicial &&
+        oldWidget.iniciarMinhaEscala == widget.iniciarMinhaEscala) {
+      return;
+    }
+
+    _controller
+      ..removeListener(_atualizar)
+      ..dispose();
+    _criarController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.carregar();
+    });
+  }
+
+  void _criarController() {
+    _controller = EscalaConsultaController(
+      repository: widget.repository ?? FirestoreEscalaRepository(),
+      usuarioId: widget.usuarioId,
+      perfilAcesso: widget.perfilAcesso,
+      dataInicial: widget.dataInicial,
+      iniciarMinhaEscala: widget.iniciarMinhaEscala,
+    )..addListener(_atualizar);
   }
 
   @override
@@ -174,7 +201,6 @@ class _EscalaPageState extends State<EscalaPage> {
               titulo: _rotuloSecao(secao.key),
               atividades: secao.value,
               controller: _controller,
-              perfilAcesso: widget.perfilAcesso,
             ),
             const SizedBox(height: 12),
           ],
@@ -350,6 +376,7 @@ class _ResumoEscala extends StatelessWidget {
   Widget build(BuildContext context) {
     final escala = controller.escala!;
     final resumo = controller.resumoHoras;
+    final realizado = controller.resumoHorasRealizadas;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -383,6 +410,30 @@ class _ResumoEscala extends StatelessWidget {
                 icon: Icons.account_balance_wallet_outlined,
                 label:
                     'Banco ${EscalaHorasService.formatarMinutos(resumo.minutosBancoHoras)}',
+              ),
+            if (realizado.alocacoesComRegistro > 0)
+              _InfoChip(
+                icon: Icons.timer_outlined,
+                label:
+                    '${EscalaHorasService.formatarMinutos(realizado.totalMinutosRealizados)} realizadas',
+              ),
+            if (realizado.minutosNormal > 0)
+              _InfoChip(
+                icon: Icons.check_circle_outline_rounded,
+                label:
+                    'Real normal ${EscalaHorasService.formatarMinutos(realizado.minutosNormal)}',
+              ),
+            if (realizado.minutosHoraExtra > 0)
+              _InfoChip(
+                icon: Icons.more_time_rounded,
+                label:
+                    'Real hora extra ${EscalaHorasService.formatarMinutos(realizado.minutosHoraExtra)}',
+              ),
+            if (realizado.minutosBancoHoras > 0)
+              _InfoChip(
+                icon: Icons.account_balance_wallet_outlined,
+                label:
+                    'Real banco ${EscalaHorasService.formatarMinutos(realizado.minutosBancoHoras)}',
               ),
           ],
         ),
@@ -525,13 +576,11 @@ class _SecaoAtividades extends StatelessWidget {
     required this.titulo,
     required this.atividades,
     required this.controller,
-    required this.perfilAcesso,
   });
 
   final String titulo;
   final List<EscalaAtividadeModel> atividades;
   final EscalaConsultaController controller;
-  final String perfilAcesso;
 
   @override
   Widget build(BuildContext context) {
@@ -572,8 +621,7 @@ class _SecaoAtividades extends StatelessWidget {
                           alocacoes: controller.alocacoesDaAtividade(
                             atividade.id,
                           ),
-                          usuarioId: controller.usuarioId,
-                          perfilAcesso: perfilAcesso,
+                          controller: controller,
                         ),
                       ),
                   ],
@@ -591,24 +639,24 @@ class _AtividadeCard extends StatelessWidget {
   const _AtividadeCard({
     required this.atividade,
     required this.alocacoes,
-    required this.usuarioId,
-    required this.perfilAcesso,
+    required this.controller,
   });
 
   final EscalaAtividadeModel atividade;
   final List<EscalaAlocacaoModel> alocacoes;
-  final String usuarioId;
-  final String perfilAcesso;
+  final EscalaConsultaController controller;
 
   @override
   Widget build(BuildContext context) {
     final resumo = EscalaHorasService.resumir(alocacoes);
     final equipe = alocacoes.take(8).toList();
     final restantes = alocacoes.length - equipe.length;
+    final usuarioId = controller.usuarioId;
+    final alocacaoPropria = controller.alocacaoPropriaDaAtividade(atividade.id);
     final podeAbrirMissao = atividade.administrativa &&
         !atividade.geraRae &&
         EscalaAccessPolicy.autoriza(
-          perfilAcesso: perfilAcesso,
+          perfilAcesso: controller.perfilAcesso,
           usuarioId: usuarioId,
           responsavelEscalaUsuarioId: '',
           permissao: EscalaPermission.registrarExecucaoMissao,
@@ -741,6 +789,50 @@ class _AtividadeCard extends StatelessWidget {
                 ],
               ),
             ],
+            if (alocacaoPropria != null) ...[
+              const Divider(height: 24),
+              if (EscalaHorasService.possuiHorasRealizadas(alocacaoPropria))
+                _LinhaInfo(
+                  icon: Icons.timer_outlined,
+                  titulo: 'Horas realizadas',
+                  valor:
+                      '${alocacaoPropria.horaInicioReal}–${alocacaoPropria.horaFimReal} • '
+                      '${EscalaHorasService.formatarMinutos(alocacaoPropria.minutosRealizados!)}',
+                )
+              else
+                const _LinhaInfo(
+                  icon: Icons.timer_off_outlined,
+                  titulo: 'Horas realizadas',
+                  valor: 'Ainda não registradas',
+                ),
+              if (alocacaoPropria.observacao.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _LinhaInfo(
+                  icon: Icons.notes_rounded,
+                  titulo: 'Observação da execução',
+                  valor: alocacaoPropria.observacao.trim(),
+                ),
+              ],
+              if (controller.podeRegistrarHoras(alocacaoPropria)) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  key: ValueKey('registrar-horas-${alocacaoPropria.id}'),
+                  onPressed: controller.salvandoHoras
+                      ? null
+                      : () => _abrirRegistroHoras(
+                            context,
+                            controller,
+                            alocacaoPropria,
+                          ),
+                  icon: const Icon(Icons.access_time_rounded),
+                  label: Text(
+                    EscalaHorasService.possuiHorasRealizadas(alocacaoPropria)
+                        ? 'Editar horas realizadas'
+                        : 'Registrar horas realizadas',
+                  ),
+                ),
+              ],
+            ],
             if (podeAbrirMissao) ...[
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -767,6 +859,146 @@ class _AtividadeCard extends StatelessWidget {
       return atividade.qtrHorario.trim();
     }
     return 'Não informado';
+  }
+
+  static Future<void> _abrirRegistroHoras(
+    BuildContext context,
+    EscalaConsultaController controller,
+    EscalaAlocacaoModel alocacao,
+  ) async {
+    var inicio = alocacao.horaInicioReal;
+    var fim = alocacao.horaFimReal;
+    var observacao = alocacao.observacao;
+    String? erro;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final minutos = EscalaHorasService.calcularDuracaoMinutos(
+            inicio: inicio,
+            fim: fim,
+          );
+
+          return AlertDialog(
+            title: const Text('Horas realizadas'),
+            content: SingleChildScrollView(
+              child: SizedBox(
+                width: 420,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Informe o período efetivamente realizado. O planejamento '
+                      'e a classificação da jornada não serão alterados.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            key: const ValueKey('horas-inicio-real'),
+                            initialValue: inicio,
+                            keyboardType: TextInputType.datetime,
+                            maxLength: 5,
+                            onChanged: (valor) => setDialogState(() {
+                              inicio = valor;
+                              erro = null;
+                            }),
+                            decoration: const InputDecoration(
+                              labelText: 'Início real (HH:mm)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            key: const ValueKey('horas-fim-real'),
+                            initialValue: fim,
+                            keyboardType: TextInputType.datetime,
+                            maxLength: 5,
+                            onChanged: (valor) => setDialogState(() {
+                              fim = valor;
+                              erro = null;
+                            }),
+                            decoration: const InputDecoration(
+                              labelText: 'Fim real (HH:mm)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      minutos == null
+                          ? 'Duração: informe horários válidos.'
+                          : 'Duração calculada: ${EscalaHorasService.formatarMinutos(minutos)}',
+                      key: const ValueKey('horas-duracao-calculada'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const ValueKey('horas-observacao'),
+                      initialValue: observacao,
+                      maxLines: 3,
+                      onChanged: (valor) => observacao = valor,
+                      decoration: const InputDecoration(
+                        labelText: 'Observação (opcional)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    if (erro != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        erro!,
+                        key: const ValueKey('horas-erro'),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: controller.salvandoHoras
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                key: const ValueKey('horas-confirmar'),
+                onPressed: controller.salvandoHoras || minutos == null
+                    ? null
+                    : () async {
+                        try {
+                          await controller.registrarHorasRealizadas(
+                            alocacaoId: alocacao.id,
+                            horaInicioReal: inicio,
+                            horaFimReal: fim,
+                            observacao: observacao,
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                        } catch (falha) {
+                          setDialogState(
+                            () => erro =
+                                'Não foi possível registrar as horas: $falha',
+                          );
+                        }
+                      },
+                child: const Text('Salvar horas'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 

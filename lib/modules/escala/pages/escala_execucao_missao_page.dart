@@ -72,15 +72,17 @@ class _EscalaExecucaoMissaoPageState extends State<EscalaExecucaoMissaoPage> {
     setState(() => _camposCarregados = true);
   }
 
-  Future<void> _executar(Future<void> Function() operacao) async {
+  Future<bool> _executar(Future<void> Function() operacao) async {
     try {
       await operacao();
       if (mounted) setState(() {});
+      return true;
     } catch (erro) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Não foi possível registrar a execução: $erro')),
       );
+      return false;
     }
   }
 
@@ -135,6 +137,165 @@ class _EscalaExecucaoMissaoPageState extends State<EscalaExecucaoMissaoPage> {
     if (!mounted) return;
     await _executar(() => _controller.cancelar(observacao: _observacao.text));
     if (mounted && _controller.terminal) _sincronizarCampos();
+  }
+
+  Future<void> _adicionarEvidencia() async {
+    var tipo = EscalaCodigos.evidenciaObservacao;
+    var descricao = '';
+    var referencia = '';
+    String? erro;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Adicionar evidência'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 460,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Este registro armazena somente metadados auditáveis. '
+                    'Nenhum arquivo será enviado nesta etapa.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    key: const ValueKey('evidencia-tipo'),
+                    initialValue: tipo,
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaFoto,
+                        child: Text('Foto'),
+                      ),
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaDocumento,
+                        child: Text('Documento'),
+                      ),
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaArquivo,
+                        child: Text('Arquivo'),
+                      ),
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaLink,
+                        child: Text('Link'),
+                      ),
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaObservacao,
+                        child: Text('Observação'),
+                      ),
+                      DropdownMenuItem(
+                        value: EscalaCodigos.evidenciaOutro,
+                        child: Text('Outro'),
+                      ),
+                    ],
+                    onChanged: _controller.salvando
+                        ? null
+                        : (valor) => setDialogState(() {
+                              tipo = valor ?? tipo;
+                              erro = null;
+                            }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const ValueKey('evidencia-descricao'),
+                    maxLines: 3,
+                    onChanged: (valor) => setDialogState(() {
+                      descricao = valor;
+                      erro = null;
+                    }),
+                    decoration: const InputDecoration(
+                      labelText: 'Descrição',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const ValueKey('evidencia-referencia'),
+                    onChanged: (valor) => setDialogState(() {
+                      referencia = valor;
+                      erro = null;
+                    }),
+                    decoration: const InputDecoration(
+                      labelText: 'Referência (opcional)',
+                      hintText: 'URL, protocolo, nome ou identificador',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  if (erro != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      erro!,
+                      key: const ValueKey('evidencia-erro'),
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _controller.salvando
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              key: const ValueKey('evidencia-confirmar'),
+              onPressed: _controller.salvando
+                  ? null
+                  : () async {
+                      if (descricao.trim().isEmpty &&
+                          referencia.trim().isEmpty) {
+                        setDialogState(
+                          () =>
+                              erro = 'Informe uma descrição ou uma referência.',
+                        );
+                        return;
+                      }
+                      try {
+                        await _controller.adicionarEvidencia(
+                          tipo: tipo,
+                          descricao: descricao,
+                          referencia: referencia,
+                        );
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      } catch (falha) {
+                        setDialogState(
+                          () => erro =
+                              'Não foi possível adicionar a evidência: $falha',
+                        );
+                      }
+                    },
+              child: const Text('Adicionar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removerEvidencia(MissaoEvidenciaModel evidencia) async {
+    if (!await _confirmar(
+      'Remover evidência?',
+      'O metadado selecionado será removido desta execução.',
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    await _executar(() => _controller.removerEvidencia(evidencia.id));
   }
 
   @override
@@ -229,13 +390,45 @@ class _EscalaExecucaoMissaoPageState extends State<EscalaExecucaoMissaoPage> {
                     const SizedBox(height: 12),
                     _informacao('Evidências registradas',
                         '${execucao.evidencias.length}'),
+                    if (editavel && _controller.podeAnexarEvidencia) ...[
+                      const SizedBox(height: 4),
+                      OutlinedButton.icon(
+                        key: const ValueKey('evidencia-adicionar'),
+                        onPressed: execucao.evidencias.length >= 20
+                            ? null
+                            : _adicionarEvidencia,
+                        icon: const Icon(Icons.add_link_rounded),
+                        label: const Text('Adicionar evidência'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Somente metadados • máximo de 20 por execução',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                     if (execucao.evidencias.isNotEmpty)
                       for (final evidencia in execucao.evidencias)
                         ListTile(
+                          key: ValueKey('evidencia-${evidencia.id}'),
                           title: Text(evidencia.descricao.trim().isEmpty
                               ? evidencia.tipo
                               : evidencia.descricao),
-                          subtitle: Text(evidencia.tipo),
+                          subtitle: Text([
+                            evidencia.tipo,
+                            if (evidencia.referencia.trim().isNotEmpty)
+                              evidencia.referencia.trim(),
+                          ].join(' • ')),
+                          trailing: editavel && _controller.podeAnexarEvidencia
+                              ? IconButton(
+                                  key: ValueKey(
+                                    'evidencia-remover-${evidencia.id}',
+                                  ),
+                                  tooltip: 'Remover evidência',
+                                  onPressed: () => _removerEvidencia(evidencia),
+                                  icon:
+                                      const Icon(Icons.delete_outline_rounded),
+                                )
+                              : null,
                         ),
                     if (editavel) ...[
                       const SizedBox(height: 16),

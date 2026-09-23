@@ -12,6 +12,7 @@ import '../models/escala_models.dart';
 import '../security/escala_access_policy.dart';
 import '../security/escala_permission.dart';
 import '../services/escala_horas_service.dart';
+import '../services/escala_pdf_service.dart';
 import '../services/escala_rae_service.dart';
 
 class EscalaPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class EscalaPage extends StatefulWidget {
     this.repository,
     this.dataInicial,
     this.iniciarMinhaEscala = false,
+    this.onGerarPdf,
   });
 
   final String usuarioId;
@@ -29,6 +31,7 @@ class EscalaPage extends StatefulWidget {
   final EscalaRepository? repository;
   final DateTime? dataInicial;
   final bool iniciarMinhaEscala;
+  final Future<void> Function(EscalaDiaConsulta dia)? onGerarPdf;
 
   @override
   State<EscalaPage> createState() => _EscalaPageState();
@@ -36,6 +39,7 @@ class EscalaPage extends StatefulWidget {
 
 class _EscalaPageState extends State<EscalaPage> {
   late EscalaConsultaController _controller;
+  bool _gerandoPdf = false;
 
   @override
   void initState() {
@@ -55,7 +59,8 @@ class _EscalaPageState extends State<EscalaPage> {
         oldWidget.perfilAcesso == widget.perfilAcesso &&
         oldWidget.repository == widget.repository &&
         oldWidget.dataInicial == widget.dataInicial &&
-        oldWidget.iniciarMinhaEscala == widget.iniciarMinhaEscala) {
+        oldWidget.iniciarMinhaEscala == widget.iniciarMinhaEscala &&
+        oldWidget.onGerarPdf == widget.onGerarPdf) {
       return;
     }
 
@@ -174,7 +179,11 @@ class _EscalaPageState extends State<EscalaPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ResumoEscala(controller: _controller),
+        _ResumoEscala(
+          controller: _controller,
+          gerandoPdf: _gerandoPdf,
+          onGerarPdf: _gerarPdfOficial,
+        ),
         const SizedBox(height: 12),
         const _JornadasReferencia(),
         const SizedBox(height: 12),
@@ -212,6 +221,30 @@ class _EscalaPageState extends State<EscalaPage> {
         ],
       ],
     );
+  }
+
+  Future<void> _gerarPdfOficial() async {
+    final dia = _controller.dia;
+    if (dia == null || !dia.publicada || _gerandoPdf) return;
+
+    setState(() => _gerandoPdf = true);
+    try {
+      final gerador = widget.onGerarPdf;
+      if (gerador != null) {
+        await gerador(dia);
+      } else {
+        await EscalaPdfService().visualizar(dia);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível gerar o PDF oficial da escala.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _gerandoPdf = false);
+    }
   }
 
   static Map<String, List<EscalaAtividadeModel>> _agruparAtividades(
@@ -371,9 +404,15 @@ class _CabecalhoConsulta extends StatelessWidget {
 }
 
 class _ResumoEscala extends StatelessWidget {
-  const _ResumoEscala({required this.controller});
+  const _ResumoEscala({
+    required this.controller,
+    required this.gerandoPdf,
+    required this.onGerarPdf,
+  });
 
   final EscalaConsultaController controller;
+  final bool gerandoPdf;
+  final VoidCallback onGerarPdf;
 
   @override
   Widget build(BuildContext context) {
@@ -385,59 +424,78 @@ class _ResumoEscala extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _InfoChip(
-              icon: Icons.verified_rounded,
-              label: 'PUBLICADA • v${escala.versao}',
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _InfoChip(
+                    icon: Icons.verified_rounded,
+                    label: 'PUBLICADA • v${escala.versao}',
+                  ),
+                  _InfoChip(
+                    icon: Icons.people_alt_rounded,
+                    label: '${resumo.totalAgentesUnicos} agente(s)',
+                  ),
+                  _InfoChip(
+                    icon: Icons.schedule_rounded,
+                    label:
+                        '${EscalaHorasService.formatarMinutos(resumo.totalMinutosProgramados)} programadas',
+                  ),
+                  if (resumo.minutosHoraExtra > 0)
+                    _InfoChip(
+                      icon: Icons.more_time_rounded,
+                      label:
+                          'Hora extra ${EscalaHorasService.formatarMinutos(resumo.minutosHoraExtra)}',
+                    ),
+                  if (resumo.minutosBancoHoras > 0)
+                    _InfoChip(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label:
+                          'Banco ${EscalaHorasService.formatarMinutos(resumo.minutosBancoHoras)}',
+                    ),
+                  if (realizado.alocacoesComRegistro > 0)
+                    _InfoChip(
+                      icon: Icons.timer_outlined,
+                      label:
+                          '${EscalaHorasService.formatarMinutos(realizado.totalMinutosRealizados)} realizadas',
+                    ),
+                  if (realizado.minutosNormal > 0)
+                    _InfoChip(
+                      icon: Icons.check_circle_outline_rounded,
+                      label:
+                          'Real normal ${EscalaHorasService.formatarMinutos(realizado.minutosNormal)}',
+                    ),
+                  if (realizado.minutosHoraExtra > 0)
+                    _InfoChip(
+                      icon: Icons.more_time_rounded,
+                      label:
+                          'Real hora extra ${EscalaHorasService.formatarMinutos(realizado.minutosHoraExtra)}',
+                    ),
+                  if (realizado.minutosBancoHoras > 0)
+                    _InfoChip(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label:
+                          'Real banco ${EscalaHorasService.formatarMinutos(realizado.minutosBancoHoras)}',
+                    ),
+                ],
+              ),
             ),
-            _InfoChip(
-              icon: Icons.people_alt_rounded,
-              label: '${resumo.totalAgentesUnicos} agente(s)',
+            const SizedBox(width: 12),
+            FilledButton.tonalIcon(
+              key: const ValueKey('escala-pdf-oficial'),
+              onPressed: gerandoPdf ? null : onGerarPdf,
+              icon: gerandoPdf
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.picture_as_pdf_outlined),
+              label: Text(gerandoPdf ? 'Gerando...' : 'PDF oficial'),
             ),
-            _InfoChip(
-              icon: Icons.schedule_rounded,
-              label:
-                  '${EscalaHorasService.formatarMinutos(resumo.totalMinutosProgramados)} programadas',
-            ),
-            if (resumo.minutosHoraExtra > 0)
-              _InfoChip(
-                icon: Icons.more_time_rounded,
-                label:
-                    'Hora extra ${EscalaHorasService.formatarMinutos(resumo.minutosHoraExtra)}',
-              ),
-            if (resumo.minutosBancoHoras > 0)
-              _InfoChip(
-                icon: Icons.account_balance_wallet_outlined,
-                label:
-                    'Banco ${EscalaHorasService.formatarMinutos(resumo.minutosBancoHoras)}',
-              ),
-            if (realizado.alocacoesComRegistro > 0)
-              _InfoChip(
-                icon: Icons.timer_outlined,
-                label:
-                    '${EscalaHorasService.formatarMinutos(realizado.totalMinutosRealizados)} realizadas',
-              ),
-            if (realizado.minutosNormal > 0)
-              _InfoChip(
-                icon: Icons.check_circle_outline_rounded,
-                label:
-                    'Real normal ${EscalaHorasService.formatarMinutos(realizado.minutosNormal)}',
-              ),
-            if (realizado.minutosHoraExtra > 0)
-              _InfoChip(
-                icon: Icons.more_time_rounded,
-                label:
-                    'Real hora extra ${EscalaHorasService.formatarMinutos(realizado.minutosHoraExtra)}',
-              ),
-            if (realizado.minutosBancoHoras > 0)
-              _InfoChip(
-                icon: Icons.account_balance_wallet_outlined,
-                label:
-                    'Real banco ${EscalaHorasService.formatarMinutos(realizado.minutosBancoHoras)}',
-              ),
           ],
         ),
       ),
@@ -663,9 +721,8 @@ class _AtividadeCard extends StatelessWidget {
           usuarioId: usuarioId,
           responsavelEscalaUsuarioId: '',
           permissao: EscalaPermission.registrarExecucaoMissao,
-          ehParticipanteAtividade: atividade.participanteUsuarioIds.contains(
-            usuarioId.trim(),
-          ),
+          ehParticipanteAtividade:
+              atividade.participanteUsuarioIds.contains(usuarioId.trim()),
           ehCoordenadorAtividade:
               atividade.coordenadorUsuarioId.trim() == usuarioId.trim(),
         );
@@ -1045,8 +1102,7 @@ class _AtividadeCard extends StatelessWidget {
                         erro!,
                         key: const ValueKey('horas-erro'),
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                            color: Theme.of(context).colorScheme.error),
                       ),
                     ],
                   ],

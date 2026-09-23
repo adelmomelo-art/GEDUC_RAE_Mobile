@@ -148,6 +148,7 @@ void main() {
     bool minha = false,
     String perfilAcesso = '',
     _FakeRepository? repository,
+    Future<void> Function(EscalaDiaConsulta dia)? onGerarPdf,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -158,6 +159,7 @@ void main() {
           repository: repository ?? _FakeRepository(resultado),
           dataInicial: data,
           iniciarMinhaEscala: minha,
+          onGerarPdf: onGerarPdf,
         ),
       ),
     );
@@ -214,15 +216,10 @@ void main() {
     expect(find.text('Nenhuma escala encontrada'), findsOneWidget);
   });
 
-  testWidgets('missão publicada oferece entrada só ao executor elegível', (
-    tester,
-  ) async {
-    final missao = atividade(
-      'm1',
-      'Apoio interno',
-      'administrativo',
-      administrativa: true,
-    );
+  testWidgets('missão publicada oferece entrada só ao executor elegível',
+      (tester) async {
+    final missao = atividade('m1', 'Apoio interno', 'administrativo',
+        administrativa: true);
     final dia = EscalaDiaConsulta(
       data: data,
       escala: escala(),
@@ -232,21 +229,16 @@ void main() {
     );
 
     await pumpPage(tester, dia, perfilAcesso: 'agente');
-    expect(
-      find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
+        findsOneWidget);
 
     await pumpPage(tester, dia, perfilAcesso: 'administrador');
-    expect(
-      find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('abrir-missao-m1'), skipOffstage: false),
+        findsNothing);
   });
 
-  testWidgets('atividade educativa oferece criar ou abrir RAE sem duplicar', (
-    tester,
-  ) async {
+  testWidgets('atividade educativa oferece criar ou abrir RAE sem duplicar',
+      (tester) async {
     final semVinculo = atividade(
       'e1',
       'Educação no Trânsito',
@@ -303,55 +295,89 @@ void main() {
     expect(find.text('240H • 18:00–23:58'), findsOneWidget);
   });
 
+  testWidgets('PDF oficial usa a escala publicada completa', (tester) async {
+    EscalaDiaConsulta? documentoRecebido;
+    await pumpPage(
+      tester,
+      publicado(),
+      minha: true,
+      onGerarPdf: (dia) async => documentoRecebido = dia,
+    );
+
+    final botao = find.byKey(const ValueKey('escala-pdf-oficial'));
+    expect(botao, findsOneWidget);
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+
+    expect(documentoRecebido, isNotNull);
+    expect(documentoRecebido!.publicada, isTrue);
+    expect(documentoRecebido!.atividades, hasLength(2));
+    expect(documentoRecebido!.alocacoes, hasLength(2));
+  });
+
+  testWidgets('PDF oficial não é exposto para rascunho', (tester) async {
+    await pumpPage(
+      tester,
+      EscalaDiaConsulta(
+        data: data,
+        escala: escala(status: EscalaCodigos.statusRascunho),
+        atividades: const [],
+        alocacoes: const [],
+        indisponibilidades: const [],
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('escala-pdf-oficial')), findsNothing);
+  });
+
   testWidgets(
-    'participante registra horas reais calculadas na própria alocação',
-    (tester) async {
-      tester.view.physicalSize = const Size(1200, 1600);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'participante registra horas reais calculadas na própria alocação',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final repository = _FakeRepository(publicado());
-      await pumpPage(
-        tester,
-        publicado(),
-        perfilAcesso: 'agente',
-        repository: repository,
-      );
+    final repository = _FakeRepository(publicado());
+    await pumpPage(
+      tester,
+      publicado(),
+      perfilAcesso: 'agente',
+      repository: repository,
+    );
 
-      final botao = find.byKey(const ValueKey('registrar-horas-al1'));
-      expect(botao, findsOneWidget);
-      await tester.ensureVisible(botao);
-      await tester.pumpAndSettle();
-      await tester.tap(botao);
-      await tester.pumpAndSettle();
+    final botao = find.byKey(const ValueKey('registrar-horas-al1'));
+    expect(botao, findsOneWidget);
+    await tester.ensureVisible(botao);
+    await tester.pumpAndSettle();
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const ValueKey('horas-inicio-real')),
-        '06:15',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('horas-fim-real')),
-        '10:45',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('horas-observacao')),
-        'Execução confirmada.',
-      );
-      await tester.pump();
-      expect(find.text('Duração calculada: 4h30'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-inicio-real')),
+      '06:15',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-fim-real')),
+      '10:45',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('horas-observacao')),
+      'Execução confirmada.',
+    );
+    await tester.pump();
+    expect(find.text('Duração calculada: 4h30'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('horas-confirmar')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('horas-confirmar')));
+    await tester.pumpAndSettle();
 
-      expect(repository.alocacaoSalva, 'al1');
-      expect(repository.minutosSalvos, 270);
-      expect(
-        find.textContaining('06:15–10:45', findRichText: true),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(repository.alocacaoSalva, 'al1');
+    expect(repository.minutosSalvos, 270);
+    expect(
+      find.textContaining('06:15–10:45', findRichText: true),
+      findsOneWidget,
+    );
+  });
 }
 
 class _FakeRepository implements EscalaRepository {

@@ -276,34 +276,36 @@ void main() {
       expect(controller.dia, isNull);
     });
 
-    test('calcula e persiste somente as horas da própria alocação publicada',
-        () async {
-      final repository = _FakeEscalaRepository((_) async => diaPublicado());
-      final controller = EscalaConsultaController(
-        repository: repository,
-        usuarioId: 'uid-atual',
-        perfilAcesso: 'agente',
-        dataInicial: data,
-        agora: () => agora,
-      );
+    test(
+      'calcula e persiste somente as horas da própria alocação publicada',
+      () async {
+        final repository = _FakeEscalaRepository((_) async => diaPublicado());
+        final controller = EscalaConsultaController(
+          repository: repository,
+          usuarioId: 'uid-atual',
+          perfilAcesso: 'agente',
+          dataInicial: data,
+          agora: () => agora,
+        );
 
-      await controller.carregar();
-      await controller.registrarHorasRealizadas(
-        alocacaoId: 'al1',
-        horaInicioReal: '06:15',
-        horaFimReal: '10:45',
-        observacao: 'Atividade concluída no local.',
-      );
+        await controller.carregar();
+        await controller.registrarHorasRealizadas(
+          alocacaoId: 'al1',
+          horaInicioReal: '06:15',
+          horaFimReal: '10:45',
+          observacao: 'Atividade concluída no local.',
+        );
 
-      expect(repository.alocacaoSalva, 'al1');
-      expect(repository.usuarioSalvo, 'uid-atual');
-      expect(repository.minutosSalvos, 270);
-      final atualizada = controller.alocacaoPropriaDaAtividade('a1')!;
-      expect(atualizada.horaInicioReal, '06:15');
-      expect(atualizada.horaFimReal, '10:45');
-      expect(atualizada.minutosRealizados, 270);
-      expect(atualizada.observacao, 'Atividade concluída no local.');
-    });
+        expect(repository.alocacaoSalva, 'al1');
+        expect(repository.usuarioSalvo, 'uid-atual');
+        expect(repository.minutosSalvos, 270);
+        final atualizada = controller.alocacaoPropriaDaAtividade('a1')!;
+        expect(atualizada.horaInicioReal, '06:15');
+        expect(atualizada.horaFimReal, '10:45');
+        expect(atualizada.minutosRealizados, 270);
+        expect(atualizada.observacao, 'Atividade concluída no local.');
+      },
+    );
 
     test('nega horas de alocação de outro usuário', () async {
       final repository = _FakeEscalaRepository((_) async => diaPublicado());
@@ -339,6 +341,14 @@ class _FakeEscalaRepository implements EscalaRepository {
 
   @override
   Future<EscalaDiaConsulta> carregarDia(DateTime data) => onCarregar(data);
+
+  @override
+  Future<EscalaPeriodoConsulta> carregarPeriodo({
+    required DateTime inicio,
+    required DateTime fim,
+  }) {
+    throw UnsupportedError('Consulta por período não usada neste teste.');
+  }
 
   @override
   Future<void> salvarHorasRealizadas({

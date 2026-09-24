@@ -203,69 +203,73 @@ void main() {
       }
     });
 
-    test('agente participante registra somente as proprias horas realizadas',
-        () {
-      expect(
-        autoriza(
-          perfil: 'agente',
-          uid: 'agente',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          participante: true,
-        ),
-        isTrue,
-      );
-      expect(
-        autoriza(
-          perfil: 'coordenador',
-          uid: 'coord',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          coordenador: true,
-        ),
-        isFalse,
-      );
-      expect(
-        autoriza(
-          perfil: 'coordenador',
-          uid: 'coord',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          participante: true,
-          coordenador: true,
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'agente participante registra somente as proprias horas realizadas',
+      () {
+        expect(
+          autoriza(
+            perfil: 'agente',
+            uid: 'agente',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            participante: true,
+          ),
+          isTrue,
+        );
+        expect(
+          autoriza(
+            perfil: 'coordenador',
+            uid: 'coord',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            coordenador: true,
+          ),
+          isFalse,
+        );
+        expect(
+          autoriza(
+            perfil: 'coordenador',
+            uid: 'coord',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            participante: true,
+            coordenador: true,
+          ),
+          isTrue,
+        );
+      },
+    );
 
-    test('agente participante registra somente as proprias horas realizadas',
-        () {
-      expect(
-        autoriza(
-          perfil: 'agente',
-          uid: 'agente',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          participante: true,
-        ),
-        isTrue,
-      );
-      expect(
-        autoriza(
-          perfil: 'coordenador',
-          uid: 'coord',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          coordenador: true,
-        ),
-        isFalse,
-      );
-      expect(
-        autoriza(
-          perfil: 'coordenador',
-          uid: 'coord',
-          permissao: EscalaPermission.registrarHorasRealizadas,
-          participante: true,
-          coordenador: true,
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'agente participante registra somente as proprias horas realizadas',
+      () {
+        expect(
+          autoriza(
+            perfil: 'agente',
+            uid: 'agente',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            participante: true,
+          ),
+          isTrue,
+        );
+        expect(
+          autoriza(
+            perfil: 'coordenador',
+            uid: 'coord',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            coordenador: true,
+          ),
+          isFalse,
+        );
+        expect(
+          autoriza(
+            perfil: 'coordenador',
+            uid: 'coord',
+            permissao: EscalaPermission.registrarHorasRealizadas,
+            participante: true,
+            coordenador: true,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('perfil desconhecido e uid vazio falham fechado', () {
       expect(
@@ -284,6 +288,59 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('EscalaAccessPolicy ESC-001H.2', () {
+    test('administrador gestor e gerente consultam histórico geral', () {
+      for (final perfil in ['administrador', 'gestor', 'gerente']) {
+        expect(
+          autoriza(
+            perfil: perfil,
+            uid: 'uid-$perfil',
+            permissao: EscalaPermission.consultarHistoricoHorasGeral,
+          ),
+          isTrue,
+          reason: perfil,
+        );
+      }
+    });
+
+    test('coordenador e agente consultam somente o próprio histórico', () {
+      for (final perfil in ['coordenador', 'agente']) {
+        expect(
+          autoriza(
+            perfil: perfil,
+            uid: 'uid-$perfil',
+            permissao: EscalaPermission.consultarHistoricoHorasProprio,
+          ),
+          isTrue,
+        );
+        expect(
+          autoriza(
+            perfil: perfil,
+            uid: 'uid-$perfil',
+            permissao: EscalaPermission.consultarHistoricoHorasGeral,
+          ),
+          isFalse,
+        );
+      }
+    });
+
+    test('perfil desconhecido ou uid vazio falham fechado no histórico', () {
+      for (final permissao in [
+        EscalaPermission.consultarHistoricoHorasGeral,
+        EscalaPermission.consultarHistoricoHorasProprio,
+      ]) {
+        expect(
+          autoriza(perfil: 'desconhecido', uid: 'uid-1', permissao: permissao),
+          isFalse,
+        );
+        expect(
+          autoriza(perfil: 'gestor', uid: '', permissao: permissao),
+          isFalse,
+        );
+      }
     });
   });
 }

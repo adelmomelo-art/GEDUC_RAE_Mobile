@@ -6,6 +6,7 @@ import '../data/escala_repository.dart';
 import '../data/firestore_escala_repository.dart';
 import '../services/escala_horas_service.dart';
 import '../services/escala_indicadores_historicos_service.dart';
+import '../services/escala_produtividade_service.dart';
 
 class EscalaHistoricoPage extends StatefulWidget {
   const EscalaHistoricoPage({
@@ -169,6 +170,10 @@ class _EscalaHistoricoPageState extends State<EscalaHistoricoPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ResumoHistorico(resumo: resumo),
+        const SizedBox(height: 12),
+        _FaixitaProdutividade(
+          resultado: EscalaProdutividadeService.analisar(resumo),
+        ),
         if (resumo.possuiPendencias) ...[
           const SizedBox(height: 12),
           _PendenciasHistorico(resumo: resumo),
@@ -212,6 +217,109 @@ class _EscalaHistoricoPageState extends State<EscalaHistoricoPage> {
   static String _mensagemArgumento(ArgumentError erro) {
     final mensagem = erro.message?.toString().trim() ?? '';
     return mensagem.isEmpty ? 'Período inválido.' : mensagem;
+  }
+}
+
+class _FaixitaProdutividade extends StatelessWidget {
+  const _FaixitaProdutividade({required this.resultado});
+
+  final EscalaProdutividadeResumo resultado;
+
+  @override
+  Widget build(BuildContext context) {
+    final cobertura = resultado.coberturaRegistroPercentual;
+    final aderencia = resultado.aderenciaPercentual;
+    return Card(
+      key: const ValueKey('historico-faixita-produtividade'),
+      margin: EdgeInsets.zero,
+      color: const Color(0xFFEAF7F7),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 72,
+              height: 84,
+              child: Image.asset(
+                'assets/images/faixita_home_operacional.png',
+                fit: BoxFit.contain,
+                semanticLabel:
+                    'Faixita, assistente educativa da Plataforma Fênix',
+                errorBuilder: (_, __, ___) => const CircleAvatar(
+                  backgroundColor: Color(0xFFD3F0EF),
+                  child: Text(
+                    'F',
+                    style: TextStyle(
+                      color: Color(0xFF007A78),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Faixita explica os indicadores',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF075E5C),
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(resultado.orientacaoFaixita),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _IndicadorFaixita(
+                        key: const ValueKey('produtividade-cobertura'),
+                        rotulo: 'Cobertura dos registros',
+                        valor: cobertura == null ? 'Sem base' : '$cobertura%',
+                      ),
+                      _IndicadorFaixita(
+                        key: const ValueKey('produtividade-aderencia'),
+                        rotulo: 'Aderência ao planejado',
+                        valor: aderencia == null ? 'Sem base' : '$aderencia%',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Leitura operacional: não é nota, ranking ou avaliação de desempenho.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IndicadorFaixita extends StatelessWidget {
+  const _IndicadorFaixita({
+    super.key,
+    required this.rotulo,
+    required this.valor,
+  });
+
+  final String rotulo;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: const Icon(Icons.insights_rounded, size: 18),
+      label: Text('$rotulo: $valor'),
+    );
   }
 }
 

@@ -5,6 +5,7 @@ import '../models/escala_models.dart';
 import '../services/escala_horas_service.dart';
 import 'escala_configuracao_repository.dart';
 import 'escala_gestao_repository.dart';
+import 'escala_periodo_builder.dart';
 import 'escala_repository.dart';
 
 class FirestoreEscalaRepository
@@ -37,6 +38,81 @@ class FirestoreEscalaRepository
     }
 
     return _carregarDiaComFilhos(data: inicio, escala: escala);
+  }
+
+  @override
+  Future<EscalaPeriodoConsulta> carregarPeriodo({
+    required DateTime inicio,
+    required DateTime fim,
+  }) async {
+    final dataInicio = EscalaPeriodoConsulta.somenteData(inicio);
+    final dataFim = EscalaPeriodoConsulta.somenteData(fim);
+    EscalaPeriodoConsulta.validarPeriodo(inicio: dataInicio, fim: dataFim);
+    final fimExclusivo = dataFim.add(const Duration(days: 1));
+    final inicioTimestamp = Timestamp.fromDate(dataInicio);
+    final fimTimestamp = Timestamp.fromDate(fimExclusivo);
+
+    final resultados = await Future.wait<dynamic>([
+      _firestore
+          .collection('escalas')
+          .where('data', isGreaterThanOrEqualTo: inicioTimestamp)
+          .where('data', isLessThan: fimTimestamp)
+          .get(),
+      _firestore
+          .collection('escala_atividades')
+          .where('data', isGreaterThanOrEqualTo: inicioTimestamp)
+          .where('data', isLessThan: fimTimestamp)
+          .get(),
+      _firestore
+          .collection('escala_alocacoes')
+          .where('data', isGreaterThanOrEqualTo: inicioTimestamp)
+          .where('data', isLessThan: fimTimestamp)
+          .get(),
+      _firestore
+          .collection('escala_indisponibilidades')
+          .where('dataInicio', isLessThan: fimTimestamp)
+          .get(),
+    ]);
+
+    final escalasSnapshot =
+        resultados[0] as QuerySnapshot<Map<String, dynamic>>;
+    final atividadesSnapshot =
+        resultados[1] as QuerySnapshot<Map<String, dynamic>>;
+    final alocacoesSnapshot =
+        resultados[2] as QuerySnapshot<Map<String, dynamic>>;
+    final indisponibilidadesSnapshot =
+        resultados[3] as QuerySnapshot<Map<String, dynamic>>;
+
+    final escalas = escalasSnapshot.docs.map(
+      (doc) => EscalaModel.fromMap(doc.data(), documentId: doc.id),
+    );
+    final atividades = atividadesSnapshot.docs.map(
+      (doc) => EscalaAtividadeModel.fromMap(doc.data(), documentId: doc.id),
+    );
+    final alocacoes = alocacoesSnapshot.docs.map(
+      (doc) => EscalaAlocacaoModel.fromMap(doc.data(), documentId: doc.id),
+    );
+    final indisponibilidades = indisponibilidadesSnapshot.docs
+        .map(
+          (doc) => EscalaIndisponibilidadeModel.fromMap(
+            doc.data(),
+            documentId: doc.id,
+          ),
+        )
+        .where(
+          (item) => !EscalaPeriodoConsulta.somenteData(
+            item.dataFim,
+          ).isBefore(dataInicio),
+        );
+
+    return EscalaPeriodoBuilder.montar(
+      inicio: dataInicio,
+      fim: dataFim,
+      escalas: escalas,
+      atividades: atividades,
+      alocacoes: alocacoes,
+      indisponibilidades: indisponibilidades,
+    );
   }
 
   @override

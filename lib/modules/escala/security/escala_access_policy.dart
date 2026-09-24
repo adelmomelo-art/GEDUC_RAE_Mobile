@@ -31,6 +31,16 @@ class EscalaAccessPolicy {
       return true;
     }
 
+    if (permissao == EscalaPermission.consultarHistoricoHorasProprio) {
+      return true;
+    }
+
+    if (permissao == EscalaPermission.consultarHistoricoHorasGeral) {
+      return perfil == 'administrador' ||
+          perfil == 'gestor' ||
+          perfil == 'gerente';
+    }
+
     final administrador = perfil == 'administrador';
     final gerente = perfil == 'gerente';
     final agenteResponsavel = perfil == 'agente' &&
@@ -54,6 +64,8 @@ class EscalaAccessPolicy {
             (ehParticipanteAtividade || ehCoordenadorAtividade);
       case EscalaPermission.consultarEscalaGeral:
       case EscalaPermission.consultarPropriaEscala:
+      case EscalaPermission.consultarHistoricoHorasGeral:
+      case EscalaPermission.consultarHistoricoHorasProprio:
         return true;
     }
   }

@@ -19,6 +19,7 @@ import '../../modules/evidencias/evidencias_page.dart';
 import '../../modules/escala/data/firestore_escala_repository.dart';
 import '../../modules/escala/pages/escala_configuracao_page.dart';
 import '../../modules/escala/pages/escala_execucao_missao_page.dart';
+import '../../modules/escala/pages/escala_historico_page.dart';
 import '../../modules/escala/pages/escala_page.dart';
 import '../../modules/escala/pages/gestao_escala_page.dart';
 import '../../modules/escala/security/escala_navigation_policy.dart';
@@ -45,6 +46,7 @@ class AppRoutes {
   static const String homePath = '/home';
   static const String accountAccessPath = '/acesso-conta';
   static const String escalaPath = '/escala';
+  static const String historicoEscalaPath = '/escala/historico';
   static const String execucaoMissaoPath = '/escala/execucao/:atividadeId';
   static String execucaoMissaoLocation(String atividadeId) =>
       '/escala/execucao/${Uri.encodeComponent(atividadeId)}';
@@ -199,6 +201,18 @@ class AppRoutes {
           perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
           dataInicial: _parseDataEscala(state.uri.queryParameters['data']),
           iniciarMinhaEscala: state.uri.queryParameters['minha'] == '1',
+        ),
+      ),
+      GoRoute(
+        path: historicoEscalaPath,
+        redirect: (context, state) => _protegerConsultaEscala(),
+        builder: (context, state) => EscalaHistoricoPage(
+          usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
+          membroEquipeId: state.uri.queryParameters['membro'] ?? '',
+          inicioInicial: _parseDataEscala(state.uri.queryParameters['inicio']),
+          fimInicial: _parseDataEscala(state.uri.queryParameters['fim']),
+          iniciarSomenteMinhasHoras: state.uri.queryParameters['minhas'] == '1',
         ),
       ),
       GoRoute(

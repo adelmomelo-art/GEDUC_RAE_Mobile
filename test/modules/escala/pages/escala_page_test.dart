@@ -170,6 +170,7 @@ void main() {
     await pumpPage(tester, publicado());
 
     expect(find.text('Escala GEDUC'), findsOneWidget);
+    expect(find.byKey(const ValueKey('abrir-historico-horas')), findsOneWidget);
     expect(find.text('COMANDOS E AÇÕES TEMÁTICAS'), findsOneWidget);
     expect(find.text('Motociclista Seguro'), findsOneWidget);
     expect(find.text('QTR: '), findsNothing);

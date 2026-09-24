@@ -99,7 +99,17 @@ class _EscalaPageState extends State<EscalaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Escala GEDUC')),
+      appBar: AppBar(
+        title: const Text('Escala GEDUC'),
+        actions: [
+          IconButton(
+            key: const ValueKey('abrir-historico-horas'),
+            tooltip: 'Histórico de horas',
+            onPressed: () => context.push(AppRoutes.historicoEscalaPath),
+            icon: const Icon(Icons.insights_outlined),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _controller.carregar,
@@ -721,8 +731,9 @@ class _AtividadeCard extends StatelessWidget {
           usuarioId: usuarioId,
           responsavelEscalaUsuarioId: '',
           permissao: EscalaPermission.registrarExecucaoMissao,
-          ehParticipanteAtividade:
-              atividade.participanteUsuarioIds.contains(usuarioId.trim()),
+          ehParticipanteAtividade: atividade.participanteUsuarioIds.contains(
+            usuarioId.trim(),
+          ),
           ehCoordenadorAtividade:
               atividade.coordenadorUsuarioId.trim() == usuarioId.trim(),
         );
@@ -1102,7 +1113,8 @@ class _AtividadeCard extends StatelessWidget {
                         erro!,
                         key: const ValueKey('horas-erro'),
                         style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ],
                   ],

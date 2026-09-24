@@ -52,6 +52,14 @@ void main() {
       expect(find.text('Crédito no banco'), findsOneWidget);
       expect(find.text('Compensado'), findsOneWidget);
       expect(find.text('Saldo do banco'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('historico-faixita-produtividade')),
+        findsOneWidget,
+      );
+      expect(find.text('Faixita explica os indicadores'), findsOneWidget);
+      expect(find.text('Cobertura dos registros: 100%'), findsOneWidget);
+      expect(find.text('Aderência ao planejado: 100%'), findsOneWidget);
+      expect(find.textContaining('não é nota, ranking'), findsOneWidget);
       expect(find.text('Banco por pessoa'), findsOneWidget);
       expect(find.text('Agente Atual'), findsOneWidget);
       expect(find.text('Agente Outro'), findsOneWidget);

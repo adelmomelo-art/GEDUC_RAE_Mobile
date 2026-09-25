@@ -1042,7 +1042,8 @@ service cloud.firestore {
     match /usuarios/{usuarioId} {
       // A leitura do próprio documento precisa funcionar mesmo para conta
       // inativa, permitindo que o cliente determine o estado da identidade.
-      allow get: if autenticado() && request.auth.uid == usuarioId;
+      allow get: if autenticado()
+        && (request.auth.uid == usuarioId || administrador());
       allow list: if administrador();
 
       // O fluxo administrativo altera somente o escopo. Perfil, situação

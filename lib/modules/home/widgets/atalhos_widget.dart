@@ -151,14 +151,6 @@ class _AtalhosWidgetState extends State<AtalhosWidget> {
           color: HomeVisualTokens.navy,
           onTap: () => context.push('/escala'),
         ),
-      if (atalhosEscala.contains(EscalaHomeShortcut.minhaEscala))
-        _AtalhoItem(
-          icon: Icons.badge_rounded,
-          title: 'Minha Escala',
-          subtitle: 'Ver minhas alocações',
-          color: HomeVisualTokens.blue,
-          onTap: () => context.push('/escala?minha=1'),
-        ),
       if (podeCriarRae)
         _AtalhoItem(
           icon: Icons.add_rounded,

@@ -195,8 +195,6 @@ class _EscalaPageState extends State<EscalaPage> {
           onGerarPdf: _gerarPdfOficial,
         ),
         const SizedBox(height: 12),
-        const _JornadasReferencia(),
-        const SizedBox(height: 12),
         if (_controller.conflitosSobreposicao.isNotEmpty ||
             _controller.multiplasAlocacoes.isNotEmpty)
           _AlertasConsulta(controller: _controller),
@@ -505,94 +503,6 @@ class _ResumoEscala extends StatelessWidget {
                     )
                   : const Icon(Icons.picture_as_pdf_outlined),
               label: Text(gerandoPdf ? 'Gerando...' : 'PDF oficial'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _JornadasReferencia extends StatelessWidget {
-  const _JornadasReferencia();
-
-  @override
-  Widget build(BuildContext context) {
-    const jornadas = [
-      (turno: 'MANHÃ', h180: '180H • 06:00–11:52', h240: '240H • 06:00–12:32'),
-      (turno: 'TARDE', h180: '180H • 12:00–18:00', h240: '240H • 12:00–18:40'),
-      (turno: 'NOITE', h180: '180H • 18:00–23:31', h240: '240H • 18:00–23:58'),
-    ];
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Jornadas de referência',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Horários informativos. Não são usados como trava de validação.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final colunas = constraints.maxWidth >= 900
-                    ? 3
-                    : constraints.maxWidth >= 560
-                        ? 2
-                        : 1;
-                const espaco = 8.0;
-                final largura =
-                    (constraints.maxWidth - espaco * (colunas - 1)) / colunas;
-
-                return Wrap(
-                  spacing: espaco,
-                  runSpacing: espaco,
-                  children: [
-                    for (final jornada in jornadas)
-                      SizedBox(
-                        width: largura,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  jornada.turno,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(jornada.h180),
-                                Text(jornada.h240),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
             ),
           ],
         ),

@@ -2,20 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geduc_rae_mobile/modules/escala/security/escala_home_shortcuts_policy.dart';
 
 void main() {
-  test('agente comum recebe consulta e Minha Escala', () {
+  test('agente comum recebe somente um atalho de consulta da escala', () {
     final atalhos = EscalaHomeShortcutsPolicy.resolver(
       perfilAcesso: 'agente',
       usuarioId: 'agente',
       responsavelEscalaUsuarioId: 'responsavel',
     );
 
-    expect(
-      atalhos,
-      containsAll([
-        EscalaHomeShortcut.escalaGeduc,
-        EscalaHomeShortcut.minhaEscala,
-      ]),
-    );
+    expect(atalhos, contains(EscalaHomeShortcut.escalaGeduc));
     expect(atalhos, isNot(contains(EscalaHomeShortcut.gestaoEscala)));
     expect(atalhos, isNot(contains(EscalaHomeShortcut.configuracaoEscala)));
   });
@@ -39,7 +33,6 @@ void main() {
     );
 
     expect(atalhos, contains(EscalaHomeShortcut.escalaGeduc));
-    expect(atalhos, contains(EscalaHomeShortcut.minhaEscala));
     expect(atalhos, contains(EscalaHomeShortcut.gestaoEscala));
     expect(atalhos, contains(EscalaHomeShortcut.configuracaoEscala));
   });

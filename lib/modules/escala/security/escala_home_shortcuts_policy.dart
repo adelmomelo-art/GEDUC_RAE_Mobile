@@ -2,7 +2,6 @@ import 'escala_navigation_policy.dart';
 
 enum EscalaHomeShortcut {
   escalaGeduc,
-  minhaEscala,
   gestaoEscala,
   configuracaoEscala,
 }
@@ -19,9 +18,7 @@ abstract final class EscalaHomeShortcutsPolicy {
       perfilAcesso: perfilAcesso,
       usuarioId: usuarioId,
     )) {
-      atalhos
-        ..add(EscalaHomeShortcut.escalaGeduc)
-        ..add(EscalaHomeShortcut.minhaEscala);
+      atalhos.add(EscalaHomeShortcut.escalaGeduc);
     }
 
     if (EscalaNavigationPolicy.podeGerenciar(

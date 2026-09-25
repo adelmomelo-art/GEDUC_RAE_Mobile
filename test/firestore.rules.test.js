@@ -330,6 +330,43 @@ test('somente administrador atualiza escopo sem alterar identidade', async () =>
   );
 });
 
+test('administrador atualiza escopo em transacao apos ler usuario alvo', async () => {
+  const db = banco('admin');
+  const usuarioRef = db.collection('usuarios').doc('gerente');
+  const referencias = [
+    db.collection('regionais').doc('regional-1'),
+    db.collection('equipes').doc('equipe-1'),
+    db.collection('projetos').doc('projeto-1'),
+  ];
+
+  await assertSucceeds(
+    db.runTransaction(async (transaction) => {
+      const usuario = await transaction.get(usuarioRef);
+      assert.equal(usuario.exists, true);
+
+      for (const referencia of referencias) {
+        const documento = await transaction.get(referencia);
+        assert.equal(documento.exists, true);
+        assert.equal(documento.data().ativo, true);
+      }
+
+      transaction.update(usuarioRef, {
+        escopoAcesso: {
+          regionalIds: ['regional-1'],
+          equipeIds: ['equipe-1'],
+          projetoIds: ['projeto-1'],
+          scopeVersion: 1,
+        },
+        scopeUpdatedAt: new Date(),
+        scopeUpdatedBy: 'admin',
+      });
+    }),
+  );
+
+  await assertFails(
+    banco('gestor').collection('usuarios').doc('gerente').get(),
+  );
+});
 test('catálogos de equipe e projeto são mantidos somente pelo admin', async () => {
   for (const uid of ['admin', 'gestor', 'coordenador', 'agente']) {
     await assertSucceeds(banco(uid).collection('equipes').get());

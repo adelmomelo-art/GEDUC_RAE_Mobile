@@ -290,22 +290,29 @@ void main() {
     expect(find.byKey(const ValueKey('abrir-rae-e2')), findsNothing);
   });
 
-  testWidgets('jornadas de referência são explicitamente informativas', (
+  testWidgets('remove quadro redundante e preserva carimbo publicado', (
     tester,
   ) async {
     await pumpPage(tester, publicado());
 
-    expect(find.text('Jornadas de referência'), findsOneWidget);
-    expect(
-      find.text(
-        'Horários informativos. Não são usados como trava de validação.',
-      ),
-      findsOneWidget,
+    final carimboPublicado = find.byWidgetPredicate(
+      (widget) {
+        if (widget is! Text) return false;
+        final label = widget.data ?? '';
+        return label.contains('PUBLICADA') &&
+            RegExp(r'v[0-9]+').hasMatch(label);
+      },
+      description: 'carimbo de publicacao com versao',
+      skipOffstage: false,
     );
-    expect(find.text('180H • 06:00–11:52'), findsOneWidget);
-    expect(find.text('240H • 18:00–23:58'), findsOneWidget);
-  });
 
+    expect(find.textContaining('Jornadas de refer'), findsNothing);
+    expect(carimboPublicado, findsWidgets);
+
+    await pumpPage(tester, publicado(), minha: true);
+    expect(find.textContaining('Jornadas de refer'), findsNothing);
+    expect(carimboPublicado, findsWidgets);
+  });
   testWidgets('PDF oficial usa a escala publicada completa', (tester) async {
     EscalaDiaConsulta? documentoRecebido;
     await pumpPage(

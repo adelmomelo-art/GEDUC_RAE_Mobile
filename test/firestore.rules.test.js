@@ -1,6 +1,8 @@
 const { before, beforeEach, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const firebase = require('firebase/compat/app');
+require('firebase/compat/firestore');
 const {
   initializeTestEnvironment,
   assertFails,
@@ -36,6 +38,31 @@ function banco(uid) {
   return uid
     ? ambiente.authenticatedContext(uid).firestore()
     : ambiente.unauthenticatedContext().firestore();
+}
+
+function bancoComEmail(uid, email, emailVerified = true) {
+  return ambiente.authenticatedContext(uid, {
+    email,
+    email_verified: emailVerified,
+  }).firestore();
+}
+
+function dadosConvite(overrides = {}) {
+  return {
+    nome: 'Participante Convidado',
+    email: 'participante@geduc.com.br',
+    telefone: '85999990000',
+    cargo: 'Agente de Trânsito',
+    setor: 'GEDUC',
+    perfilAcesso: 'agente',
+    status: 'pendente',
+    criadoPor: 'admin',
+    criadoEm: new Date('2026-09-25T10:00:00.000Z'),
+    atualizadoEm: new Date('2026-09-25T10:00:00.000Z'),
+    expiraEm: new Date('2099-10-25T10:00:00.000Z'),
+    usuarioId: '',
+    ...overrides,
+  };
 }
 
 async function semear() {
@@ -148,6 +175,129 @@ test('nenhum cliente altera perfil, situação ativa ou identidade', async () =>
     perfilAcesso: 'administrador', ativo: true,
   }));
   await assertFails(banco('admin').collection('usuarios').doc('agente').delete());
+});
+
+test('somente administrador cria e lista convites válidos', async () => {
+  const servidor = firebase.firestore.FieldValue.serverTimestamp();
+  const convite = dadosConvite({ criadoEm: servidor, atualizadoEm: servidor });
+
+  await assertSucceeds(
+    banco('admin').collection('convites_usuarios').doc('convite-admin').set(convite),
+  );
+  await assertSucceeds(banco('admin').collection('convites_usuarios').get());
+  await assertFails(
+    banco('gestor').collection('convites_usuarios').doc('convite-gestor').set({
+      ...convite,
+      criadoPor: 'gestor',
+    }),
+  );
+  await assertFails(
+    banco('admin').collection('convites_usuarios').doc('convite-super').set({
+      ...convite,
+      perfilAcesso: 'administrador',
+    }),
+  );
+});
+
+test('convite exige e-mail correspondente e confirmado', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore().collection('convites_usuarios').doc('convite-1').set(
+      dadosConvite(),
+    );
+  });
+
+  await assertSucceeds(
+    bancoComEmail('novo', 'participante@geduc.com.br')
+      .collection('convites_usuarios').doc('convite-1').get(),
+  );
+  await assertFails(
+    bancoComEmail('intruso', 'intruso@geduc.com.br')
+      .collection('convites_usuarios').doc('convite-1').get(),
+  );
+
+  const naoConfirmado = bancoComEmail(
+    'novo',
+    'participante@geduc.com.br',
+    false,
+  );
+  await assertFails(
+    naoConfirmado.collection('convites_usuarios').doc('convite-1').update({
+      status: 'utilizado',
+      usuarioId: 'novo',
+      utilizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+    }),
+  );
+});
+
+test('usuário confirmado consome convite e nasce inativo com vínculo pendente', async () => {
+  await ambiente.withSecurityRulesDisabled(async (contexto) => {
+    await contexto.firestore().collection('convites_usuarios').doc('convite-1').set(
+      dadosConvite(),
+    );
+  });
+
+  const db = bancoComEmail('novo', 'participante@geduc.com.br');
+  const servidor = firebase.firestore.FieldValue.serverTimestamp();
+  const batch = db.batch();
+  batch.set(db.collection('usuarios').doc('novo'), {
+    nome: 'Participante Convidado',
+    email: 'participante@geduc.com.br',
+    telefone: '85999990000',
+    cargo: 'Agente de Trânsito',
+    setor: 'GEDUC',
+    perfilAcesso: 'agente',
+    ativo: false,
+    dataCriacao: servidor,
+    ultimoAcesso: null,
+    escopoAcesso: {
+      regionalIds: [],
+      equipeIds: [],
+      projetoIds: [],
+      scopeVersion: 1,
+    },
+    conviteId: 'convite-1',
+  });
+  batch.set(db.collection('equipe_operacional').doc('novo'), {
+    usuarioId: 'novo',
+    nome: 'Participante Convidado',
+    vinculo: 'agente',
+    podeCoordenar: false,
+    ativo: false,
+    origem: 'convite',
+    createdAt: servidor,
+    updatedAt: servidor,
+  });
+  batch.update(db.collection('convites_usuarios').doc('convite-1'), {
+    status: 'utilizado',
+    usuarioId: 'novo',
+    utilizadoEm: servidor,
+    atualizadoEm: servidor,
+  });
+  await assertSucceeds(batch.commit());
+
+  await assertFails(
+    banco('admin').collection('usuarios').doc('novo').update({
+      ativo: true,
+      ativadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      ativadoPor: 'admin',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }),
+  );
+  await assertSucceeds(
+    banco('admin').collection('equipe_operacional').doc('novo').update({
+      ativo: true,
+      updatedAt: new Date('2026-09-25T12:00:00.000Z'),
+    }),
+  );
+  await assertSucceeds(
+    banco('admin').collection('usuarios').doc('novo').update({
+      ativo: true,
+      ativadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      ativadoPor: 'admin',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }),
+  );
 });
 
 test('todos os perfis ativos leem catálogos operacionais', async () => {

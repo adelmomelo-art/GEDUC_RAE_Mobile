@@ -134,6 +134,119 @@ service cloud.firestore {
         && request.resource.data.scopeUpdatedBy == request.auth.uid;
     }
 
+    function perfilConviteValido(perfil) {
+      return perfil in ['gestor', 'gerente', 'coordenador', 'agente'];
+    }
+
+    function conviteUsuarioValido() {
+      return request.resource.data.keys().hasOnly([
+          'nome', 'email', 'telefone', 'cargo', 'setor', 'perfilAcesso',
+          'status', 'criadoPor', 'criadoEm', 'atualizadoEm', 'expiraEm',
+          'usuarioId'
+        ])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.telefone is string
+        && request.resource.data.cargo is string
+        && request.resource.data.setor is string
+        && perfilConviteValido(request.resource.data.perfilAcesso)
+        && request.resource.data.status == 'pendente'
+        && request.resource.data.criadoPor == request.auth.uid
+        && request.resource.data.criadoEm == request.time
+        && request.resource.data.atualizadoEm == request.time
+        && request.resource.data.expiraEm is timestamp
+        && request.resource.data.expiraEm > request.time
+        && request.resource.data.usuarioId == '';
+    }
+
+    function identidadeConfirmadaParaConvite(convite) {
+      return autenticado()
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == convite.email;
+    }
+
+    function conviteConsumidoPeloUsuario(conviteId, usuarioId) {
+      let caminho = /databases/$(database)/documents/convites_usuarios/$(conviteId);
+      return exists(caminho)
+        && get(caminho).data.status == 'pendente'
+        && get(caminho).data.expiraEm > request.time
+        && identidadeConfirmadaParaConvite(get(caminho).data)
+        && getAfter(caminho).data.status == 'utilizado'
+        && getAfter(caminho).data.usuarioId == usuarioId;
+    }
+
+    function novoUsuarioPorConviteValido(usuarioId) {
+      let conviteId = request.resource.data.conviteId;
+      let convite = get(
+        /databases/$(database)/documents/convites_usuarios/$(conviteId)
+      ).data;
+      return request.resource.data.keys().hasOnly([
+          'nome', 'email', 'telefone', 'cargo', 'setor', 'perfilAcesso',
+          'ativo', 'dataCriacao', 'ultimoAcesso', 'escopoAcesso', 'conviteId'
+        ])
+        && request.resource.data.nome == convite.nome
+        && request.resource.data.email == convite.email
+        && request.resource.data.telefone == convite.telefone
+        && request.resource.data.cargo == convite.cargo
+        && request.resource.data.setor == convite.setor
+        && request.resource.data.perfilAcesso == convite.perfilAcesso
+        && request.resource.data.ativo == false
+        && request.resource.data.dataCriacao == request.time
+        && request.resource.data.ultimoAcesso == null
+        && request.resource.data.escopoAcesso == {
+          'regionalIds': [],
+          'equipeIds': [],
+          'projetoIds': [],
+          'scopeVersion': 1
+        }
+        && request.auth.uid == usuarioId
+        && conviteConsumidoPeloUsuario(conviteId, usuarioId);
+    }
+
+    function novoMembroPorConviteValido(membroId) {
+      let usuarioDepois = getAfter(
+        /databases/$(database)/documents/usuarios/$(request.auth.uid)
+      ).data;
+      let convite = get(
+        /databases/$(database)/documents/convites_usuarios/$(usuarioDepois.conviteId)
+      ).data;
+      return membroId == request.auth.uid
+        && convite.perfilAcesso in ['agente', 'coordenador']
+        && request.resource.data.keys().hasOnly([
+          'usuarioId', 'nome', 'vinculo', 'podeCoordenar', 'ativo',
+          'origem', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.usuarioId == request.auth.uid
+        && request.resource.data.nome == convite.nome
+        && request.resource.data.vinculo == 'agente'
+        && request.resource.data.podeCoordenar
+          == (convite.perfilAcesso == 'coordenador')
+        && request.resource.data.ativo == false
+        && request.resource.data.origem == 'convite'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && conviteConsumidoPeloUsuario(usuarioDepois.conviteId, request.auth.uid);
+    }
+
+    function usuarioProntoParaAtivacao(usuarioId) {
+      let perfil = resource.data.perfilAcesso;
+      let membro = /databases/$(database)/documents/equipe_operacional/$(usuarioId);
+      return (
+          perfil in ['agente', 'coordenador']
+          && exists(membro)
+          && get(membro).data.usuarioId == usuarioId
+          && get(membro).data.ativo == true
+        ) || (
+          perfil == 'gerente'
+          && resource.data.escopoAcesso.regionalIds.size() > 0
+          && resource.data.escopoAcesso.equipeIds.size() > 0
+          && resource.data.escopoAcesso.projetoIds.size() > 0
+        ) || perfil == 'gestor';
+    }
+
     function equipeValida() {
       return request.resource.data.keys().hasAll([
           'nome',
@@ -1048,14 +1161,49 @@ service cloud.firestore {
 
       // O fluxo administrativo altera somente o escopo. Perfil, situação
       // ativa e demais dados de identidade permanecem imutáveis no aplicativo.
-      allow update: if administrador()
+      allow update: if administrador() && (
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'escopoAcesso', 'scopeUpdatedAt', 'scopeUpdatedBy'
+          ])
+          && escopoAcessoValido()
+        ) || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'ativo', 'ativadoEm', 'ativadoPor', 'updatedAt'
+          ])
+          && request.resource.data.ativo is bool
+          && request.resource.data.ativadoEm == request.time
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.ativadoPor == request.auth.uid
+          && (
+            request.resource.data.ativo == false
+            || usuarioProntoParaAtivacao(usuarioId)
+          )
+        )
+      );
+      allow create: if novoUsuarioPorConviteValido(usuarioId);
+      allow delete: if false;
+    }
+
+    match /convites_usuarios/{conviteId} {
+      allow get: if administrador()
+        || (autenticado()
+          && request.auth.token.email is string
+          && request.auth.token.email == resource.data.email);
+      allow list: if administrador();
+      allow create: if administrador() && conviteUsuarioValido();
+      allow update: if autenticado()
+        && resource.data.status == 'pendente'
+        && resource.data.expiraEm > request.time
+        && identidadeConfirmadaParaConvite(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'escopoAcesso',
-          'scopeUpdatedAt',
-          'scopeUpdatedBy'
+          'status', 'usuarioId', 'utilizadoEm', 'atualizadoEm'
         ])
-        && escopoAcessoValido();
-      allow create, delete: if false;
+        && request.resource.data.status == 'utilizado'
+        && request.resource.data.usuarioId == request.auth.uid
+        && request.resource.data.utilizadoEm == request.time
+        && request.resource.data.atualizadoEm == request.time;
+      allow delete: if false;
     }
 
     match /domains/{domainId} {
@@ -1084,7 +1232,8 @@ service cloud.firestore {
       // Excecao de leitura estritamente necessaria a Gestao da Escala.
       // Nao altera perfilReconhecido()/usuarioAtivo() nem libera escrita.
       allow get, list: if usuarioAtivo() || gerenteEscala();
-      allow create: if administrador() && membroEquipeValido();
+      allow create: if (administrador() && membroEquipeValido())
+        || novoMembroPorConviteValido(membroId);
       allow update: if administrador()
         && membroEquipeValido()
         && createdAtPreservadoOuRegularizado();

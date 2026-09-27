@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/security/authorization_service.dart';
 import '../../core/security/identity_status.dart';
+import '../usuarios/services/cadastro_usuario_service.dart';
 
 class AccountAccessPage extends StatelessWidget {
   const AccountAccessPage({super.key});
@@ -29,18 +30,12 @@ class AccountAccessPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            _icone(status),
-                            size: 68,
-                            color: _cor(status),
-                          ),
+                          Icon(_icone(status), size: 68, color: _cor(status)),
                           const SizedBox(height: 20),
                           Text(
                             _titulo(status),
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
+                            style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 12),
@@ -53,10 +48,17 @@ class AccountAccessPage extends StatelessWidget {
                           if (status == IdentityStatus.carregando)
                             const CircularProgressIndicator()
                           else ...[
+                            if (status == IdentityStatus.semCadastro) ...[
+                              _VincularConviteCard(
+                                onVinculado: authorizationService.recarregar,
+                              ),
+                              const SizedBox(height: 18),
+                            ],
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton.icon(
-                                onPressed: () => authorizationService.recarregar(),
+                                onPressed: () =>
+                                    authorizationService.recarregar(),
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('TENTAR NOVAMENTE'),
                               ),
@@ -108,7 +110,8 @@ class AccountAccessPage extends StatelessWidget {
         'O perfil associado à conta não é reconhecido pela política de segurança. Procure a administração da plataforma.',
       IdentityStatus.erro =>
         'Ocorreu uma falha ao consultar sua identidade. Verifique a conexão e tente novamente.',
-      _ => 'Esta conta não pode acessar os recursos da plataforma neste momento.',
+      _ =>
+        'Esta conta não pode acessar os recursos da plataforma neste momento.',
     };
   }
 
@@ -129,5 +132,77 @@ class AccountAccessPage extends StatelessWidget {
       IdentityStatus.erro => Colors.orange.shade800,
       _ => Colors.red.shade700,
     };
+  }
+}
+
+class _VincularConviteCard extends StatefulWidget {
+  const _VincularConviteCard({required this.onVinculado});
+
+  final Future<void> Function() onVinculado;
+
+  @override
+  State<_VincularConviteCard> createState() => _VincularConviteCardState();
+}
+
+class _VincularConviteCardState extends State<_VincularConviteCard> {
+  final _codigo = TextEditingController();
+  bool _processando = false;
+
+  @override
+  void dispose() {
+    _codigo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _vincular() async {
+    if (_codigo.text.trim().isEmpty) return;
+    setState(() => _processando = true);
+    try {
+      await CadastroUsuarioService().vincularConvite(_codigo.text);
+      await widget.onVinculado();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Convite vinculado. Aguarde a ativação administrativa.',
+          ),
+        ),
+      );
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível vincular o convite: $erro')),
+      );
+    } finally {
+      if (mounted) setState(() => _processando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          key: const ValueKey('codigo-convite'),
+          controller: _codigo,
+          enabled: !_processando,
+          decoration: const InputDecoration(
+            labelText: 'Código do convite',
+            helperText: 'Solicite o código à administração.',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: const ValueKey('vincular-convite'),
+            onPressed: _processando ? null : _vincular,
+            icon: const Icon(Icons.link),
+            label: Text(_processando ? 'VINCULANDO...' : 'VINCULAR CONVITE'),
+          ),
+        ),
+      ],
+    );
   }
 }

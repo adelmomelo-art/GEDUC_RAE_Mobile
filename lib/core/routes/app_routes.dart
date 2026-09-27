@@ -12,6 +12,7 @@ import '../../modules/admin/admin_home_page.dart';
 import '../../modules/admin/domain_list_page.dart';
 import '../../modules/auth/login_page.dart';
 import '../../modules/auth/account_access_page.dart';
+import '../../modules/auth/ativar_conta_page.dart';
 import '../../modules/avaliacao/avaliacao_page.dart';
 import '../../modules/coordenadores/coordenadores_page.dart';
 import '../../modules/dashboard/dashboard_page.dart';
@@ -43,6 +44,7 @@ class AppRoutes {
   AppRoutes._();
 
   static const String loginPath = '/login';
+  static const String ativarContaPath = '/ativar-conta';
   static const String homePath = '/home';
   static const String accountAccessPath = '/acesso-conta';
   static const String escalaPath = '/escala';
@@ -119,8 +121,8 @@ class AppRoutes {
       final usuario = _authorizationService.usuarioAtual;
       if (usuario == null) return acessoNegadoPath;
 
-      final configuracao =
-          await FirestoreEscalaRepository().carregarConfiguracao();
+      final configuracao = await FirestoreEscalaRepository()
+          .carregarConfiguracao();
 
       final autorizado = EscalaNavigationPolicy.podeGerenciar(
         perfilAcesso: usuario.perfilAcesso,
@@ -165,9 +167,10 @@ class AppRoutes {
     redirect: (context, state) async {
       final usuarioAutenticado = _authorizationService.autenticado;
       final estaNoLogin = state.uri.path == loginPath;
+      final estaNaAtivacao = state.uri.path == ativarContaPath;
       final estaNoAcessoConta = state.uri.path == accountAccessPath;
 
-      if (!usuarioAutenticado && !estaNoLogin) {
+      if (!usuarioAutenticado && !estaNoLogin && !estaNaAtivacao) {
         return loginPath;
       }
 
@@ -176,7 +179,7 @@ class AppRoutes {
       await _authorizationService.garantirUsuarioAtual();
 
       if (_authorizationService.status == IdentityStatus.ativo) {
-        if (estaNoLogin || estaNoAcessoConta) return homePath;
+        if (estaNoLogin || estaNaAtivacao || estaNoAcessoConta) return homePath;
         return null;
       }
 
@@ -188,6 +191,10 @@ class AppRoutes {
     },
     routes: [
       GoRoute(path: loginPath, builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: ativarContaPath,
+        builder: (context, state) => const AtivarContaPage(),
+      ),
       GoRoute(
         path: accountAccessPath,
         builder: (context, state) => const AccountAccessPage(),

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/config/app_environment.dart';
 import '../../core/version/app_build_info.dart';
 import 'widgets/faixita_card.dart';
@@ -67,20 +68,14 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.message ?? 'Erro ao realizar login.',
-          ),
-        ),
+        SnackBar(content: Text(e.message ?? 'Erro ao realizar login.')),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -110,11 +105,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Link de recuperação enviado para $email.',
-          ),
-        ),
+        SnackBar(content: Text('Link de recuperação enviado para $email.')),
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -174,10 +165,7 @@ class _LoginPageState extends State<LoginPage> {
               '• recomendações operacionais.\n\n'
               'Vou acompanhar a evolução da plataforma e ajudar a transformar '
               'dados operacionais em inteligência para tomada de decisão.',
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.45,
-              ),
+              style: TextStyle(fontSize: 15, height: 1.45),
             ),
           ),
           actions: [
@@ -226,9 +214,7 @@ class _LoginPageState extends State<LoginPage> {
             );
           },
         ),
-        Container(
-          color: Colors.white.withValues(alpha: 0.55),
-        ),
+        Container(color: Colors.white.withValues(alpha: 0.55)),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -246,9 +232,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cabecalhoInstitucional({
-    required bool compacto,
-  }) {
+  Widget _cabecalhoInstitucional({required bool compacto}) {
     final tituloPrefeitura = compacto ? 24.0 : 30.0;
     final tituloAmc = compacto ? 30.0 : 38.0;
     final tamanhoIcone = compacto ? 41.0 : 52.0;
@@ -332,9 +316,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _logoSistema({
-    required bool compacto,
-  }) {
+  Widget _logoSistema({required bool compacto}) {
     return Column(
       children: [
         Icon(
@@ -362,9 +344,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          style: TextStyle(
-            fontSize: compacto ? 34 : 42,
-          ),
+          style: TextStyle(fontSize: compacto ? 34 : 42),
         ),
         Text(
           'Gestão de Ações Educativas',
@@ -379,9 +359,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _cardLogin({
-    required double largura,
-  }) {
+  Widget _cardLogin({required double largura}) {
     return Container(
       width: largura,
       padding: const EdgeInsets.all(28),
@@ -478,6 +456,13 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            key: const ValueKey('ativar-conta-convidada'),
+            onPressed: carregando ? null : () => context.push('/ativar-conta'),
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            label: const Text('Recebi um convite / ativar conta'),
+          ),
         ],
       ),
     );
@@ -489,9 +474,7 @@ class _LoginPageState extends State<LoginPage> {
     required String texto,
   }) {
     return Container(
-      constraints: const BoxConstraints(
-        minHeight: 86,
-      ),
+      constraints: const BoxConstraints(minHeight: 86),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.72),
@@ -504,10 +487,7 @@ class _LoginPageState extends State<LoginPage> {
           CircleAvatar(
             radius: 22,
             backgroundColor: azulSuave,
-            child: Icon(
-              icone,
-              color: verdeInstitucional,
-            ),
+            child: Icon(icone, color: verdeInstitucional),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -524,10 +504,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextSpan(text: texto),
                 ],
               ),
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.35,
-              ),
+              style: const TextStyle(fontSize: 12, height: 1.35),
             ),
           ),
         ],
@@ -537,9 +514,11 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _versaoCard() {
     final environment = AppEnvironmentConfig.current;
-    final version = _buildInfo?.versionLabel ??
+    final version =
+        _buildInfo?.versionLabel ??
         (_buildInfoLoadFailed ? 'não disponível' : 'carregando...');
-    final build = _buildInfo?.buildLabel ??
+    final build =
+        _buildInfo?.buildLabel ??
         (_buildInfoLoadFailed ? 'não disponível' : 'carregando...');
 
     return Container(
@@ -555,10 +534,7 @@ class _LoginPageState extends State<LoginPage> {
           const CircleAvatar(
             radius: 22,
             backgroundColor: azulSuave,
-            child: Icon(
-              Icons.info_outline,
-              color: verdeInstitucional,
-            ),
+            child: Icon(Icons.info_outline, color: verdeInstitucional),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -616,20 +592,20 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _rodapeResponsivo({
-    required double larguraDisponivel,
-  }) {
+  Widget _rodapeResponsivo({required double larguraDisponivel}) {
     const espacamento = 10.0;
     const paddingHorizontal = 28.0;
 
     final colunas = larguraDisponivel >= 1100
         ? 4
         : larguraDisponivel >= 600
-            ? 2
-            : 1;
+        ? 2
+        : 1;
 
-    final larguraInterna =
-        (larguraDisponivel - paddingHorizontal).clamp(280.0, double.infinity);
+    final larguraInterna = (larguraDisponivel - paddingHorizontal).clamp(
+      280.0,
+      double.infinity,
+    );
 
     final larguraItem = colunas == 1
         ? larguraInterna
@@ -640,9 +616,7 @@ class _LoginPageState extends State<LoginPage> {
         icone: Icons.verified_user_outlined,
         titulo:
             'Ambiente: ${AppEnvironmentConfig.label(AppEnvironmentConfig.current)}',
-        texto: AppEnvironmentConfig.description(
-          AppEnvironmentConfig.current,
-        ),
+        texto: AppEnvironmentConfig.description(AppEnvironmentConfig.current),
       ),
       _rodapeItem(
         icone: Icons.lock_outline,
@@ -661,12 +635,7 @@ class _LoginPageState extends State<LoginPage> {
         spacing: espacamento,
         runSpacing: espacamento,
         children: itens
-            .map(
-              (item) => SizedBox(
-                width: larguraItem,
-                child: item,
-              ),
-            )
+            .map((item) => SizedBox(width: larguraItem, child: item))
             .toList(),
       ),
     );
@@ -679,32 +648,27 @@ class _LoginPageState extends State<LoginPage> {
         final isWide = largura >= 1050;
         final compacto = largura < 850;
         final larguraCard = isWide ? 620.0 : largura.clamp(320.0, 700.0) - 32;
-        final larguraFaixita =
-            isWide ? 340.0 : largura.clamp(320.0, 620.0) - 32;
+        final larguraFaixita = isWide
+            ? 340.0
+            : largura.clamp(320.0, 620.0) - 32;
 
         return SafeArea(
           child: SingleChildScrollView(
             child: Column(
               children: [
-                _cabecalhoInstitucional(
-                  compacto: compacto,
-                ),
+                _cabecalhoInstitucional(compacto: compacto),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
                   child: Column(
                     children: [
-                      _logoSistema(
-                        compacto: compacto,
-                      ),
+                      _logoSistema(compacto: compacto),
                       const SizedBox(height: 28),
                       if (isWide)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            _cardLogin(
-                              largura: larguraCard,
-                            ),
+                            _cardLogin(largura: larguraCard),
                             const SizedBox(width: 20),
                             Transform.translate(
                               offset: const Offset(0, -6),
@@ -720,9 +684,7 @@ class _LoginPageState extends State<LoginPage> {
                       else
                         Column(
                           children: [
-                            _cardLogin(
-                              largura: larguraCard,
-                            ),
+                            _cardLogin(largura: larguraCard),
                             const SizedBox(height: 12),
                             Transform.translate(
                               offset: const Offset(0, -4),
@@ -738,9 +700,7 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                 ),
-                _rodapeResponsivo(
-                  larguraDisponivel: largura,
-                ),
+                _rodapeResponsivo(larguraDisponivel: largura),
                 Container(
                   height: 8,
                   decoration: const BoxDecoration(
@@ -763,13 +723,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          _fundo(),
-          _conteudoPrincipal(),
-        ],
-      ),
-    );
+    return Scaffold(body: Stack(children: [_fundo(), _conteudoPrincipal()]));
   }
 }

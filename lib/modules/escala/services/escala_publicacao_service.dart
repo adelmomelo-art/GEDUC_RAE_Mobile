@@ -85,6 +85,35 @@ abstract final class EscalaPublicacaoService {
         bloqueios.add('A atividade "${atividade.titulo}" está sem turno.');
       }
 
+      if (atividade.agendaCompromissoId.isNotEmpty &&
+          atividade.status != 'cancelada') {
+        if (atividade.horaInicio.isEmpty ||
+            atividade.horaFim.isEmpty ||
+            atividade.qthLocal.trim().isEmpty ||
+            atividade.qthEndereco.trim().isEmpty) {
+          bloqueios.add(
+            'Complete horário e local da ação da agenda "${atividade.titulo}".',
+          );
+        }
+        if (alocacoes.any((a) =>
+            a.atividadeId == atividade.id &&
+            (a.horaInicio != atividade.horaInicio ||
+                a.horaFim != atividade.horaFim))) {
+          bloqueios.add(
+              'Confira os horários da equipe após aplicar a agenda à ação "${atividade.titulo}".');
+        }
+        if (atividade.coordenadorMembroEquipeId.isEmpty ||
+            !alocacoes.any(
+              (a) =>
+                  a.atividadeId == atividade.id &&
+                  a.membroEquipeId == atividade.coordenadorMembroEquipeId,
+            )) {
+          bloqueios.add(
+            'Defina a equipe e inclua o coordenador na ação "${atividade.titulo}".',
+          );
+        }
+      }
+
       if (atividade.naturezaAtividade == EscalaCodigos.naturezaEducativa) {
         educativas++;
         if (!atividade.geraRae) {

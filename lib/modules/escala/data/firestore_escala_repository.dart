@@ -370,6 +370,11 @@ class FirestoreEscalaRepository
       throw StateError('A revisão ainda não terminou de ser preparada.');
     }
 
+    final atividadesAgenda = await _firestore
+        .collection('escala_atividades')
+        .where('escalaId', isEqualTo: escalaAtual.id)
+        .get();
+
     final candidatas = await _buscarEscalasDaData(escalaAtual.data);
     final anterioresPublicadas = candidatas
         .where(
@@ -379,31 +384,74 @@ class FirestoreEscalaRepository
         )
         .toList(growable: false);
 
-    final batch = _firestore.batch();
-
-    batch.update(
-      _firestore.collection('escalas').doc(escalaAtual.id),
-      <String, dynamic>{
+    await _firestore.runTransaction((tx) async {
+      final ref = _firestore.collection('escalas').doc(escalaAtual.id);
+      final atual = await tx.get(ref);
+      if (atual.data()?['status'] != EscalaCodigos.statusRascunho ||
+          atual.data()?['revisaoPreparada'] == false) {
+        throw StateError('A escala mudou. Atualize antes de publicar.');
+      }
+      // A revisão privada e o snapshot são conferidos na mesma transação
+      // da publicação: edição concorrente exige uma nova conferência.
+      for (final doc in atividadesAgenda.docs) {
+        final snapshot = await tx.get(doc.reference);
+        if (snapshot.data() == null) {
+          throw StateError('Uma atividade foi removida. Atualize a escala.');
+        }
+        final atividade = EscalaAtividadeModel.fromMap(
+          snapshot.data()!,
+          documentId: doc.id,
+        );
+        if (snapshot.data()?['atualizadoEm'] != doc.data()['atualizadoEm']) {
+          throw StateError('Uma atividade mudou. Confira a escala novamente.');
+        }
+        if (atividade.agendaCompromissoId.isEmpty ||
+            atividade.status == 'cancelada') {
+          continue;
+        }
+        final config = await tx.get(
+          _firestore.collection('escala_configuracoes').doc('principal'),
+        );
+        if (config.data()?['ativo'] != true ||
+            config.data()?['responsavelEscalaUsuarioId'] != uid) {
+          throw StateError(
+            'A publicação de ações da agenda cabe ao responsável designado pela escala.',
+          );
+        }
+        final agenda = await tx.get(_firestore
+            .collection('agenda_operacional')
+            .doc(atividade.agendaCompromissoId));
+        if (agenda.data()?['situacao'] != 'pronta' ||
+            agenda.data()?['revisao'] != atividade.agendaRevisao ||
+            agenda.data()?['atividadeId'] != atividade.id) {
+          throw StateError(
+            'Há planejamento pendente. Aplique a agenda à revisão antes de publicar.',
+          );
+        }
+      }
+      final anteriores = <DocumentReference<Map<String, dynamic>>>[];
+      for (final anterior in anterioresPublicadas) {
+        final anteriorRef = _firestore.collection('escalas').doc(anterior.id);
+        final snapshot = await tx.get(anteriorRef);
+        if (snapshot.data()?['status'] == EscalaCodigos.statusPublicada) {
+          anteriores.add(anteriorRef);
+        }
+      }
+      tx.update(ref, <String, dynamic>{
         'status': EscalaCodigos.statusPublicada,
         'publicadoPor': uid,
         'publicadoEm': Timestamp.fromDate(agora),
         'atualizadoPor': uid,
         'atualizadoEm': Timestamp.fromDate(agora),
-      },
-    );
-
-    for (final anterior in anterioresPublicadas) {
-      batch.update(
-        _firestore.collection('escalas').doc(anterior.id),
-        <String, dynamic>{
+      });
+      for (final anterior in anteriores) {
+        tx.update(anterior, <String, dynamic>{
           'status': EscalaCodigos.statusArquivada,
           'atualizadoPor': uid,
           'atualizadoEm': Timestamp.fromDate(agora),
-        },
-      );
-    }
-
-    await batch.commit();
+        });
+      }
+    });
   }
 
   @override
@@ -579,6 +627,11 @@ class FirestoreEscalaRepository
         if (existente.exists) return;
 
         final clone = EscalaAtividadeModel(
+          agendaOrigemAtividadeId:
+              item.agendaCompromissoId.isEmpty ? '' : item.id,
+          agendaCompromissoId: item.agendaCompromissoId,
+          agendaRevisao: item.agendaRevisao,
+          projetoId: item.projetoId,
           id: cloneId,
           escalaId: escalaDestinoId,
           data: _somenteData(item.data),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/config/acl_feature_flags.dart';
 import '../../../core/security/authorization_service.dart';
 import '../../../core/security/permission.dart';
+import '../../agenda/security/agenda_access_policy.dart';
 import '../../acoes/controllers/acao_controller.dart';
 import '../../escala/data/escala_gestao_repository.dart';
 import '../../escala/data/firestore_escala_repository.dart';
@@ -170,6 +171,19 @@ class _AtalhosWidgetState extends State<AtalhosWidget> {
     ];
 
     final secundarios = <_AtalhoItem>[
+      if (usuarioAtual != null &&
+          AgendaAccessPolicy.autoriza(
+            usuarioId: usuarioAtual.id,
+            perfilAcesso: usuarioAtual.perfilAcesso,
+            configuracao: configuracao,
+          ))
+        _AtalhoItem(
+          icon: Icons.event_note_rounded,
+          title: 'Agenda Operacional',
+          subtitle: 'Planejar ações do mês',
+          color: HomeVisualTokens.orange,
+          onTap: () => context.push('/agenda-operacional'),
+        ),
       if (atalhosEscala.contains(EscalaHomeShortcut.gestaoEscala))
         _AtalhoItem(
           icon: Icons.edit_calendar_rounded,

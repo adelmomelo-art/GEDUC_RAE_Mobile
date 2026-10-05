@@ -159,6 +159,14 @@ Plataforma Fênix.
 
 # Controle de Evolução
 
+## Agenda Operacional — AGO-001
+
+- [Implementação, dados e homologação](AGO-001_AGENDA_OPERACIONAL.md)
+- [R3: segurança das ferramentas npm](AGO-001_R3_SEGURANCA_NPM.md)
+- Fluxo: planejamento privado → escala diária → consulta pela equipe.
+- Status: homologação funcional web local H01–H14 concluída em 05/10/2026;
+  commit/push, CI, publicação controlada e A05 pendentes.
+
   ------------------------------------------------------------------------
   Versão                 Data              Descrição
   ---------------------- ----------------- -------------------------------
@@ -166,3 +174,5 @@ Plataforma Fênix.
                                            como Portal Oficial do SKPF.
 
   ------------------------------------------------------------------------
+
+- AGO-001 R5 — homologação web local: `docs/AGO-001_HOMOLOGACAO_LOCAL.md`.

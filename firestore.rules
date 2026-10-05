@@ -348,14 +348,24 @@ service cloud.firestore {
     }
 
     function podeAtualizarEscala() {
-      return gerenteEscala() || responsavelEscalaAtivo();
+      // A mesma política, com identidade avaliada uma única vez.
+      let usuario = usuarioExiste() ? usuarioAtual().data : {};
+      let perfil = usuario.get('perfilAcesso', '');
+      return usuario.get('ativo', false) == true && (
+        perfil == 'gerente' || (
+          perfil == 'agente'
+          && exists(caminhoConfiguracaoEscala())
+          && get(caminhoConfiguracaoEscala()).data.ativo == true
+          && get(caminhoConfiguracaoEscala()).data.responsavelEscalaUsuarioId == request.auth.uid
+        )
+      );
     }
 
     function escalaRascunhoPorId(escalaId) {
       return escalaId is string
         && escalaId.size() > 0
-        && exists(/databases/$(database)/documents/escalas/$(escalaId))
-        && get(/databases/$(database)/documents/escalas/$(escalaId)).data.status == 'rascunho';
+        && existsAfter(/databases/$(database)/documents/escalas/$(escalaId))
+        && getAfter(/databases/$(database)/documents/escalas/$(escalaId)).data.status == 'rascunho';
     }
 
     function escalaPublicadaPorId(escalaId) {
@@ -617,8 +627,115 @@ service cloud.firestore {
         );
     }
 
+    // AGO-001: a agenda permanece privada; a escala recebe apenas um snapshot operacional.
+    function caminhoAgenda(id) {
+      return /databases/$(database)/documents/agenda_operacional/$(id);
+    }
+
+    function agendaValida() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+        'data', 'titulo', 'turno', 'instituicao', 'projetoId', 'natureza', 'secaoId',
+        'horaInicio', 'horaFim', 'local', 'endereco', 'bairro', 'regionalId', 'referencia',
+        'contatoNome', 'contatoTelefone', 'descricao', 'publico', 'quantidadePublico',
+        'integrantesNecessarios', 'materiais', 'observacoesInternas', 'orientacaoEquipe',
+        'origem', 'processo', 'situacao', 'motivo', 'revisao', 'escalaId', 'atividadeId',
+        'dataVinculada', 'criadoPor', 'criadoEm', 'atualizadoPor', 'atualizadoEm'
+      ])
+      && d.keys().hasAll([
+        'data', 'titulo', 'turno', 'instituicao', 'projetoId', 'natureza', 'secaoId',
+        'horaInicio', 'horaFim', 'local', 'endereco', 'bairro', 'regionalId', 'referencia',
+        'contatoNome', 'contatoTelefone', 'descricao', 'publico', 'quantidadePublico',
+        'integrantesNecessarios', 'materiais', 'observacoesInternas', 'orientacaoEquipe',
+        'origem', 'processo', 'situacao', 'motivo', 'revisao', 'escalaId', 'atividadeId',
+        'dataVinculada', 'criadoPor', 'criadoEm', 'atualizadoPor', 'atualizadoEm'
+      ])
+      && d.data is timestamp && d.titulo is string && d.titulo.size() > 0 && d.titulo.size() <= 4000
+      && d.turno in ['manha', 'tarde', 'noite'] && d.natureza in ['educativa', 'administrativa']
+      && d.secaoId is string && d.secaoId.size() > 0
+      && d.instituicao is string && d.projetoId is string && d.local is string && d.endereco is string
+      && d.bairro is string && d.regionalId is string && d.referencia is string
+      && d.contatoNome is string && d.contatoTelefone is string
+      && d.descricao is string && d.publico is string && d.materiais is string
+      && d.observacoesInternas is string && d.orientacaoEquipe is string
+      && d.processo is string && d.motivo is string
+      && d.origem in ['contato_direto', 'processo', 'chefia']
+      && d.situacao in ['planejamento', 'pronta', 'cancelada']
+      && (d.situacao != 'cancelada' || d.motivo.size() > 0)
+      && d.horaInicio is string && d.horaFim is string
+      && ((d.horaInicio == '' && d.horaFim == '') ||
+        (horarioRealEscalaValido(d.horaInicio) && horarioRealEscalaValido(d.horaFim)))
+      && (d.quantidadePublico == null || (d.quantidadePublico is int && d.quantidadePublico >= 0))
+      && (d.integrantesNecessarios == null || (d.integrantesNecessarios is int && d.integrantesNecessarios >= 0))
+      && d.revisao is int && d.revisao > 0
+      && d.escalaId is string && d.atividadeId is string
+      && ((d.escalaId == '' && d.atividadeId == '' && d.dataVinculada == null) ||
+        (d.escalaId.size() > 0 && d.atividadeId.size() > 0 && d.dataVinculada is timestamp))
+      && d.criadoPor is string && d.criadoEm is timestamp
+      && d.atualizadoPor == request.auth.uid && d.atualizadoEm == request.time;
+    }
+
+    function agendaTemHistorico(id) {
+      let caminho = /databases/$(database)/documents/agenda_operacional/$(id)/historico/$(string(request.resource.data.revisao));
+      return existsAfter(caminho)
+        && getAfter(caminho).data.revisao == request.resource.data.revisao
+        && getAfter(caminho).data.usuarioId == request.auth.uid
+        && getAfter(caminho).data.em == request.time;
+    }
+
+    function agendaVinculoDepoisValido(id) {
+      let d = request.resource.data;
+      let atividade = /databases/$(database)/documents/escala_atividades/$(d.atividadeId);
+      return d.atividadeId == '' || (existsAfter(atividade)
+        && getAfter(atividade).data.agendaCompromissoId == id
+        && getAfter(atividade).data.escalaId == d.escalaId);
+    }
+
+    function atividadeAgendaCamposValidos() {
+      let d = request.resource.data;
+      return (!('projetoId' in d) || d.projetoId is string)
+        && (!('agendaCompromissoId' in d) ||
+          (d.agendaCompromissoId is string && d.agendaCompromissoId.size() > 0
+            && d.agendaRevisao is int && d.agendaRevisao > 0
+            && (!('agendaOrigemAtividadeId' in d) || d.agendaOrigemAtividadeId is string)));
+    }
+
+    function atividadeAgendaVinculoValido(atividadeId) {
+      let d = request.resource.data;
+      let origem = 'agendaOrigemAtividadeId' in d ? d.agendaOrigemAtividadeId : '';
+      let caminhoOrigem = /databases/$(database)/documents/escala_atividades/$(origem);
+      let escalaDestino = /databases/$(database)/documents/escalas/$(d.escalaId);
+      // A cópia da publicação é validada pela origem antes de consultar a
+      // agenda privada. Evita repetir autorizações no caminho quente da revisão.
+      return !('agendaCompromissoId' in d) || (
+        origem.size() > 0 && exists(caminhoOrigem)
+        && get(caminhoOrigem).data.agendaCompromissoId == d.agendaCompromissoId
+        && get(caminhoOrigem).data.agendaRevisao == d.agendaRevisao
+        && getAfter(escalaDestino).data.revisaoDeEscalaId == get(caminhoOrigem).data.escalaId
+      ) || (
+        responsavelEscalaAtivo()
+        && existsAfter(caminhoAgenda(d.agendaCompromissoId))
+        && getAfter(caminhoAgenda(d.agendaCompromissoId)).data.situacao == 'pronta'
+        && getAfter(caminhoAgenda(d.agendaCompromissoId)).data.atividadeId == atividadeId
+        && getAfter(caminhoAgenda(d.agendaCompromissoId)).data.revisao == d.agendaRevisao
+        && getAfter(caminhoAgenda(d.agendaCompromissoId)).data.escalaId == d.escalaId
+      );
+    }
+
+    function atividadeAgendaOrigemPreservada() {
+      let anterior = 'agendaCompromissoId' in resource.data ? resource.data.agendaCompromissoId : '';
+      let atual = 'agendaCompromissoId' in request.resource.data ? request.resource.data.agendaCompromissoId : '';
+      return anterior == atual && (anterior == '' || (
+        request.resource.data.agendaRevisao == resource.data.agendaRevisao || (
+          responsavelEscalaAtivo()
+          && getAfter(caminhoAgenda(atual)).data.revisao == request.resource.data.agendaRevisao
+        )
+      ));
+    }
+
     function atividadeEscalaValida() {
       return request.resource.data.keys().hasOnly([
+          'agendaCompromissoId', 'agendaRevisao', 'agendaOrigemAtividadeId', 'projetoId',
           'escalaId',
           'data',
           'secaoId',
@@ -698,7 +815,8 @@ service cloud.firestore {
             && request.resource.data.geraRae == false
           )
         )
-        && coordenadorAtividadeValido();
+        && coordenadorAtividadeValido()
+        && atividadeAgendaCamposValidos();
     }
 
     function jornadaComplementarEscala() {
@@ -992,6 +1110,7 @@ service cloud.firestore {
       let caminho = caminhoRae(raeId);
       return resource.data.naturezaAtividade == 'educativa'
         && resource.data.geraRae == true
+        && resource.data.status != 'cancelada'
         && escalaPublicadaPorId(resource.data.escalaId)
         && operadorRaeDaAtividade(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -1032,6 +1151,7 @@ service cloud.firestore {
           && getAfter(caminho).data.escalaId == request.resource.data.escalaId
           && getAfter(caminho).data.naturezaAtividade == 'educativa'
           && getAfter(caminho).data.geraRae == true
+          && getAfter(caminho).data.status != 'cancelada'
           && getAfter(caminho).data.raeId == acaoId
           && operadorRaeDaAtividade(getAfter(caminho).data)
         );
@@ -1063,6 +1183,7 @@ service cloud.firestore {
         && exists(caminho)
         && get(caminho).data.naturezaAtividade == 'administrativa'
         && get(caminho).data.geraRae == false
+        && get(caminho).data.status != 'cancelada'
         && get(caminho).data.escalaId is string
         && escalaPublicadaPorId(get(caminho).data.escalaId)
         && (
@@ -1277,6 +1398,42 @@ service cloud.firestore {
     }
 
     // ESC-001C - Escala GEDUC
+    match /agenda_operacional/{compromissoId} {
+      allow get, list: if responsavelEscalaAtivo();
+      allow create: if responsavelEscalaAtivo() && agendaValida()
+        && request.resource.data.revisao == 1
+        && request.resource.data.criadoPor == request.auth.uid
+        && request.resource.data.criadoEm == request.time
+        && request.resource.data.situacao == 'planejamento'
+        && request.resource.data.atividadeId == ''
+        && agendaTemHistorico(compromissoId);
+      allow update: if responsavelEscalaAtivo() && agendaValida()
+        && resource.data.situacao != 'cancelada'
+        && request.resource.data.revisao == resource.data.revisao + 1
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm
+        && (request.resource.data.data == resource.data.data || request.resource.data.motivo.size() > 0)
+        && agendaVinculoDepoisValido(compromissoId)
+        && agendaTemHistorico(compromissoId);
+      allow delete: if false;
+      match /historico/{eventoId} {
+        allow get, list: if responsavelEscalaAtivo();
+        allow create: if responsavelEscalaAtivo()
+          && request.resource.data.keys().hasOnly(['acao', 'usuarioId', 'motivo', 'revisao', 'em', 'dataAnterior', 'dataNova'])
+          && request.resource.data.acao in ['cadastro', 'edicao', 'remarcacao', 'cancelamento', 'vinculacao', 'aplicacao']
+          && request.resource.data.usuarioId == request.auth.uid
+          && request.resource.data.motivo is string
+          && request.resource.data.em == request.time
+          && request.resource.data.revisao is int
+          && eventoId == string(request.resource.data.revisao)
+          && request.resource.data.revisao == getAfter(caminhoAgenda(compromissoId)).data.revisao
+          && getAfter(caminhoAgenda(compromissoId)).data.atualizadoEm == request.time
+          && (request.resource.data.dataAnterior == null || request.resource.data.dataAnterior is timestamp)
+          && request.resource.data.dataNova is timestamp;
+        allow update, delete: if false;
+      }
+    }
+
     match /escala_configuracoes/{configId} {
       allow get, list: if usuarioEscalaAtivo();
       allow create, update: if configId == 'principal'
@@ -1318,11 +1475,13 @@ service cloud.firestore {
       allow create: if podeAtualizarEscala()
         && escalaRascunhoPorId(request.resource.data.escalaId)
         && atividadeEscalaValida()
+        && atividadeAgendaVinculoValido(atividadeId)
         && request.resource.data.criadoPor == request.auth.uid;
       allow update: if (
           podeAtualizarEscala()
           && escalaRascunhoPorId(request.resource.data.escalaId)
           && atividadeEscalaValida()
+          && atividadeAgendaOrigemPreservada()
           && request.resource.data.escalaId == resource.data.escalaId
           && request.resource.data.data == resource.data.data
           && request.resource.data.criadoPor == resource.data.criadoPor

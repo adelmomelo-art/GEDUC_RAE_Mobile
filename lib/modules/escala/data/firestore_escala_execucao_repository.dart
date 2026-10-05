@@ -89,6 +89,9 @@ class FirestoreEscalaExecucaoRepository implements EscalaExecucaoRepository {
       throw StateError('A execução exige escala publicada.');
     }
 
+    if (atividade.status == 'cancelada') {
+      throw StateError('Missão cancelada não pode ser executada.');
+    }
     if (atividade.naturezaAtividade != EscalaCodigos.naturezaAdministrativa ||
         atividade.geraRae) {
       throw StateError(

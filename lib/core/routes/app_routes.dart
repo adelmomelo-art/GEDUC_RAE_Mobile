@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../modules/agenda/pages/agenda_page.dart';
+import '../../modules/agenda/security/agenda_access_policy.dart';
 import '../../modules/acoes/caracterizacao_acao_page.dart';
 import '../../modules/acoes/consulta_rae_page.dart';
 import '../../modules/acoes/nova_acao_page.dart';
@@ -47,6 +49,7 @@ class AppRoutes {
   static const String ativarContaPath = '/ativar-conta';
   static const String homePath = '/home';
   static const String accountAccessPath = '/acesso-conta';
+  static const String agendaPath = '/agenda-operacional';
   static const String escalaPath = '/escala';
   static const String historicoEscalaPath = '/escala/historico';
   static const String execucaoMissaoPath = '/escala/execucao/:atividadeId';
@@ -115,14 +118,32 @@ class AppRoutes {
     return autorizado ? null : acessoNegadoPath;
   }
 
+  static Future<String?> _protegerAgenda() async {
+    try {
+      await _authorizationService.garantirUsuarioAtual();
+      final usuario = _authorizationService.usuarioAtual;
+      if (usuario == null) return acessoNegadoPath;
+      final config = await FirestoreEscalaRepository().carregarConfiguracao();
+      return AgendaAccessPolicy.autoriza(
+        usuarioId: usuario.id,
+        perfilAcesso: usuario.perfilAcesso,
+        configuracao: config,
+      )
+          ? null
+          : acessoNegadoPath;
+    } catch (_) {
+      return acessoNegadoPath;
+    }
+  }
+
   static Future<String?> _protegerGestaoEscala() async {
     try {
       await _authorizationService.garantirUsuarioAtual();
       final usuario = _authorizationService.usuarioAtual;
       if (usuario == null) return acessoNegadoPath;
 
-      final configuracao = await FirestoreEscalaRepository()
-          .carregarConfiguracao();
+      final configuracao =
+          await FirestoreEscalaRepository().carregarConfiguracao();
 
       final autorizado = EscalaNavigationPolicy.podeGerenciar(
         perfilAcesso: usuario.perfilAcesso,
@@ -200,6 +221,15 @@ class AppRoutes {
         builder: (context, state) => const AccountAccessPage(),
       ),
       GoRoute(path: homePath, builder: (context, state) => const HomePage()),
+      GoRoute(
+        path: agendaPath,
+        redirect: (context, state) => _protegerAgenda(),
+        builder: (context, state) => AgendaPage(
+          usuarioId: _authorizationService.usuarioAtual?.id ?? '',
+          perfilAcesso: _authorizationService.usuarioAtual?.perfilAcesso ?? '',
+          dataInicial: _parseDataEscala(state.uri.queryParameters['data']),
+        ),
+      ),
       GoRoute(
         path: escalaPath,
         redirect: (context, state) => _protegerConsultaEscala(),

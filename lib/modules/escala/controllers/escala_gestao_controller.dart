@@ -584,6 +584,10 @@ class EscalaGestaoController extends ChangeNotifier {
         .toSet();
 
     final atividade = EscalaAtividadeModel(
+      agendaOrigemAtividadeId: existente?.agendaOrigemAtividadeId ?? '',
+      agendaCompromissoId: existente?.agendaCompromissoId ?? '',
+      agendaRevisao: existente?.agendaRevisao ?? 0,
+      projetoId: existente?.projetoId ?? '',
       id: atividadeId,
       escalaId: escalaAtual.id,
       data: _somenteData(_dataSelecionada),

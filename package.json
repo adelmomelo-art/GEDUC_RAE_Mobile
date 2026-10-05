@@ -4,25 +4,39 @@
   "scripts": {
     "audit:security": "npm audit --audit-level=high",
     "audit:scripts": "npm approve-scripts --allow-scripts-pending",
-    "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js test/firestore_escala.rules.test.js\"",
+    "test:rules": "firebase emulators:exec --only firestore --project geduc-rae-mobile-test \"node --test test/firestore.rules.test.js test/firestore_escala.rules.test.js test/firestore_agenda.rules.test.js\"",
     "test:rules:acl-stage4a": "firebase emulators:exec --only firestore --project geduc-rae-acl001-stage4a-test \"node --test test/firestore_acl001_stage4a.rules.test.js\"",
     "test:migration:mig001e3": "node --test test/mig001e3_importer.test.mjs test/mig001e3_firestore_rest.test.mjs",
     "test:migration:mig001e4": "node --test test/mig001e4_pilot.test.mjs",
     "test:migration:mig001e5": "node --test test/mig001e5_recovery.test.mjs",
-    "test:migration:mig001e6": "node --test test/mig001e6_full_load.test.mjs"
+    "test:migration:mig001e6": "node --test test/mig001e6_full_load.test.mjs",
+    "test:rules:watch": "node test/security/firestore_cli_watch_test.cjs",
+    "test:security:compat": "node --test test/security/npm_toolchain_compat.test.cjs",
+    "test:ago001:hml": "firebase emulators:exec --only auth,firestore --project demo-geduc-ago001-hml --config firebase.ago001-hml.json \"node tools/ago001/hml.cjs seed && node tools/ago001/hml.cjs seed && node tools/ago001/hml.cjs smoke\""
   },
   "allowScripts": {
     "@firebase/util@1.12.1": true,
     "fsevents": false,
-    "protobufjs@7.6.5": true,
-    "re2@1.26.1": true
+    "protobufjs@7.6.6": true,
+    "re2@1.27.0": true
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^4.0.1",
-    "firebase-tools": "^15.30.0"
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase-tools": "15.32.1"
   },
   "overrides": {
-    "fast-uri": "3.1.7",
-    "js-yaml": "4.3.2"
+    "fast-uri": "3.1.8",
+    "js-yaml": "4.3.2",
+    "@grpc/grpc-js": "1.14.5",
+    "firebase-tools": {
+      "chokidar": "4.0.3",
+      "@google-cloud/pubsub": "6.1.0"
+    },
+    "get-uri": {
+      "basic-ftp": "6.2.2"
+    },
+    "gaxios": {
+      "uuid": "11.1.1"
+    }
   }
 }

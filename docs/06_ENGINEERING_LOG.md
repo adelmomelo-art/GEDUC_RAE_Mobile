@@ -2496,3 +2496,87 @@ Validacoes:
 Fronteira: este fechamento publica codigo/PR. Bucket real, deploy Cloudflare,
 secrets e habilitacao produtiva permanecem fora deste script.
 <!-- SEC-R2-002A-A6F-LOG-END -->
+
+## 2026-10-04 — AGO-001: Agenda Operacional
+
+Implementação na base `7c52323896c89e6bec2fbfcc61846c060b4c48ab`.
+Agenda mensal privada para agente designado, cadastro progressivo, campos
+operacionais, histórico imutável e vínculo transacional com a escala diária.
+Snapshots preservam a privacidade e o projeto institucional acompanha o RAE.
+Revisões preservam origem; publicação confere pendências, remarcação e
+cancelamento preservam versões e bloqueiam registros com resultado.
+
+Validação automatizada e roteiro: `AGO-001_AGENDA_OPERACIONAL.md` e relatório
+de verificações do pacote. Homologação funcional e aceite do produto pendentes.
+Nenhum deploy produtivo realizado.
+
+### AGO-001 R3 — auditoria npm
+
+Correção controlada das ferramentas npm: Firebase CLI 15.32.1, biblioteca de
+testes 4.0.1 preservada, overrides restritos e lockfile reproduzível.
+Auditoria: 27 vulnerabilidades (14 altas) → zero; gate mantido.
+Validação: npm ci PASS; 82 testes Firestore, 3 de compatibilidade,
+68 de migração e recarga de regras do emulador PASS. Fontes Dart e
+dependências Flutter da R2 preservadas. Novos testes incluídos no workflow.
+Detalhes, fontes e limites: `AGO-001_R3_SEGURANCA_NPM.md`.
+
+### AGO-001 R4 — sincronização das aprovações npm
+
+Correção da homologação Windows: allowScripts atualizado para
+protobufjs@7.6.6 e re2@1.27.0, versões exatas do lockfile da R3.
+Nenhuma alteração em dependências, regras ou Dart. Instalação estrita
+e validação npm incluídas nas evidências do pacote integral R4.
+
+### AGO-001 R5 — homologação funcional local
+
+Entrada debug web dedicada ao projeto demo-geduc-ago001-hml, Auth e
+Firestore loopback, cache desativado e origem exclusiva 7351. Seed idempotente
+de seis contas fictícias e efetivo/catálogos; teste com login real emulado
+e bloqueio da agenda/histórico. Launcher PS5.1 e roteiro H01–H14.
+main.dart e configuração de produção preservados. Aceite manual pendente.
+
+### AGO-001 R6 — datas e launcher na homologação Windows
+
+Captura do usuário registrou LocaleDataException na primeira abertura.
+Inicialização local dos símbolos intl antes da interface nas entradas
+normal e HML, sem alterar Intl.defaultLocale. Teste de mês pt_BR e data
+por extenso. Launcher resolve RepoPath após param, evitando PSScriptRoot
+vazio no valor padrão do PowerShell 5.1. Dependências e regras preservadas.
+
+### AGO-001 R7 — limite de expressões na revisão
+
+Reprodução da homologação: PERMISSION_DENIED por limite de 1.000
+expressões em clone com coordenador. Política de atualização da escala
+com avaliação única da identidade; clone verifica origem antes da agenda
+privada. Mantidos roles, atividade/origem/revisão, designação e ativo.
+Regressão também exerce aplicação atômica e preservação da v1; vínculos
+forjados e agente não autorizado negados. Regras 83; Dart/npm iguais à R6.
+Homologação manual da revisão/v2 e PDF confirmada PASS em 05/10/2026. Sem deploy de produção.
+
+
+### AGO-001 R8 — snapshot independente na remarcação
+
+Após retirada v3 publicada, montagem em outra data encontrou falha genérica.
+Identificador global agenda-compromisso colidia com o snapshot histórico.
+Novas atividades usam escala+compromisso; aplicação de vínculos existentes
+preserva IDs legados. Regressão nega sobrescrita histórica, permite vínculo
+atômico na nova data e reaplicação sem duplicação. Erros de Firebase exibem
+código; diagnóstico debug registra tipo/código/stack sem conteúdo privado.
+Regras/dependências preservadas. H14 aguarda repetição da montagem pelo usuário.
+Sugestão de títulos e semáforo no calendário registrada no roteiro, sem
+implementação nesta correção.
+
+Validação local R8: Analyze zero issues; Flutter 1.156 PASS; regras 84 PASS;
+build web HML PASS. Instalador integral com 45 arquivos validado sobre base
+e R7 com CRLF. Não houve deploy, commit ou alteração de dependências.
+
+
+### AGO-001 R9 — homologação web local concluída (05/10/2026)
+
+Usuário confirmou montagem remarcada em 06/10, rascunho v1, atividade única,
+reaplicação sem duplicação e planejamento preservado. H14 PASS após R8.
+H01–H14 da homologação funcional web local concluídos. Consolidação somente
+documental; código/regras/dependências e evidências R8 preservados.
+Ainda pendentes: commit/push, CI remoto, revisão/merge, publicação controlada
+das regras e homologação/atualização A05. Sugestão de títulos e semáforo no
+calendário registrada para próxima evolução; limiar amarelo não definido.

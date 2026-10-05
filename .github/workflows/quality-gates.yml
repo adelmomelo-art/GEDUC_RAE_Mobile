@@ -140,6 +140,15 @@ jobs:
 
       - name: Test Firestore security rules
         run: npm run test:rules
+
+      - name: Test security-tool compatibility
+        run: npm run test:security:compat
+
+      - name: Test Firestore rules reload
+        run: npm run test:rules:watch
+
+      - name: AGO-001 homologacao local com Auth e Firestore
+        run: npm run test:ago001:hml
   migration-importer:
     name: Quality Gate - Migration Importer
     runs-on: ubuntu-24.04

@@ -162,4 +162,41 @@ void main() {
     expect(restaurado['escalaId'], '2026-09-23');
     expect(restaurado['escalaAtividadeId'], 'atividade-educativa-1');
   });
+  test('projeto institucional da agenda acompanha o RAE', () {
+    final item = EscalaAtividadeModel.fromMap({
+      ...atividade().toMap(),
+      'projetoId': 'projeto-oficial',
+      'agendaCompromissoId': 'compromisso',
+      'agendaRevisao': 2,
+    }, documentId: atividade().id);
+    final rae = EscalaRaeService.criarRascunho(
+      atividade: item,
+      alocacoes: const [],
+      usuarioId: 'uid-agente',
+    );
+    expect(rae.projetoId, 'projeto-oficial');
+    final copia =
+        EscalaAtividadeModel.fromMap(item.toMap(), documentId: item.id);
+    expect(copia.agendaCompromissoId, 'compromisso');
+    expect(copia.agendaRevisao, 2);
+    expect(copia.projetoId, 'projeto-oficial');
+  });
+
+  test('atividade cancelada não autoriza nem gera novo RAE', () {
+    final item = EscalaAtividadeModel.fromMap({
+      ...atividade().toMap(),
+      'status': 'cancelada',
+    }, documentId: atividade().id);
+    expect(
+        EscalaRaeService.podeCriarRae(
+            atividade: item,
+            escalaPublicada: true,
+            perfilAcesso: 'agente',
+            usuarioId: 'uid-agente'),
+        isFalse);
+    expect(
+        () => EscalaRaeService.criarRascunho(
+            atividade: item, alocacoes: const [], usuarioId: 'uid-agente'),
+        throwsStateError);
+  });
 }

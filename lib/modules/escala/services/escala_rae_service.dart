@@ -20,7 +20,8 @@ class EscalaRaeService {
     if (!escalaPublicada ||
         uid.isEmpty ||
         !atividade.educativa ||
-        !atividade.geraRae) {
+        !atividade.geraRae ||
+        atividade.status == 'cancelada') {
       return false;
     }
 
@@ -59,7 +60,9 @@ class EscalaRaeService {
     if (uid.isEmpty) {
       throw ArgumentError.value(usuarioId, 'usuarioId', 'Usuário obrigatório.');
     }
-    if (!atividade.educativa || !atividade.geraRae) {
+    if (!atividade.educativa ||
+        !atividade.geraRae ||
+        atividade.status == 'cancelada') {
       throw StateError(
         'Somente atividade educativa marcada para RAE é aceita.',
       );
@@ -84,6 +87,7 @@ class EscalaRaeService {
       turno: atividade.turnoId.trim(),
       nomeAcao: atividade.titulo.trim(),
       tipoAcao: atividade.tipoAtividadeId.trim(),
+      projetoId: atividade.projetoId,
       publicoEstimado: 0,
       publicoMinimo: 0,
       acaoPlanejada: true,

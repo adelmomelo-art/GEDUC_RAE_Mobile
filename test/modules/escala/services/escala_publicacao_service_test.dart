@@ -164,4 +164,62 @@ void main() {
     expect(resultado.podePublicar, isFalse);
     expect(resultado.bloqueios.join(' '), contains('classificação completa'));
   });
+  EscalaAtividadeModel daAgenda({Map<String, dynamic> campos = const {}}) =>
+      EscalaAtividadeModel.fromMap({
+        ...atividade().toMap(),
+        'agendaCompromissoId': 'compromisso',
+        'agendaRevisao': 3,
+        'qthEndereco': 'Rua Central, 10',
+        'coordenadorMembroEquipeId': 'membro-a',
+        ...campos,
+      }, documentId: 'atividade-1');
+
+  test('ação da agenda exige endereço e coordenador incluído na equipe', () {
+    final incompleta = EscalaPublicacaoService.analisar(
+      escala: escala(),
+      atividades: [
+        daAgenda(campos: {'qthEndereco': ''})
+      ],
+      alocacoes: const [],
+    );
+    expect(incompleta.podePublicar, isFalse);
+    expect(
+        incompleta.bloqueios.join(' '), contains('Complete horário e local'));
+    expect(incompleta.bloqueios.join(' '), contains('inclua o coordenador'));
+    expect(
+        EscalaPublicacaoService.analisar(
+          escala: escala(),
+          atividades: [daAgenda()],
+          alocacoes: [alocacao()],
+        ).podePublicar,
+        isTrue);
+  });
+
+  test('alteração de horário da agenda exige conferir horários da equipe', () {
+    final resultado = EscalaPublicacaoService.analisar(
+      escala: escala(),
+      atividades: [
+        daAgenda(campos: {'horaFim': '12:00'})
+      ],
+      alocacoes: [alocacao()],
+    );
+    expect(resultado.podePublicar, isFalse);
+    expect(resultado.bloqueios.join(' '), contains('Confira os horários'));
+  });
+
+  test('cancelamento planejado permite publicar retirada sem equipe', () {
+    expect(
+        EscalaPublicacaoService.analisar(
+          escala: escala(),
+          atividades: [
+            daAgenda(campos: {
+              'status': 'cancelada',
+              'coordenadorMembroEquipeId': '',
+              'qthEndereco': ''
+            })
+          ],
+          alocacoes: const [],
+        ).podePublicar,
+        isTrue);
+  });
 }

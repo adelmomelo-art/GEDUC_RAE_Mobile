@@ -59,7 +59,19 @@ class _GestaoEscalaPageState extends State<GestaoEscalaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestão da Escala')),
+      appBar: AppBar(
+        title: const Text('Gestão da Escala'),
+        actions: [
+          if (_controller.ehResponsavel)
+            IconButton(
+              tooltip: 'Agenda Operacional',
+              icon: const Icon(Icons.event_note),
+              onPressed: _controller.salvando
+                  ? null
+                  : () => context.push('/agenda-operacional'),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: Stack(
           children: [

@@ -204,6 +204,10 @@ class EscalaModel {
 
 class EscalaAtividadeModel {
   EscalaAtividadeModel({
+    this.agendaOrigemAtividadeId = '',
+    this.agendaCompromissoId = '',
+    this.agendaRevisao = 0,
+    this.projetoId = '',
     required this.id,
     required this.escalaId,
     required this.data,
@@ -240,6 +244,10 @@ class EscalaAtividadeModel {
               .where((item) => item.isNotEmpty),
         );
 
+  final String agendaOrigemAtividadeId;
+  final String agendaCompromissoId;
+  final int agendaRevisao;
+  final String projetoId;
   final String id;
   final String escalaId;
   final DateTime data;
@@ -280,6 +288,10 @@ class EscalaAtividadeModel {
     required String documentId,
   }) {
     return EscalaAtividadeModel(
+      agendaOrigemAtividadeId: map['agendaOrigemAtividadeId']?.toString() ?? '',
+      agendaCompromissoId: map['agendaCompromissoId']?.toString() ?? '',
+      agendaRevisao: _inteiro(map['agendaRevisao'], fallback: 0),
+      projetoId: map['projetoId']?.toString() ?? '',
       id: documentId,
       escalaId: map['escalaId']?.toString() ?? '',
       data: _dataObrigatoria(map['data']),
@@ -315,6 +327,12 @@ class EscalaAtividadeModel {
   }
 
   Map<String, dynamic> toMap() => <String, dynamic>{
+        if (agendaCompromissoId.isNotEmpty) ...{
+          'agendaOrigemAtividadeId': agendaOrigemAtividadeId,
+          'agendaCompromissoId': agendaCompromissoId,
+          'agendaRevisao': agendaRevisao,
+        },
+        if (projetoId.isNotEmpty) 'projetoId': projetoId,
         'escalaId': escalaId.trim(),
         'data': Timestamp.fromDate(data),
         'secaoId': secaoId.trim(),

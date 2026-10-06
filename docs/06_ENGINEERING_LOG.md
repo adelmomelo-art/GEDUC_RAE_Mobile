@@ -2634,3 +2634,40 @@ publicação, participante/privacidade e PDF: todos PASS.
 Validação técnica da entrega: analyze sem problemas, 1.162 testes Flutter
 aprovados e build web de homologação aprovado.
 Publicação da AGO-002 em produção e atualização A05 seguem após merge e CI.
+
+
+## 06/10/2026 — AGO-002: fechamento em produção
+
+
+Status final: AGO-002 R2 concluída e homologada na web de produção e no Samsung A05.
+Registros anteriores de pendências correspondem às etapas históricas desta entrega.
+
+| Evidência | Resultado |
+|---|---|
+| PR #113 | Merge confirmado em 06/10/2026 |
+| Commit da implementação | `b0f0bd475282490f396f2f62146d9d9c039811c4` |
+| Commit do merge / base publicada | `3f8423d5c3aa0c221327810edcf5599546dd7a25` |
+| CI do PR | Quality Gates 6/6 PASS; run `37461874606` |
+| CI da main após merge | Quality Gates PASS; run `37462210318` |
+| Validação Flutter da implementação | Analyze sem problemas; suíte completa 1.162 PASS |
+| Android | APK release assinado; instalação `adb install -r` SUCCESS |
+| A05 | `versionName=1.0.0`, `versionCode=5`; serial `R9QX600KCZJ` |
+| Homologação A05 | Agenda, links, escala e PDF PASS pelo usuário |
+| Web | Versão 1.0.0, build 5; Worker `geduc-fenix-web` |
+| Domínio oficial | `https://app.flybuddies.com.br` |
+| Versão Cloudflare | `b2854d68-0821-40ff-9077-bb719a6a5277` |
+| Versão web publicada | build 5 confirmado pelo usuário via version.json |
+| Homologação web em produção | PASS pelo usuário em 06/10/2026 |
+
+Entregues nomes clicáveis para o cartão de detalhes, semáforo por ação e sete
+colunas visíveis no layout móvel. Cancelamento prevalece; amarelo abrange hoje
+até os próximos três dias civis; demais ações ativas ficam verdes. Nomes e +N
+preservam o destino correto, filtros e montagem sem duplicação.
+Homologação local: publicação, participante/privacidade e PDF PASS.
+Regras Firestore e dependências não mudaram nesta entrega; não houve novo
+deploy de regras para AGO-002. O fechamento documental não altera a aplicação
+publicada nem exige novo build ou homologação funcional.
+
+Próxima etapa de planejamento: consolidar novas propostas para a escala,
+seguindo Blueprint → Plano → Implementação → Validação → Homologação.
+Nenhuma nova funcionalidade de escala está especificada neste fechamento.

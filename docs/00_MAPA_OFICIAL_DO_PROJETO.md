@@ -164,8 +164,9 @@ Plataforma Fênix.
 - [Implementação, dados e homologação](AGO-001_AGENDA_OPERACIONAL.md)
 - [R3: segurança das ferramentas npm](AGO-001_R3_SEGURANCA_NPM.md)
 - Fluxo: planejamento privado → escala diária → consulta pela equipe.
-- Status: homologação funcional web local H01–H14 concluída em 05/10/2026;
-  commit/push, CI, publicação controlada e A05 pendentes.
+- Status: concluída em 06/10/2026; PR #112/main, CI, regras publicadas,
+  web e A05 build 4 homologados PASS.
+- [AGO-002: calendário com nomes, links e semáforo](AGO-002_CALENDARIO_ACOES.md)
 
   ------------------------------------------------------------------------
   Versão                 Data              Descrição

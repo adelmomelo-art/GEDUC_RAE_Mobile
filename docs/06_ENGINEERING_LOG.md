@@ -2580,3 +2580,57 @@ documental; código/regras/dependências e evidências R8 preservados.
 Ainda pendentes: commit/push, CI remoto, revisão/merge, publicação controlada
 das regras e homologação/atualização A05. Sugestão de títulos e semáforo no
 calendário registrada para próxima evolução; limiar amarelo não definido.
+
+
+## 06/10/2026 — AGO-001: fechamento em produção
+
+PR #112 integrado à main no commit `251d260c49553955ebc3606e0118eb05652c4fb8`.
+CI push main run 37371455562 aprovado após repetição do Flutter Test cancelado.
+Firebase geduc-rae-mobile: regras compiladas/publicadas pelo CLI, audit zero
+vulnerabilidades. Web e A05 build 4 instalados/publicados; web Worker
+`geduc-fenix-web`, versão `6fc95ffc-a84c-4259-b9b7-8f22f585f468`.
+Usuário confirmou planejamento/persistência, montagem sem duplicação,
+publicação, participante/privacidade e PDF na web; Agenda/Escala/PDF no A05 PASS.
+AGO-001 encerrada funcionalmente. Documentação desta seção é posterior ao merge.
+
+## 06/10/2026 — AGO-002: calendário por ação
+
+Usuário autorizou fluxo completo e esclareceu que o link do título aponta
+para o cartão de detalhes. Aproximidade definida em escolha explícita:
+hoje e próximos três dias. Blueprint em AGO-002_CALENDARIO_ACOES.md.
+Título clicável no calendário seleciona data, rola para o cartão existente
+com borda de destaque. Cor por ação, cancelamento prevalece, tooltip e
+semântica textual. Calendário móvel com rolagem horizontal, dois títulos por
+célula e acesso às demais ações. Sem alteração de dados, regras ou dependências.
+Validação técnica e homologação da AGO-002 têm registros próprios; não se
+confundem com o aceite já concluído da AGO-001.
+
+AGO-002 R1: Flutter analyze zero issues e suíte completa 1.161 PASS. Aplicador
+PowerShell com hashes LF/CRLF PASS; build web HML PASS.
+Homologação funcional AGO-002 pendente.
+
+
+### AGO-002 R2 — retorno da homologação móvel
+
+Nome/link, semáforo/prioridade, várias ações, filtros e montagem sem duplicação
+PASS pelo usuário. Layout móvel FAIL: largura mínima de 784 px ocultava
+Qui a Dom. R2 exibe sete colunas na largura disponível, sem rolagem horizontal,
+com nomes compactos em duas linhas e +N. Mantém tooltip/semântica completa,
+cores por ação, destinos e fluxo operacional. Adicionada verificação explícita
+da visibilidade de domingo em novembro a 390 px. R2 pronta somente após as
+validações técnicas e novo aceite visual, ainda sem commit/deploy.
+
+Validação R2: analyze sem problemas, agenda 20 PASS, suíte completa 1.162 PASS e
+build web debug HML PASS. Aplicador na base limpa LF e sobre R1 integral CRLF:
+nove hashes por cenário conferidos, alteração fora do escopo bloqueada sem
+gravação. Homologação visual R2 pelo usuário pendente.
+
+### AGO-002 R2 — homologação funcional concluída em 06/10/2026
+
+Homologação local em emuladores e Chrome: PASS.
+Nome no calendário, link para cartão, cores e prioridade do cancelamento,
+várias ações/+N, filtros, montagem sem duplicação, layout móvel R2,
+publicação, participante/privacidade e PDF: todos PASS.
+Validação técnica da entrega: analyze sem problemas, 1.162 testes Flutter
+aprovados e build web de homologação aprovado.
+Publicação da AGO-002 em produção e atualização A05 seguem após merge e CI.

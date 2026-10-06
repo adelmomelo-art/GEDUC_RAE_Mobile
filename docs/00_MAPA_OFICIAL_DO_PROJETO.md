@@ -12,7 +12,7 @@
   Categoria        Portal Oficial do Sistema de Conhecimento
   Versão           2.0
   Status           Oficial
-  Última Revisão   27/07/2026
+  Última Revisão   06/10/2026
   Responsável      Arquitetura da Plataforma Fênix
 
 ------------------------------------------------------------------------
@@ -166,7 +166,14 @@ Plataforma Fênix.
 - Fluxo: planejamento privado → escala diária → consulta pela equipe.
 - Status: concluída em 06/10/2026; PR #112/main, CI, regras publicadas,
   web e A05 build 4 homologados PASS.
-- [AGO-002: calendário com nomes, links e semáforo](AGO-002_CALENDARIO_ACOES.md)
+
+## Calendário por ação — AGO-002
+
+- [Implementação e fechamento em produção](AGO-002_CALENDARIO_ACOES.md)
+- Status: concluída em 06/10/2026; PR #113/main, CI e web/A05 build 5 PASS.
+- Nomes clicáveis, cores por ação e sete colunas no layout móvel.
+- Próxima etapa de planejamento: consolidar novas propostas para a escala.
+  Escopo de nova implementação ainda não definido.
 
   ------------------------------------------------------------------------
   Versão                 Data              Descrição

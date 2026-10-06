@@ -195,3 +195,10 @@ regras 84 PASS e build web HML PASS. Sem repetir suites para esta alteração
 documental. Próximas etapas: commit/push, CI remoto e revisão da entrega;
 publicação das regras e atualização A05 continuam pendentes. O semáforo
 no calendário permanece proposta para a próxima evolução, após esta entrega.
+
+## Fechamento posterior — web de produção e A05
+
+As pendências descritas acima pertencem às revisões históricas. Em 06/10/2026,
+merge, CI remoto, publicação das regras, atualização web/A05 e homologação
+funcional em ambos foram concluídos PASS. Registro consolidado em
+[AGO-001](AGO-001_AGENDA_OPERACIONAL.md#fechamento-em-produção--06102026).

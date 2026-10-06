@@ -1,7 +1,7 @@
 # AGO-001 — Agenda Operacional
 
-Status: homologação funcional web local H01–H14 concluída em 05/10/2026.
-Commit/push, CI, publicação controlada e homologação A05 pendentes.
+Status: concluída e homologada na web de produção e no Samsung A05 em 06/10/2026.
+PR #112 integrado à main; CI aprovado, regras publicadas e build 4 homologado.
 Base: `7c52323896c89e6bec2fbfcc61846c060b4c48ab`.
 
 ## Fluxo implementado
@@ -142,3 +142,25 @@ R8 homologada: remarcação com retirada v3 publicada, montagem na nova data
 sem duplicação e planejamento preservado. R9 consolida a documentação,
 sem alteração de código ou regras. Evidências e evolução do calendário
 registradas em `AGO-001_HOMOLOGACAO_LOCAL.md`.
+
+## Fechamento em produção — 06/10/2026
+
+- Merge PR #112: `251d260c49553955ebc3606e0118eb05652c4fb8`.
+- CI da main: run `37371455562`, Flutter Test/Analyze, Rules, auditoria,
+  homologação local, migração e segredos PASS; Dependency Review dispensado
+  no push, aprovado no PR. Teste Flutter inicialmente cancelado, repetido PASS.
+- Firebase `geduc-rae-mobile`: compilação e publicação de `firestore.rules`
+  confirmadas pelo CLI em 05/10; npm audit zero vulnerabilidades.
+- A05 `R9QX600KCZJ`: instalação com `adb install -r` SUCCESS,
+  `versionCode=4`, `versionName=1.0.0`; dados preservados pela atualização.
+- Web: `https://app.flybuddies.com.br/#/login`, Worker `geduc-fenix-web`,
+  versão Cloudflare `6fc95ffc-a84c-4259-b9b7-8f22f585f468`, build 4.
+  Endpoint version.json oficial e workers.dev conferidos HTTP 200/build 4.
+- Homologação manual web: login, agenda, planejamento/persistência,
+  montagem sem duplicação, publicação, participante/privacidade e PDF PASS.
+- Homologação manual A05: Agenda, Escala e PDF PASS.
+- Aceite final do usuário: “homologação concluida”, em 06/10/2026.
+
+Próxima evolução: AGO-002; nomes das ações clicáveis para o cartão de detalhes
+na agenda privada, com semáforo por ação. Proximidade aprovada: hoje e próximos
+três dias. Não altera o fluxo operacional homologado da AGO-001.
